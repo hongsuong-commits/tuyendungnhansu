@@ -1,0 +1,19 @@
+{
+  "name": "smart-ats-system",
+  "version": "1.0.0",
+  "description": "SmartATS - Hệ thống quản lý tuyển dụng thông minh",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "ats",
+    "recruitment",
+    "hiring",
+    "hr",
+    "cv-parsing"
+  ],
+  "author": "SmartATS Team",
+  "license": "MIT"
+}
