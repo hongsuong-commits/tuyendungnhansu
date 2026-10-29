@@ -42,6 +42,13 @@ const ScreeningPage = (() => {
             </div>
           </div>
 
+          <div class="alert alert-success mb-4">
+            <i data-lucide="sparkles" class="icon-sm"></i>
+            <div class="text-xs leading-relaxed">
+              <strong>Chính sách duyệt tự động:</strong> AI chuyển hồ sơ sang <strong>Đạt – Chờ phỏng vấn</strong> khi tổng điểm đạt <strong>≥ ${settings.scoreThresholds?.pass ?? 80} điểm</strong> và không còn tiêu chí bắt buộc nào chưa đáp ứng. Hồ sơ dưới ngưỡng được giữ lại cho HR xem xét; AI <strong>không tự động loại</strong> ứng viên.
+            </div>
+          </div>
+
           <!-- Position Selector & Scoring Weights Configuration Bar -->
           <div class="grid grid-cols-3 gap-4 mb-4">
             <div class="card col-span-2">
@@ -167,10 +174,19 @@ const ScreeningPage = (() => {
                          value="${settings.screeningWeights?.education ?? 15}">
                 </div>
                 <div class="form-group">
-                  <button type="button" class="btn btn-primary btn-sm w-full" id="btn-save-criteria">
-                    <i data-lucide="save" class="icon-xs"></i> Lưu tiêu chí
-                  </button>
+                  <label class="form-label text-2xs font-semibold">Tỷ trọng Chứng chỉ (%)</label>
+                  <input type="number" id="weight-cert" class="form-input text-xs" min="0" max="100"
+                         value="${settings.screeningWeights?.certifications ?? 15}">
                 </div>
+              </div>
+              <div class="flex items-center justify-between gap-3 mt-3">
+                <span class="text-2xs text-muted">
+                  Tổng trọng số: <strong id="weight-total" class="font-mono">${(settings.screeningWeights?.skills ?? 40) + (settings.screeningWeights?.experience ?? 30) + (settings.screeningWeights?.education ?? 15) + (settings.screeningWeights?.certifications ?? 15)}%</strong>
+                  · phải bằng 100%
+                </span>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-save-criteria">
+                  <i data-lucide="save" class="icon-xs"></i> Lưu tiêu chí
+                </button>
               </div>
             </div>
           </div>
@@ -253,7 +269,7 @@ const ScreeningPage = (() => {
 
       return `
         <div class="table-responsive">
-          <table class="data-table data-table-compact">
+          <table class="data-table data-table-compact table-sticky-actions">
             <thead>
               <tr>
                 <th>Ứng viên</th>
@@ -291,10 +307,24 @@ const ScreeningPage = (() => {
           const passScore = parseInt(document.getElementById('criteria-pass-score')?.value, 10) || 80;
           const reviewScore = parseInt(document.getElementById('criteria-review-score')?.value, 10) || 60;
 
-          const wSkills = parseInt(document.getElementById('weight-skills')?.value, 10) || 40;
-          const wExp = parseInt(document.getElementById('weight-exp')?.value, 10) || 30;
-          const wEdu = parseInt(document.getElementById('weight-edu')?.value, 10) || 15;
-          const wCert = Math.max(0, 100 - (wSkills + wExp + wEdu));
+          const wSkills = parseInt(document.getElementById('weight-skills')?.value, 10) || 0;
+          const wExp = parseInt(document.getElementById('weight-exp')?.value, 10) || 0;
+          const wEdu = parseInt(document.getElementById('weight-edu')?.value, 10) || 0;
+          const wCert = parseInt(document.getElementById('weight-cert')?.value, 10) || 0;
+          const weightTotal = wSkills + wExp + wEdu + wCert;
+
+          if ([wSkills, wExp, wEdu, wCert].some(w => w < 0 || w > 100)) {
+            UI.toast({ message: 'Mỗi tỷ trọng phải nằm trong khoảng 0–100%.', type: 'warning' });
+            return;
+          }
+          if (weightTotal !== 100) {
+            UI.toast({ message: `Tổng trọng số phải bằng 100% (hiện tại ${weightTotal}%).`, type: 'warning' });
+            return;
+          }
+          if (passScore <= reviewScore) {
+            UI.toast({ message: 'Điểm Đạt phải lớn hơn điểm Xem xét.', type: 'warning' });
+            return;
+          }
 
           const skills = skillsRaw.split(',').map(s => s.trim()).filter(Boolean);
 
@@ -317,6 +347,20 @@ const ScreeningPage = (() => {
           this.refresh();
         });
       }
+
+      // Live total for the four screening weights
+      const weightInputs = ['weight-skills', 'weight-exp', 'weight-edu', 'weight-cert']
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+      const weightTotalEl = document.getElementById('weight-total');
+      const updateWeightTotal = () => {
+        if (!weightTotalEl) return;
+        const total = weightInputs.reduce((sum, input) => sum + (parseInt(input.value, 10) || 0), 0);
+        weightTotalEl.textContent = total + '%';
+        weightTotalEl.classList.toggle('text-danger', total !== 100);
+        weightTotalEl.classList.toggle('text-success', total === 100);
+      };
+      weightInputs.forEach(input => input.addEventListener('input', updateWeightTotal));
 
       // Live Scanner Button
       const btnScan = document.getElementById('btn-open-live-scanner');
@@ -778,7 +822,10 @@ CHỨNG CHỈ:
             source: 'website'
           });
 
-          UI.toast({ message: `Đã lưu hồ sơ ứng viên ${candData.fullName} vào hệ thống!`, type: 'success' });
+          const autoNote = newApp?.screeningDetails?.autoApproved
+            ? ' AI đã tự động duyệt sang bước Đạt – Chờ phỏng vấn.'
+            : '';
+          UI.toast({ message: `Đã lưu hồ sơ ứng viên ${candData.fullName} vào hệ thống!${autoNote}`, type: 'success' });
           UI.closeModal('modal-live-scanner');
           this.refresh();
         });

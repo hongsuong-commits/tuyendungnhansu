@@ -137,7 +137,8 @@ const onlineApp = ATSStore.submitApplication({
 });
 assert(onlineApp && onlineApp.id, 'Hồ sơ ứng tuyển trực tuyến được tiếp nhận thành công');
 assert(onlineApp.source === 'website', 'Nguồn ứng viên được ghi nhận chính xác: website');
-assert(onlineApp.status === 'pending_review', 'Trạng thái hồ sơ ban đầu là Chờ nhân sự duyệt');
+assert(onlineApp.status === 'passed_screening', 'Hồ sơ đạt ngưỡng được AI tự động duyệt sang Đạt – Chờ phỏng vấn');
+assert(onlineApp.screeningDetails && onlineApp.screeningDetails.autoApproved === true, 'Nhật ký AI ghi nhận tự động duyệt theo ngưỡng điểm đã cấu hình');
 
 // ── TEST 5: Tải CV thủ công & Trích xuất tự động ──────────────────────────────
 console.log('\n--- LUỒNG 5: TỰ ĐỘNG ĐỌC CV & TRÍCH XUẤT THÔNG TIN ---');
@@ -242,6 +243,28 @@ assert(Helpers.isValidEmail('hr@smartats.vn'), 'Email hợp lệ được chấp
 assert(!Helpers.isValidPhone('12345'), 'Bắt lỗi số điện thoại không hợp lệ: 12345');
 assert(Helpers.isValidPhone('0912345678'), 'Số điện thoại Việt Nam hợp lệ được chấp nhận: 0912345678');
 assert(!Helpers.isRequired('   '), 'Bắt lỗi khoảng trắng rỗng');
+
+// ── TEST 13: Quản lý tài khoản người dùng ─────────────────────────────────────
+console.log('\n--- LUỒNG 13: QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG ---');
+const newUser = ATSStore.createUser({
+  fullName: 'Đỗ Minh Anh',
+  username: 'hr2',
+  password: '123456',
+  email: 'anh.do@smartats.vn',
+  phone: '0909123456',
+  role: 'hr',
+  department: 'Phòng Nhân sự',
+  title: 'Chuyên viên Tuyển dụng'
+});
+assert(newUser.success && newUser.user.username === 'hr2', 'Tạo tài khoản nhân sự mới thành công');
+const duplicateUser = ATSStore.createUser({
+  fullName: 'Trùng Tài Khoản',
+  username: 'hr2',
+  password: '123456',
+  email: 'khac@smartats.vn',
+  role: 'hr'
+});
+assert(!duplicateUser.success, 'Từ chối tạo tài khoản trùng tên đăng nhập');
 
 console.log('\n================================================================');
 console.log(` KẾT QUẢ KIỂM THỬ: ${passedTests}/${totalTests} BÀI KIỂM THỬ THÀNH CÔNG (100% ĐẠT)`);

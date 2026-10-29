@@ -108,7 +108,7 @@ const UsersPage = (() => {
             </div>
             <div class="card-body card-body-no-padding">
               <div class="table-responsive">
-                <table class="data-table">
+                <table class="data-table table-sticky-actions">
                   <thead>
                     <tr>
                       <th class="text-center" style="width: 45px;">STT</th>
@@ -174,8 +174,123 @@ const UsersPage = (() => {
 
       // Add user button
       document.getElementById('btn-add-user')?.addEventListener('click', () => {
-        UI.toast({ message: 'Tính năng thêm người dùng: bạn có thể cấu hình tài khoản qua file mock store hoặc form.', type: 'info' });
+        this.showAddUserModal();
       });
+    },
+
+    showAddUserModal() {
+      const departments = ATSStore.getDepartments();
+      const modalHtml = `
+        <div class="modal active" id="modal-add-user">
+          <div class="modal-dialog modal-md">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3 class="modal-title flex items-center gap-2">
+                  <i data-lucide="user-plus" class="icon-md text-primary"></i>
+                  Thêm tài khoản mới
+                </h3>
+                <button type="button" class="modal-close" onclick="UI.closeModal('modal-add-user')">&times;</button>
+              </div>
+              <form id="form-add-user">
+                <div class="modal-body">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="form-group">
+                      <label class="form-label required">Họ và tên</label>
+                      <input type="text" name="fullName" class="form-input" placeholder="Ví dụ: Nguyễn Văn An" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label required">Tên đăng nhập</label>
+                      <input type="text" name="username" class="form-input" placeholder="Ví dụ: hr2" autocomplete="off" required>
+                      <small class="text-2xs text-muted">Chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.</small>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label required">Mật khẩu</label>
+                      <input type="password" name="password" class="form-input" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label required">Email liên hệ</label>
+                      <input type="email" name="email" class="form-input" placeholder="ten.nhanvien@smartats.vn" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Số điện thoại</label>
+                      <input type="tel" name="phone" class="form-input" placeholder="09xx xxx xxx">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label required">Vai trò</label>
+                      <select name="role" class="form-select" required>
+                        <option value="hr">Nhân viên nhân sự (HR)</option>
+                        <option value="department_head">Trưởng phòng (HOD)</option>
+                        <option value="director">Giám đốc (Director)</option>
+                        <option value="candidate">Ứng viên (Candidate)</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label required">Phòng ban</label>
+                      <select name="department" class="form-select" required>
+                        ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Chức danh</label>
+                      <input type="text" name="title" class="form-input" placeholder="Ví dụ: Chuyên viên tuyển dụng">
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info mt-3 text-xs">
+                    <i data-lucide="info" class="icon-xs"></i>
+                    <span>Tài khoản được tạo sẽ hoạt động ngay và có thể đăng nhập bằng tên đăng nhập/mật khẩu vừa nhập. Ứng viên sau khi đăng nhập sẽ được chuyển tới Cổng tuyển dụng.</span>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" onclick="UI.closeModal('modal-add-user')">Hủy</button>
+                  <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save" class="icon-xs"></i> Tạo tài khoản
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const container = document.getElementById('user-modals-container');
+      if (!container) return;
+      container.innerHTML = modalHtml;
+      UI.openModal('modal-add-user');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      document.getElementById('form-add-user')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const result = ATSStore.createUser({
+          fullName: fd.get('fullName'),
+          username: fd.get('username'),
+          password: fd.get('password'),
+          email: fd.get('email'),
+          phone: fd.get('phone'),
+          role: fd.get('role'),
+          department: fd.get('department'),
+          title: fd.get('title')
+        });
+
+        if (!result.success) {
+          UI.toast({ message: result.message, type: 'warning' });
+          return;
+        }
+
+        UI.closeModal('modal-add-user');
+        UI.toast({ message: `Đã tạo tài khoản “${result.user.username}” cho ${result.user.fullName}.`, type: 'success' });
+        this.refresh();
+      });
+    },
+
+    refresh() {
+      const mainContent = document.getElementById('mainContent');
+      if (mainContent) {
+        mainContent.innerHTML = this.render();
+        this.init();
+        if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+      }
     }
   };
 })();

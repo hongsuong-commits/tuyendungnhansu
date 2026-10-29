@@ -79,7 +79,7 @@
     Router.register('postings/:id', (params) => renderPage(PostingsPage, params));
 
     // Candidates
-    Router.register('candidates', () => renderPage(CandidatesPage));
+    Router.register('candidates', (params) => renderPage(CandidatesPage, params));
     Router.register('candidates/:id', (params) => {
       renderPage(CandidatesPage, params);
       // Auto open detail modal if id supplied
@@ -105,6 +105,10 @@
 
     // Settings
     Router.register('settings', () => renderPage(SettingsPage));
+
+    // Personal profile & notification center
+    Router.register('profile', () => renderPage(ProfilePage));
+    Router.register('notifications', () => renderPage(NotificationsPage));
 
     // Public Candidate Career Portal
     Router.register('portal', (params) => renderPage(PortalPage, params));

@@ -12,11 +12,35 @@ const Router = (() => {
   let _initialized = false;
 
   /**
+   * Split a hash into its path and query string.
+   * e.g. "#/candidates?search=nam" → { path: "candidates", query: "search=nam" }
+   */
+  function parseHash(hash) {
+    const raw = (hash || '').replace(/^#\/?/, '');
+    const queryIndex = raw.indexOf('?');
+    const path = (queryIndex >= 0 ? raw.slice(0, queryIndex) : raw).replace(/\/$/, '');
+    const query = queryIndex >= 0 ? raw.slice(queryIndex + 1) : '';
+    return { path, query };
+  }
+
+  /**
+   * Parse a query string into a plain object.
+   */
+  function parseQuery(query) {
+    const params = {};
+    if (!query) return params;
+    new URLSearchParams(query).forEach((value, key) => {
+      params[key] = value;
+    });
+    return params;
+  }
+
+  /**
    * Parse a hash path into segments
    * e.g. "#/candidates/123" → ["candidates", "123"]
    */
   function parsePath(hash) {
-    const path = (hash || '').replace(/^#\/?/, '').replace(/\/$/, '');
+    const { path } = parseHash(hash);
     return path ? path.split('/') : [];
   }
 
@@ -81,10 +105,11 @@ const Router = (() => {
   function handleHashChange() {
     const hash = window.location.hash || '#/portal';
     const resolved = resolveRoute(hash);
+    const queryParams = parseQuery(parseHash(hash).query);
 
     if (resolved) {
       _currentRoute = resolved.pattern;
-      _currentParams = resolved.params;
+      _currentParams = { ...resolved.params, ...queryParams };
 
       if (_onNavigate) {
         _onNavigate(_currentRoute, _currentParams);
@@ -157,13 +182,15 @@ const Router = (() => {
         _history.push(window.location.hash);
       }
 
-      // Merge extra params
-      if (params) {
-        _currentParams = { ..._currentParams, ...params };
-      }
-
       const cleanPath = path.replace(/^#?\/?/, '');
-      window.location.hash = '#/' + cleanPath;
+      const query = params
+        ? Object.entries(params)
+            .filter(([, value]) => value !== undefined && value !== null && value !== '')
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&')
+        : '';
+
+      window.location.hash = '#/' + cleanPath + (query ? '?' + query : '');
     },
 
     /**
@@ -196,7 +223,7 @@ const Router = (() => {
      * Get the current hash path as a clean string
      */
     getCurrentPath() {
-      return (window.location.hash || '#/portal').replace(/^#\/?/, '');
+      return parseHash(window.location.hash || '#/portal').path;
     },
 
     /**

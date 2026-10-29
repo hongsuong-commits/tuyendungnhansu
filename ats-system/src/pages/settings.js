@@ -68,6 +68,14 @@ const SettingsPage = (() => {
                       </div>
                     </div>
 
+                    <div class="form-group mb-4">
+                      <label class="checkbox-label">
+                        <input type="checkbox" name="auto_approve" class="form-checkbox" ${settings.autoApproveEnabled !== false ? 'checked' : ''}>
+                        <span>Tự động duyệt hồ sơ đạt ngưỡng</span>
+                      </label>
+                      <small class="text-xs text-muted">Khi bật, AI chuyển hồ sơ Đạt tiêu chí sang trạng thái “Đạt – Chờ phỏng vấn”. Hồ sơ dưới ngưỡng vẫn vào hàng chờ HR; AI không tự động loại ứng viên.</small>
+                    </div>
+
                     <div class="text-right">
                       <button type="submit" class="btn btn-primary">
                         <i data-lucide="save" class="icon-sm"></i> Lưu cấu hình sàng lọc
@@ -141,18 +149,18 @@ const SettingsPage = (() => {
                 <div class="card-body text-xs space-y-3">
                   <div class="form-group">
                     <label class="form-label">Tên công ty / Tập đoàn</label>
-                    <input type="text" class="form-input text-xs" value="${settings.companyName || 'SmartATS Solutions Việt Nam'}">
+                    <input type="text" id="settings-company-name" class="form-input text-xs" value="${settings.companyName || 'SmartATS Solutions Việt Nam'}">
                   </div>
                   <div class="form-group">
                     <label class="form-label">Email phòng nhân sự (HR)</label>
-                    <input type="email" class="form-input text-xs" value="${settings.companyEmail || 'hr@smartats.vn'}">
+                    <input type="email" id="settings-company-email" class="form-input text-xs" value="${settings.companyEmail || 'hr@smartats.vn'}">
                   </div>
                   <div class="form-group">
                     <label class="form-label">Trụ sở chính</label>
-                    <input type="text" class="form-input text-xs" value="Tòa nhà Landmark, Cầu Giấy, Hà Nội">
+                    <input type="text" id="settings-company-address" class="form-input text-xs" value="${settings.companyAddress || 'Tòa nhà Landmark, Cầu Giấy, Hà Nội'}">
                   </div>
-                  <button type="button" class="btn btn-xs btn-outline w-full" onclick="UI.toast({ message: 'Đã lưu thông tin doanh nghiệp!', type: 'success' })">
-                    Lưu thông tin
+                  <button type="button" class="btn btn-xs btn-outline w-full" id="btn-save-company-info">
+                    <i data-lucide="save" class="icon-xs"></i> Lưu thông tin
                   </button>
                 </div>
               </div>
@@ -185,22 +193,55 @@ const SettingsPage = (() => {
       document.getElementById('form-settings-weights')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        const weights = {
+          skills: parseInt(fd.get('weight_skills'), 10) || 0,
+          experience: parseInt(fd.get('weight_exp'), 10) || 0,
+          education: parseInt(fd.get('weight_edu'), 10) || 0,
+          certifications: parseInt(fd.get('weight_certs'), 10) || 0
+        };
+        const weightTotal = weights.skills + weights.experience + weights.education + weights.certifications;
+        const passThreshold = parseInt(fd.get('threshold_pass'), 10) || 80;
+        const manualThreshold = parseInt(fd.get('threshold_manual'), 10) || 60;
+
+        if (weightTotal !== 100) {
+          UI.toast({ message: `Tổng trọng số phải bằng 100% (hiện tại ${weightTotal}%).`, type: 'warning' });
+          return;
+        }
+        if (passThreshold <= manualThreshold) {
+          UI.toast({ message: 'Ngưỡng Đạt phải lớn hơn ngưỡng Cần kiểm tra thủ công.', type: 'warning' });
+          return;
+        }
 
         const newSettings = {
-          screeningWeights: {
-            skills: parseInt(fd.get('weight_skills'), 10) || 40,
-            experience: parseInt(fd.get('weight_exp'), 10) || 30,
-            education: parseInt(fd.get('weight_edu'), 10) || 15,
-            certifications: parseInt(fd.get('weight_certs'), 10) || 15
-          },
+          screeningWeights: weights,
           scoreThresholds: {
-            pass: parseInt(fd.get('threshold_pass'), 10) || 80,
-            manual_check: parseInt(fd.get('threshold_manual'), 10) || 60
-          }
+            pass: passThreshold,
+            manual_check: manualThreshold
+          },
+          autoApproveEnabled: fd.get('auto_approve') === 'on'
         };
 
         ATSStore.updateSettings(newSettings);
         UI.toast({ message: 'Đã lưu cấu hình sàng lọc thành công!', type: 'success' });
+      });
+
+      // Company info persistence
+      document.getElementById('btn-save-company-info')?.addEventListener('click', () => {
+        const companyName = (document.getElementById('settings-company-name')?.value || '').trim();
+        const companyEmail = (document.getElementById('settings-company-email')?.value || '').trim();
+        const companyAddress = (document.getElementById('settings-company-address')?.value || '').trim();
+
+        if (!companyName || !companyEmail) {
+          UI.toast({ message: 'Vui lòng nhập tên công ty và email HR.', type: 'warning' });
+          return;
+        }
+        if (!Helpers.isValidEmail(companyEmail)) {
+          UI.toast({ message: 'Email HR chưa đúng định dạng.', type: 'warning' });
+          return;
+        }
+
+        ATSStore.updateSettings({ companyName, companyEmail, companyAddress });
+        UI.toast({ message: 'Đã lưu thông tin doanh nghiệp!', type: 'success' });
       });
 
       // Reset store data button

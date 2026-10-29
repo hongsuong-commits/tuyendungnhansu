@@ -39,6 +39,15 @@ const PostingsPage = (() => {
             </div>
           </div>
 
+          <div class="alert alert-info mb-4">
+            <i data-lucide="plug-zap" class="icon-sm"></i>
+            <div class="text-xs leading-relaxed">
+              <strong>Trạng thái tích hợp:</strong> Cổng tuyển dụng SmartATS (Website) đăng tin và nhận hồ sơ thật trong ứng dụng.
+              Các kênh <strong>TopCV, LinkedIn Jobs và VietnamWorks</strong> hiện chỉ <strong>mô phỏng đồng bộ</strong> để minh họa luồng đa kênh —
+              chưa có API key, tài khoản đối tác hoặc backend kết nối thực tế.
+            </div>
+          </div>
+
           <!-- Filter Bar -->
           <div class="card mb-4">
             <div class="card-body py-3">
@@ -101,16 +110,16 @@ const PostingsPage = (() => {
         const ch = p.channels || {};
         const channelsHtml = `
           <div class="chip-row">
-            ${ch.website?.active ? `<span class="badge badge-secondary text-2xs" title="Website Portal: ${ch.website.applicants || 0} hồ sơ">Web</span>` : ''}
-            ${ch.topcv?.active ? `<span class="badge badge-secondary text-2xs" title="TopCV: ${ch.topcv.applicants || 0} hồ sơ">TopCV</span>` : ''}
-            ${ch.linkedin?.active ? `<span class="badge badge-secondary text-2xs" title="LinkedIn: ${ch.linkedin.applicants || 0} hồ sơ">LinkedIn</span>` : ''}
-            ${ch.vietnamworks?.active ? `<span class="badge badge-secondary text-2xs" title="VietnamWorks">VNW</span>` : ''}
+            ${ch.website?.active ? `<span class="badge badge-secondary text-2xs" title="Website Portal (đăng tin thật): ${ch.website.applicants || 0} hồ sơ">Web</span>` : ''}
+            ${ch.topcv?.active ? `<span class="badge badge-secondary text-2xs" title="TopCV (mô phỏng): ${ch.topcv.applicants || 0} hồ sơ">TopCV · Demo</span>` : ''}
+            ${ch.linkedin?.active ? `<span class="badge badge-secondary text-2xs" title="LinkedIn (mô phỏng): ${ch.linkedin.applicants || 0} hồ sơ">LinkedIn · Demo</span>` : ''}
+            ${ch.vietnamworks?.active ? `<span class="badge badge-secondary text-2xs" title="VietnamWorks (mô phỏng)">VNW · Demo</span>` : ''}
           </div>
         `;
 
         return `
           <tr>
-            <td>
+            <td class="text-center">
               <a href="javascript:void(0)" class="table-name btn-preview-post" data-id="${p.id}" title="${p.title}">${Helpers.truncate(p.title, 34)}</a>
               <span class="table-sub">${p.code} · ${p.department} · ${p.salary || 'Thỏa thuận'}</span>
             </td>
@@ -145,10 +154,10 @@ const PostingsPage = (() => {
 
       return `
         <div class="table-responsive">
-          <table class="data-table data-table-compact">
+          <table class="data-table data-table-compact table-sticky-actions">
             <thead>
               <tr>
-                <th>Tin tuyển dụng</th>
+                <th class="text-center">Tin tuyển dụng</th>
                 <th class="col-compact">Kênh đăng</th>
                 <th>Ứng viên</th>
                 <th class="col-compact">Hạn nộp</th>
@@ -322,8 +331,9 @@ const PostingsPage = (() => {
                     <div>
                       <div class="font-semibold text-sm flex items-center gap-1.5">
                         <i data-lucide="share-2" class="icon-sm text-info"></i> Nền tảng TopCV
+                        <span class="badge badge-warning text-2xs">Mô phỏng</span>
                       </div>
-                      <div class="text-xs text-muted mt-0.5">Trạng thái: <span class="text-success font-medium">${ch.topcv?.syncStatus || 'Mô phỏng đồng bộ'}</span></div>
+                      <div class="text-xs text-muted mt-0.5">Trạng thái: <span class="text-warning font-medium">Demo – chưa kết nối API đối tác</span></div>
                     </div>
                     <span class="badge badge-info font-semibold">${ch.topcv?.applicants || 0} hồ sơ</span>
                   </div>
@@ -333,8 +343,9 @@ const PostingsPage = (() => {
                     <div>
                       <div class="font-semibold text-sm flex items-center gap-1.5">
                         <i data-lucide="linkedin" class="icon-sm text-primary"></i> LinkedIn Jobs
+                        <span class="badge badge-warning text-2xs">Mô phỏng</span>
                       </div>
-                      <div class="text-xs text-muted mt-0.5">Trạng thái: <span class="text-success font-medium">${ch.linkedin?.syncStatus || 'Mô phỏng đồng bộ'}</span></div>
+                      <div class="text-xs text-muted mt-0.5">Trạng thái: <span class="text-warning font-medium">Demo – chưa kết nối API đối tác</span></div>
                     </div>
                     <span class="badge badge-primary font-semibold">${ch.linkedin?.applicants || 0} hồ sơ</span>
                   </div>
@@ -344,8 +355,9 @@ const PostingsPage = (() => {
                     <div>
                       <div class="font-semibold text-sm flex items-center gap-1.5">
                         <i data-lucide="radio" class="icon-sm text-warning"></i> VietnamWorks
+                        <span class="badge badge-warning text-2xs">Mô phỏng</span>
                       </div>
-                      <div class="text-xs text-muted mt-0.5">Trạng thái: <span class="text-muted font-medium">${ch.vietnamworks?.syncStatus || 'Chưa cấu hình API'}</span></div>
+                      <div class="text-xs text-muted mt-0.5">Trạng thái: <span class="text-muted font-medium">Chưa cấu hình API</span></div>
                     </div>
                     <span class="badge badge-secondary font-semibold">${ch.vietnamworks?.applicants || 0} hồ sơ</span>
                   </div>
@@ -353,7 +365,7 @@ const PostingsPage = (() => {
 
                 <div class="alert alert-info mt-4 text-xs">
                   <i data-lucide="info" class="icon-xs"></i>
-                  <span>Lưu ý: Các nguồn bên ngoài hiện đang ở chế độ <strong>mô phỏng đồng bộ dữ liệu</strong> và chưa kết nối tài khoản doanh nghiệp thực tế.</span>
+                  <span>Lưu ý: Các nguồn bên ngoài hiện đang ở chế độ <strong>mô phỏng đồng bộ dữ liệu</strong> và chưa kết nối tài khoản doanh nghiệp thực tế. Chỉ Cổng tuyển dụng SmartATS là kênh đăng tin thật trong ứng dụng.</span>
                 </div>
               </div>
               <div class="modal-footer">

@@ -147,7 +147,7 @@ const RequisitionsPage = (() => {
 
       return `
         <div class="table-responsive">
-          <table class="data-table data-table-compact">
+          <table class="data-table data-table-compact table-sticky-actions">
             <thead>
               <tr>
                 <th>Yêu cầu · phòng ban</th>

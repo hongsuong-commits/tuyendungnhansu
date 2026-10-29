@@ -23,10 +23,9 @@ const LoginPage = (() => {
               <p class="login-kicker">Hệ thống quản lý tuyển dụng · SmartATS Solutions</p>
               <p class="login-aside-title">Mỗi hồ sơ đi đúng một lối.</p>
               <p class="login-aside-text">Từ yêu cầu tuyển dụng, tin tuyển, sàng lọc CV đến lịch phỏng vấn và quyết định nhận việc — một dòng chảy duy nhất cho nhân sự, trưởng phòng và ban giám đốc.</p>
-              ${this._renderStageStrip()}
             </div>
 
-            <p class="login-aside-foot">Số liệu lấy từ dữ liệu demo của hệ thống, cập nhật theo từng hồ sơ.</p>
+            <p class="login-aside-foot">SmartATS Solutions · Tuyển dụng minh bạch, dữ liệu tập trung.</p>
           </aside>
 
           <div class="login-container">
@@ -40,7 +39,7 @@ const LoginPage = (() => {
             <div class="login-card" id="loginCard">
               <div class="login-header">
                 <h1 class="login-title">Đăng nhập</h1>
-                <p class="login-subtitle">Dùng tài khoản nội bộ để vào bảng điều khiển tuyển dụng.</p>
+                <p class="login-subtitle">Tài khoản nội bộ vào bảng điều khiển; tài khoản ứng viên mở Cổng tuyển dụng.</p>
               </div>
 
               <form class="login-form" id="loginForm" novalidate>
@@ -144,49 +143,17 @@ const LoginPage = (() => {
                       <td><code>head_sales</code></td>
                       <td><code>123456</code></td>
                     </tr>
+                    <tr class="demo-row" data-username="candidate" data-password="123456">
+                      <td><span class="demo-role-badge demo-role-candidate">Ứng viên</span></td>
+                      <td><code>candidate</code></td>
+                      <td><code>123456</code></td>
+                    </tr>
                   </tbody>
                 </table>
+                <p class="demo-note">Tài khoản ứng viên mở Cổng tuyển dụng công khai, không vào bảng điều khiển nội bộ.</p>
               </div>
             </div>
 
-            ${this._renderStageStrip('login-rail')}
-          </div>
-        </div>
-      `;
-    },
-
-    /**
-     * The pipeline strip: the product's own motif, fed by the real demo
-     * data instead of decorative shapes. Rendered on the login aside on
-     * wide screens and as a compact rail under the form on narrow ones.
-     */
-    _renderStageStrip(modifier = '') {
-      const stages = [
-        ['pending_review', 'Chờ duyệt', 'Chờ duyệt'],
-        ['reviewing', 'Xem xét', 'Xem xét'],
-        ['passed_screening', 'Đạt sàng lọc', 'Sàng lọc'],
-        ['interview_scheduled', 'Phỏng vấn', 'Phỏng vấn'],
-        ['proposed', 'Đề xuất', 'Đề xuất'],
-        ['hired', 'Đã tuyển', 'Đã tuyển'],
-      ];
-      let byStage = {};
-      try {
-        const stats = (typeof ATSStore !== 'undefined' && ATSStore.getDashboardStats)
-          ? ATSStore.getDashboardStats()
-          : null;
-        byStage = (stats && stats.candidatesByStage) || {};
-      } catch (err) {
-        byStage = {};
-      }
-      return `
-        <div class="login-pipeline ${modifier}" aria-label="Hồ sơ theo giai đoạn tuyển dụng">
-          ${modifier ? '<p class="login-rail-label">Hồ sơ theo giai đoạn · dữ liệu demo</p>' : ''}
-          <div class="login-rail-cells">
-            ${stages.map(([key, label, shortLabel], index) => `
-              <div class="login-stage ${index === 0 ? 'is-first' : ''}">
-                <b>${Number(byStage[key] || 0)}</b>
-                <span>${modifier ? shortLabel : label}</span>
-              </div>`).join('')}
           </div>
         </div>
       `;

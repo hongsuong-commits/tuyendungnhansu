@@ -1029,8 +1029,12 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       pass: 80,
       manual_check: 60
     },
+    // AI only auto-approves candidates that clear every required criterion.
+    // Below-threshold applications stay in the human review queue; AI never auto-rejects.
+    autoApproveEnabled: true,
     companyName: 'SmartATS Solutions Việt Nam',
     companyEmail: 'hr@smartats.vn',
+    companyAddress: 'Tòa nhà Landmark, Cầu Giấy, Hà Nội',
     integrations: {
       websitePortal: { active: true, name: 'Cổng tuyển dụng Doanh nghiệp' },
       topcv: { active: true, name: 'TopCV Open API (Mô phỏng)' },
@@ -1512,6 +1516,83 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       return (_data.users || []).find(u => u.id === id);
     },
 
+    createUser(data = {}) {
+      const username = String(data.username || '').trim().toLowerCase();
+      const fullName = String(data.fullName || '').trim();
+      const email = String(data.email || '').trim().toLowerCase();
+      const password = String(data.password || '').trim();
+      const role = String(data.role || 'hr').trim();
+
+      if (!fullName || !username || !email || !password) {
+        return { success: false, message: 'Vui lòng nhập đầy đủ họ tên, tài khoản, email và mật khẩu.' };
+      }
+      if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
+        return { success: false, message: 'Tài khoản phải dài 3–32 ký tự, chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.' };
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return { success: false, message: 'Email chưa đúng định dạng.' };
+      }
+      if (password.length < 6) {
+        return { success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự.' };
+      }
+      if ((_data.users || []).some(u => u.username.toLowerCase() === username)) {
+        return { success: false, message: `Tài khoản “${username}” đã tồn tại.` };
+      }
+      if ((_data.users || []).some(u => (u.email || '').toLowerCase() === email)) {
+        return { success: false, message: `Email “${email}” đã được dùng cho tài khoản khác.` };
+      }
+      if (!['director', 'department_head', 'hr', 'candidate'].includes(role)) {
+        return { success: false, message: 'Vai trò không hợp lệ.' };
+      }
+
+      const nameParts = fullName.split(/\s+/).filter(Boolean);
+      const avatar = nameParts.slice(-3).map(part => part.charAt(0).toUpperCase()).join('') || 'USR';
+      const user = {
+        id: 'usr_' + Date.now(),
+        username,
+        password,
+        fullName,
+        email,
+        phone: String(data.phone || '').trim(),
+        role,
+        department: String(data.department || '').trim() || 'Phòng Nhân sự',
+        title: String(data.title || '').trim() || Helpers.getRoleLabel(role),
+        status: 'active',
+        avatar
+      };
+
+      _data.users.push(user);
+      saveState();
+      return { success: true, user };
+    },
+
+    updateUser(id, updates = {}) {
+      const user = (_data.users || []).find(u => u.id === id);
+      if (!user) return { success: false, message: 'Không tìm thấy tài khoản.' };
+
+      const email = String(updates.email ?? user.email).trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return { success: false, message: 'Email chưa đúng định dạng.' };
+      }
+      if ((_data.users || []).some(u => u.id !== id && (u.email || '').toLowerCase() === email)) {
+        return { success: false, message: `Email “${email}” đã được dùng cho tài khoản khác.` };
+      }
+
+      const allowed = ['fullName', 'email', 'phone', 'title', 'department'];
+      allowed.forEach(key => {
+        if (updates[key] !== undefined) user[key] = String(updates[key]).trim();
+      });
+      user.email = email;
+
+      if (_currentUser && _currentUser.id === id) {
+        _currentUser = { ...user };
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(_currentUser));
+      }
+
+      saveState();
+      return { success: true, user };
+    },
+
     login(username, password) {
       const user = (_data.users || []).find(u => u.username === username.trim() && u.password === password.trim());
       if (user) {
@@ -1851,8 +1932,32 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         _data.candidates.push(cand);
       }
 
-      // Auto-evaluate candidate with criteria
+      // Auto-evaluate candidate against the configured criteria.
+      // Pass = score >= pass threshold AND no unmet mandatory criterion.
       const screening = CVEngine.evaluateCandidate(cand, req);
+      const passThreshold = _data.settings?.scoreThresholds?.pass ?? 80;
+      const autoApproveEnabled = _data.settings?.autoApproveEnabled !== false;
+      const autoApproved = autoApproveEnabled
+        && screening.classification === 'pass'
+        && screening.score >= passThreshold;
+      const receivedAt = new Date().toISOString();
+      const statusHistory = [
+        {
+          status: 'pending_review',
+          changedBy: source === 'website' ? 'Cổng ứng viên Website' : (source.toUpperCase() + ' Sync'),
+          timestamp: receivedAt,
+          note: 'Tiếp nhận hồ sơ ứng tuyển mới'
+        }
+      ];
+
+      if (autoApproved) {
+        statusHistory.push({
+          status: 'passed_screening',
+          changedBy: 'AI Screening',
+          timestamp: receivedAt,
+          note: `AI tự động duyệt hồ sơ: ${screening.score} điểm ≥ ngưỡng ${passThreshold}, đáp ứng đủ tiêu chí bắt buộc.`
+        });
+      }
 
       const newApp = {
         id: 'app_' + Date.now(),
@@ -1862,21 +1967,14 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         postingId: postingId || (req.postings && req.postings[0]) || null,
         positionTitle: req.title,
         source: source,
-        appliedDate: new Date().toISOString(),
-        status: 'pending_review',
+        appliedDate: receivedAt,
+        status: autoApproved ? 'passed_screening' : 'pending_review',
         assignedTo: 'usr_hr1',
         assigneeName: 'Nguyễn Thu Hà',
         screeningScore: screening.score,
         screeningResult: screening.classification,
-        screeningDetails: screening,
-        statusHistory: [
-          {
-            status: 'pending_review',
-            changedBy: source === 'website' ? 'Cổng ứng viên Website' : (source.toUpperCase() + ' Sync'),
-            timestamp: new Date().toISOString(),
-            note: 'Tiếp nhận hồ sơ ứng tuyển mới'
-          }
-        ],
+        screeningDetails: { ...screening, autoApproved, autoApproveThreshold: passThreshold },
+        statusHistory,
         internalNotes: []
       };
 
@@ -1893,11 +1991,13 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       // Add Notification
       _data.notifications.unshift({
         id: 'notif_' + Date.now(),
-        title: 'Hồ sơ mới tiếp nhận',
-        message: `${cand.fullName} vừa nộp hồ sơ vị trí ${req.title} từ nguồn ${source}.`,
-        date: new Date().toISOString(),
+        title: autoApproved ? 'AI đã duyệt hồ sơ đạt tiêu chí' : 'Hồ sơ mới cần HR xem xét',
+        message: autoApproved
+          ? `${cand.fullName} đạt ${screening.score} điểm và được AI chuyển sang bước Đạt sàng lọc cho vị trí ${req.title}.`
+          : `${cand.fullName} vừa nộp hồ sơ vị trí ${req.title} từ nguồn ${source} (${screening.score} điểm, cần HR xem xét).`,
+        date: receivedAt,
         read: false,
-        icon: 'user-plus',
+        icon: autoApproved ? 'sparkles' : 'user-plus',
         link: `#/candidates/${newApp.id}`
       });
 
@@ -2027,10 +2127,37 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
     // ── Reports Analytics Dynamic Engine ───────────────────────
     getRecruitmentReport(filters = {}) {
-      const apps = _data.applications || [];
-      const reqs = _data.requisitions || [];
-      const ivs = _data.interviews || [];
-      const posts = _data.postings || [];
+      const allApps = _data.applications || [];
+      const allReqs = _data.requisitions || [];
+      const allPosts = _data.postings || [];
+      const reqById = new Map(allReqs.map(r => [r.id, r]));
+      const now = new Date();
+      const nowYear = now.getFullYear();
+      const nowMonth = now.getMonth();
+
+      const matchesTime = (value) => {
+        if (!filters.timeRange || filters.timeRange === 'all') return true;
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return false;
+        if (filters.timeRange === 'this_month') {
+          return d.getFullYear() === nowYear && d.getMonth() === nowMonth;
+        }
+        if (filters.timeRange === 'this_quarter') {
+          return d.getFullYear() === nowYear
+            && Math.floor(d.getMonth() / 3) === Math.floor(nowMonth / 3);
+        }
+        if (filters.timeRange === 'this_year') return d.getFullYear() === nowYear;
+        return true;
+      };
+
+      const matchesDept = (dept) => !filters.department
+        || filters.department === 'all'
+        || dept === filters.department;
+
+      const departmentOfApp = (app) => (reqById.get(app.requisitionId) || {}).department || '';
+      const apps = allApps.filter(a => matchesTime(a.appliedDate) && matchesDept(departmentOfApp(a)));
+      const reqs = allReqs.filter(r => matchesDept(r.department));
+      const posts = allPosts.filter(p => matchesDept(p.department) && matchesTime(p.publishedAt));
 
       // 9.1 Summary Overview
       const totalApplications = apps.length;
@@ -2041,49 +2168,83 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       const activePositions = reqs.filter(r => r.status === 'recruiting' || r.status === 'approved').length;
       const closedPositions = reqs.filter(r => r.status === 'closed').length;
 
-      // 9.2 Funnel
-      const passedScreeningCount = apps.filter(a => a.screeningResult === 'pass' || a.status === 'passed_screening' || interviewedCount > 0).length;
+      // 9.2 Funnel — count applications that reached each stage, not just current status
+      const passedScreeningCount = apps.filter(a =>
+        a.screeningResult === 'pass'
+        || ['passed_screening', 'interview_scheduled', 'proposed', 'hired'].includes(a.status)
+      ).length;
+
+      const pct = (value, total) => total > 0 ? Math.round((value / total) * 100) : 0;
+      const drop = (previous, current) => previous > 0
+        ? Math.max(0, Math.round(((previous - current) / previous) * 100))
+        : 0;
+
       const funnelStages = [
         { stage: 'Hồ sơ tiếp nhận', count: totalApplications, rate: '100%', dropRate: '0%' },
-        { stage: 'Đạt sàng lọc CV', count: passedScreeningCount, rate: totalApplications ? Math.round((passedScreeningCount / totalApplications) * 100) + '%' : '0%', dropRate: totalApplications ? Math.round(((totalApplications - passedScreeningCount) / totalApplications) * 100) + '%' : '0%' },
-        { stage: 'Mời & Phỏng vấn', count: interviewedCount, rate: passedScreeningCount ? Math.round((interviewedCount / passedScreeningCount) * 100) + '%' : '0%', dropRate: passedScreeningCount ? Math.round(((passedScreeningCount - interviewedCount) / passedScreeningCount) * 100) + '%' : '0%' },
-        { stage: 'Đề xuất tuyển dụng', count: proposedCount, rate: interviewedCount ? Math.round((proposedCount / interviewedCount) * 100) + '%' : '0%', dropRate: interviewedCount ? Math.round(((interviewedCount - proposedCount) / interviewedCount) * 100) + '%' : '0%' },
-        { stage: 'Tuyển dụng thành công', count: hiredCount, rate: proposedCount ? Math.round((hiredCount / proposedCount) * 100) + '%' : '0%', dropRate: proposedCount ? Math.round(((proposedCount - hiredCount) / proposedCount) * 100) + '%' : '0%' }
+        { stage: 'Đạt sàng lọc CV', count: passedScreeningCount, rate: pct(passedScreeningCount, totalApplications) + '%', dropRate: drop(totalApplications, passedScreeningCount) + '%' },
+        { stage: 'Mời & Phỏng vấn', count: interviewedCount, rate: pct(interviewedCount, passedScreeningCount) + '%', dropRate: drop(passedScreeningCount, interviewedCount) + '%' },
+        { stage: 'Đề xuất tuyển dụng', count: proposedCount, rate: pct(proposedCount, interviewedCount) + '%', dropRate: drop(interviewedCount, proposedCount) + '%' },
+        { stage: 'Tuyển dụng thành công', count: hiredCount, rate: pct(hiredCount, proposedCount) + '%', dropRate: drop(proposedCount, hiredCount) + '%' }
       ];
 
       // 9.3 Time & Cost to hire
+      const hiredApps = apps.filter(a => a.status === 'hired');
+      const hireDurations = hiredApps.map(a => {
+        const hiredEvent = (a.statusHistory || []).find(h => h.status === 'hired');
+        if (!hiredEvent) return null;
+        const days = Math.round((new Date(hiredEvent.timestamp) - new Date(a.appliedDate)) / (1000 * 60 * 60 * 24));
+        return Number.isFinite(days) && days >= 0 ? Math.max(1, days) : null;
+      }).filter(d => d !== null);
+
+      const avgTimeToHireDays = hireDurations.length > 0
+        ? Math.round(hireDurations.reduce((sum, d) => sum + d, 0) / hireDurations.length)
+        : 0;
+      const totalRecruitmentCost = 45000000;
+      const avgCostPerHire = hiredCount > 0 ? Math.round(totalRecruitmentCost / hiredCount) : 0;
+
+      const positionsTime = reqs.slice(0, 6).map(r => {
+        const reqApps = apps.filter(a => a.requisitionId === r.id);
+        const avgDays = reqApps.length > 0
+          ? Math.round(reqApps.reduce((sum, a) => {
+              const days = Math.round((now - new Date(a.appliedDate)) / (1000 * 60 * 60 * 24));
+              return sum + (Number.isFinite(days) ? Math.max(1, days) : 1);
+            }, 0) / reqApps.length)
+          : 0;
+        return {
+          position: r.title,
+          department: r.department,
+          avgDays,
+          cost: Math.round(totalRecruitmentCost / Math.max(1, reqs.length))
+        };
+      });
+
       const timeAndCost = {
-        avgTimeToHireDays: 24, // trung bình 24 ngày
-        totalRecruitmentCost: 45000000, // 45M VNĐ
-        avgCostPerHire: hiredCount > 0 ? Math.round(45000000 / hiredCount) : 45000000,
-        positionsTime: [
-          { position: 'Senior Frontend Developer', avgDays: 22, cost: '12.000.000 VNĐ' },
-          { position: 'B2B Sales Executive', avgDays: 18, cost: '8.500.000 VNĐ' },
-          { position: 'DevOps / Cloud Engineer', avgDays: 28, cost: '15.000.000 VNĐ' },
-          { position: 'Kế toán Tổng hợp', avgDays: 20, cost: '5.000.000 VNĐ' }
-        ]
+        avgTimeToHireDays,
+        totalRecruitmentCost,
+        avgCostPerHire,
+        positionsTime,
+        isDemoEstimate: true
       };
 
       // 9.4 Sourcing Efficiency
       const sourcesMap = {
-        website: { name: 'Website Tuyển dụng', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: '5.000.000 VNĐ' },
-        linkedin: { name: 'LinkedIn Jobs', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: '20.000.000 VNĐ' },
-        topcv: { name: 'TopCV', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: '15.000.000 VNĐ' },
-        vietnamworks: { name: 'VietnamWorks', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: '0 VNĐ' },
-        referral: { name: 'Giới thiệu nội bộ (Referral)', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: '5.000.000 VNĐ' }
+        website: { name: 'Website Tuyển dụng', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: 5000000, costLabel: '5.000.000 VNĐ' },
+        linkedin: { name: 'LinkedIn Jobs', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: 20000000, costLabel: '20.000.000 VNĐ' },
+        topcv: { name: 'TopCV', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: 15000000, costLabel: '15.000.000 VNĐ' },
+        vietnamworks: { name: 'VietnamWorks', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: 0, costLabel: '0 VNĐ' },
+        referral: { name: 'Giới thiệu nội bộ (Referral)', apps: 0, passed: 0, interviewed: 0, hired: 0, cost: 5000000, costLabel: '5.000.000 VNĐ' }
       };
 
       apps.forEach(a => {
         const src = sourcesMap[a.source] || sourcesMap['website'];
         src.apps++;
-        if (a.screeningResult === 'pass') src.passed++;
+        if (a.screeningResult === 'pass' || ['passed_screening', 'interview_scheduled', 'proposed', 'hired'].includes(a.status)) src.passed++;
         if (a.status === 'interview_scheduled' || a.status === 'proposed' || a.status === 'hired') src.interviewed++;
         if (a.status === 'hired') src.hired++;
       });
 
       const sourcingList = Object.keys(sourcesMap).map(k => {
         const item = sourcesMap[k];
-        const conversionRate = item.apps > 0 ? Math.round((item.hired / item.apps) * 100) + '%' : '0%';
         return {
           sourceKey: k,
           sourceName: item.name,
@@ -2091,17 +2252,21 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           passed: item.passed,
           interviewed: item.interviewed,
           hired: item.hired,
-          conversionRate,
-          cost: item.cost
+          conversionRate: pct(item.hired, item.apps) + '%',
+          passRate: pct(item.passed, item.apps) + '%',
+          cost: item.costLabel,
+          costValue: item.cost,
+          costPerHire: item.hired > 0 ? Math.round(item.cost / item.hired) : null
         };
       });
 
       // 9.5 Job Postings Duration & Aging Alert
       const postingsReport = posts.map(p => {
         const pubDate = new Date(p.publishedAt || Date.now());
-        const daysActive = Math.max(1, Math.round((Date.now() - pubDate.getTime()) / (1000 * 60 * 60 * 24)));
+        const daysActive = Math.max(1, Math.round((now - pubDate.getTime()) / (1000 * 60 * 60 * 24)));
         const isExpiringSoon = daysActive >= 25 && daysActive <= 30;
         const isProlonged = daysActive > 30;
+        const appCount = apps.filter(a => a.postingId === p.id).length;
         return {
           id: p.id,
           code: p.code,
@@ -2110,7 +2275,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           status: p.status,
           publishedAt: p.publishedAt,
           daysActive,
-          applicantsCount: p.applicantsCount || 0,
+          applicantsCount: appCount || p.applicantsCount || 0,
           isExpiringSoon,
           isProlonged
         };
@@ -2129,7 +2294,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         funnel: funnelStages,
         timeAndCost,
         sourcing: sourcingList,
-        postings: postingsReport
+        postings: postingsReport,
+        filters: { ...filters }
       };
     },
 

@@ -168,7 +168,7 @@ const InterviewsPage = (() => {
 
       return `
         <div class="table-responsive">
-          <table class="data-table">
+          <table class="data-table table-sticky-actions">
             <thead>
               <tr>
                 <th class="text-center" style="width: 45px;">STT</th>

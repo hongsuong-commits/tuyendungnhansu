@@ -44,6 +44,8 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
 - Theo dõi lịch sử phê duyệt: Chờ phê duyệt, Đã phê duyệt, Từ chối, Đang tuyển, Đã đóng.
 - Tạo tin tuyển dụng (`TND-YYYYMMDD-xxx`) từ yêu cầu đã duyệt chỉ bằng 1 thao tác.
 - Quản lý nguồn đăng tin tuyển dụng: Website công ty, TopCV, LinkedIn, VietnamWorks (lưu URL, trạng thái đồng bộ, lượt xem và số lượng hồ sơ thu được).
+- **Kênh đăng tin thật:** Cổng tuyển dụng SmartATS (Website) — tin đăng và hồ sơ được tạo trực tiếp trong ứng dụng.
+- **Kênh mô phỏng:** TopCV, LinkedIn Jobs, VietnamWorks — chỉ minh họa luồng đa kênh, chưa gọi API đối tác và chưa có dữ liệu đồng bộ thật. Giao diện quản lý nguồn ghi rõ nhãn “Mô phỏng”.
 
 ### 2.5. Tự động đọc CV & Đối chiếu Tiêu chí Tuyển dụng (CV Parsing & AI Screening)
 - **Tiếp nhận hồ sơ:** Nhận đơn trực tuyến từ cổng Portal hoặc HR tải CV lên thủ công.
@@ -54,6 +56,7 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
   - Trình độ học vấn & Bằng cấp: 15% trọng số.
   - Chứng chỉ chuyên môn & Ngoại ngữ: 15% trọng số.
 - **Phân loại kết quả:** Đạt tiêu chí (`pass`), Cần kiểm tra thủ công (`manual_check`), Không đạt (`fail`).
+- **Duyệt tự động bằng AI:** Khi bật tùy chọn trong Cài đặt, hồ sơ được chuyển thẳng sang **Đạt – Chờ phỏng vấn** nếu tổng điểm ≥ ngưỡng Đạt (mặc định 80) **và** không còn tiêu chí bắt buộc nào chưa đáp ứng. Hồ sơ dưới ngưỡng vẫn vào hàng chờ HR; AI **không tự động loại** ứng viên. Mỗi lần duyệt tự động đều ghi vào lịch sử trạng thái với tác nhân “AI Screening”.
 - **Minh bạch & Đạo đức tuyển dụng:** Hiển thị rõ danh sách các tiêu chí đạt (xanh lá), chưa đạt (đỏ) và thông tin còn thiếu (vàng). Hệ thống chỉ đóng vai trò trợ lý hỗ trợ quyết định, không tự động loại bỏ ứng viên và không sử dụng các đặc điểm nhạy cảm (tuổi, giới tính, tôn giáo).
 - **Công cụ Live Scanner:** Cho phép dán hoặc nạp CV mẫu để chạy kiểm thử trích xuất và tính điểm ngay lập tức.
 
@@ -76,7 +79,7 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
 - Hộp thoại xác nhận trước thao tác quan trọng (Từ chối kèm lý do).
 
 ### 2.7. Quản lý Lịch Phỏng vấn (Phong cách Tanca ATS)
-- Đa chế độ hiển thị: Dạng danh sách (List view) và Lịch trực quan theo tháng (Month Calendar).
+- Đa chế độ hiển thị: Dạng danh sách (List view) và Lịch tuần trực quan (Week view) có nút chuyển tuần trước/sau/về tuần hiện tại.
 - Quản lý đầy đủ: Mã lịch (`LPV-YYYYMMDD-xxx`), Ứng viên, Vị trí, Vòng phỏng vấn (Vòng 1 - HR Sơ loại, Vòng 2 - Đánh giá Chuyên môn, Vòng 3 - Phỏng vấn Giám đốc), Ngày giờ bắt đầu/kết thúc, Hình thức (Trực tiếp hoặc Online Google Meet), Hội đồng phỏng vấn.
 - **Thuật toán kiểm tra trùng lịch (Conflict Detection):** Tự động phát hiện và cảnh báo người phỏng vấn nếu bị trùng lịch trong cùng khung giờ.
 - **Mô phỏng gửi Email:** Xem trước nội dung thư mời phỏng vấn tự động điền thông tin chi tiết.
@@ -93,12 +96,13 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
 - Luồng quyết định: Đề xuất tuyển dụng -> Phê duyệt tuyển dụng chính thức -> Chuyển trạng thái "Đã tuyển".
 
 ### 2.9. Báo cáo & Thống kê Tuyển dụng Chuyên sâu (5 Phân hệ)
-- **9.1 Tổng quan chỉ số:** Số hồ sơ, đang duyệt, đã phỏng vấn, đề xuất nhận việc, đã tuyển, tỷ lệ lấp đầy vị trí.
-- **9.2 Phễu tuyển dụng (Recruitment Funnel):** Đo lường tỷ lệ chuyển đổi (%) và tỷ lệ rơi rụng qua 5 nấc: Tiếp nhận -> Đạt sàng lọc -> Mời PV -> Đề xuất -> Tuyển dụng thành công.
-- **9.3 Thời gian & Chi phí tuyển dụng:** Thời gian tuyển dụng trung bình (Time-to-Hire = 24 ngày), tổng chi phí, chi phí trung bình trên 1 nhân sự trúng tuyển (Cost-per-Hire) và chi phí theo từng vị trí.
-- **9.4 Hiệu quả nguồn tuyển dụng:** So sánh số hồ sơ, tỷ lệ đạt, số lượng trúng tuyển và chi phí đầu tư giữa Website, TopCV, LinkedIn, VietnamWorks và Giới thiệu nội bộ.
-- **9.5 Trạng thái & Thời gian đăng tin:** Đếm số ngày tin đã xuất bản, tự động cảnh báo các tin đăng kéo dài (>30 ngày) chưa tuyển đủ chỉ tiêu để tối ưu ngân sách.
-- Hỗ trợ xuất dữ liệu ra file CSV tương thích Microsoft Excel.
+- **Bộ lọc:** Khoảng thời gian (tháng/quý/năm/toàn bộ) và phòng ban; mọi số liệu bên dưới đều tính lại theo bộ lọc.
+- **9.1 Tổng quan chỉ số:** Số hồ sơ, đang duyệt, đã phỏng vấn, đề xuất nhận việc, đã tuyển, tỷ lệ tuyển thành công.
+- **9.2 Phễu tuyển dụng (Recruitment Funnel):** Đo lường tỷ lệ chuyển đổi (%) và tỷ lệ rơi rụng qua 5 nấc: Tiếp nhận -> Đạt sàng lọc -> Mời PV -> Đề xuất -> Tuyển dụng thành công. Số “Đạt sàng lọc” đếm cả hồ sơ đã đi tiếp, không chỉ hồ sơ đang dừng ở bước này.
+- **9.3 Thời gian & Chi phí tuyển dụng:** Thời gian tuyển dụng trung bình (chỉ tính khi đã có hồ sơ chuyển sang “Đã tuyển”; nếu chưa đủ dữ liệu sẽ ghi rõ), tổng chi phí, chi phí trung bình trên 1 nhân sự trúng tuyển (Cost-per-Hire) và chi phí theo từng vị trí. Chi phí hiện là **số liệu ước tính demo**, sẽ thay bằng ngân sách thật khi có backend.
+- **9.4 Hiệu quả nguồn tuyển dụng:** So sánh số hồ sơ, tỷ lệ đạt sàng lọc, số lượng phỏng vấn/trúng tuyển, tỷ lệ chuyển đổi và chi phí giữa Website, TopCV, LinkedIn, VietnamWorks và Giới thiệu nội bộ.
+- **9.5 Trạng thái & Thời gian đăng tin:** Đếm số ngày tin đã xuất bản, cảnh báo tin sắp hết hạn (25–30 ngày) và tin tồn đọng (>30 ngày) để tối ưu ngân sách.
+- Hỗ trợ xuất toàn bộ 5 phân hệ ra file CSV tương thích Microsoft Excel.
 
 ### 2.10. Cổng Thông tin Tuyển dụng Ứng viên (Career Portal)
 - Giao diện người dùng công khai độc lập, không hiển thị thanh quản trị nội bộ.
@@ -125,7 +129,7 @@ ats-system/
 ├── index.html                   # File HTML chính khởi động ứng dụng
 ├── server.js                    # Web server Node.js (thuần, zero-dependency)
 ├── package.json                 # Thông tin cấu hình dự án
-├── test-suite.js                # Bộ kịch bản kiểm thử tự động 12 luồng nghiệp vụ
+├── test-suite.js                # Bộ kịch bản kiểm thử tự động 13 luồng nghiệp vụ
 ├── README.md                    # Tài liệu hướng dẫn sử dụng tiếng Việt
 └── src/
     ├── app.js                   # Điểm khởi tạo ứng dụng, đăng ký Routes & Auth Guard
@@ -144,11 +148,15 @@ ats-system/
     │   ├── interviews.js        # Lịch phỏng vấn (Tanca style) & Cảnh báo trùng lịch
     │   ├── evaluations.js       # Phiếu đánh giá chấm điểm & Quyết định tuyển dụng
     │   ├── reports.js           # Báo cáo tuyển dụng chuyên sâu 5 phân hệ
-    │   ├── users.js             # Quản lý người dùng & Ma trận phân quyền
-    │   ├── settings.js          # Cấu hình trọng số, ngưỡng điểm & Reset dữ liệu
+    │   ├── users.js             # Quản lý người dùng, tạo tài khoản & Ma trận phân quyền
+    │   ├── settings.js          # Cấu hình trọng số, ngưỡng điểm, duyệt AI & Reset dữ liệu
+    │   ├── profile.js           # Hồ sơ cá nhân & cập nhật thông tin liên hệ
+    │   ├── notifications.js     # Trung tâm thông báo nội bộ
     │   └── portal.js            # Cổng tuyển dụng ứng viên công khai & Tra cứu hồ sơ
     ├── styles/
-    │   └── main.css             # Hệ thống Style SaaS Dashboard & Responsive hoàn chỉnh
+    │   ├── design.css           # Design system gốc: token, layout, component, responsive
+    │   ├── utilities.css        # Utility classes & breakpoint helpers
+    │   └── main.css             # Bổ sung style nghiệp vụ & tương thích component cũ
     └── utils/
         ├── helpers.js           # Hàm tiện ích format tiền tệ, ngày tháng, validate, quyền
         └── router.js            # Client-side Hash Router
@@ -180,7 +188,7 @@ Do hệ thống được phát triển theo kiến trúc Client-side độc lậ
 
 ## 5. KẾT QUẢ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITE)
 
-Hệ thống đi kèm bộ kiểm thử tự động `test-suite.js` kiểm tra toàn bộ 12 luồng nghiệp vụ yêu cầu:
+Hệ thống đi kèm bộ kiểm thử tự động `test-suite.js` kiểm tra toàn bộ 13 luồng nghiệp vụ yêu cầu:
 Chạy lệnh:
 ```bash
 node test-suite.js
@@ -198,7 +206,8 @@ Kết quả thực tế:
 - **Luồng 10:** Nhập phiếu đánh giá & Quyết định tuyển dụng: `PASSED` (3/3 tests)
 - **Luồng 11:** Thống kê Dashboard & Tính toán báo cáo động: `PASSED` (5/5 tests)
 - **Luồng 12:** Kiểm thử các trường hợp dữ liệu lỗi & Validation: `PASSED` (5/5 tests)
-- **Tổng kết:** **43/43 Bài kiểm thử Thành công (100% ĐẠT)**.
+- **Luồng 13:** Quản lý tài khoản người dùng & chống trùng tên đăng nhập: `PASSED` (2/2 tests)
+- **Tổng kết:** **46/46 Bài kiểm thử Thành công (100% ĐẠT)**.
 
 ---
 
@@ -207,4 +216,4 @@ Kết quả thực tế:
 1. **Lưu trữ dữ liệu:** Phiên bản hiện tại sử dụng `localStorage` trên trình duyệt để lưu giữ dữ liệu mượt mà giữa các lần tải lại trang mà không cần cài đặt cơ sở dữ liệu phức tạp. Để đưa vào sử dụng thực tế cho doanh nghiệp nhiều chi nhánh, cần kết nối với Backend API (Node.js/NestJS/Spring Boot) và Cơ sở dữ liệu tập trung (PostgreSQL/MySQL).
 2. **Xác thực bảo mật:** Kiểm tra phiên làm việc hiện tại sử dụng Mock Session. Trong môi trường thực tế, hệ thống sẽ tích hợp JWT (JSON Web Token), OAuth2 hoặc SSO nội bộ (Google Workspace / Microsoft Azure AD).
 3. **Dịch vụ Email & Lịch ngoại vi:** Tính năng thông báo email và lịch họp Google Meet hiện hiển thị bản xem trước mẫu thư thông báo. Khi triển khai chính thức, chỉ cần cấu hình thông số máy chủ SMTP hoặc kết nối Google Calendar API tại trang Cài đặt.
-4. **Đồng bộ sàn việc làm bên ngoài:** Các nguồn TopCV, LinkedIn, VietnamWorks được xây dựng sẵn giao diện quản trị nguồn và cơ chế đón nhận dữ liệu mô phỏng. Khi doanh nghiệp ký hợp đồng tài khoản doanh nghiệp với các nền tảng trên, có thể cắm trực tiếp API Key vào module tích hợp để đồng bộ tự động.
+4. **Đồng bộ sàn việc làm bên ngoài (đang mô phỏng):** Các nguồn TopCV, LinkedIn, VietnamWorks hiện chỉ có giao diện quản trị nguồn và dữ liệu demo, **không gọi API thật**. Muốn đăng tin tự động thật cần: (1) tài khoản doanh nghiệp/đối tác và API key của từng nền tảng, (2) backend trung gian giữ bí mật key và xử lý webhook/đồng bộ trạng thái, (3) ánh xạ schema tin đăng và hồ sơ ứng viên giữa SmartATS và từng sàn. Khi có các điều kiện trên, module tích hợp đã sẵn sàng để cắm adapter mà không phải đổi luồng nghiệp vụ.

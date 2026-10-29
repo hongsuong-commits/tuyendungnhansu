@@ -517,8 +517,11 @@ Kinh nghiệm: 4 năm làm Frontend Developer với React, TypeScript, Next.js, 
           });
 
           const nlpScore = newApp && newApp.screeningScore != null ? ` Điểm đánh giá NLP: ${newApp.screeningScore}đ.` : '';
+          const autoNote = newApp?.screeningDetails?.autoApproved
+            ? ' Hồ sơ đã vượt qua sàng lọc sơ bộ và được chuyển sang bước phỏng vấn.'
+            : '';
           UI.toast({
-            message: `Nộp hồ sơ thành công! Mã hồ sơ: ${newApp.id}.${nlpScore} Bộ phận Tuyển dụng sẽ sớm liên hệ lại.`,
+            message: `Nộp hồ sơ thành công! Mã hồ sơ: ${newApp.id}.${nlpScore}${autoNote} Bộ phận Tuyển dụng sẽ sớm liên hệ lại.`,
             type: 'success',
             duration: 6000
           });

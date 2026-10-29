@@ -16,6 +16,10 @@ const CandidatesPage = (() => {
       const user = ATSStore.getCurrentUser();
       if (!user) return '<div class="page-container"><p>Vui lòng đăng nhập.</p></div>';
 
+      if (typeof params.search === 'string') {
+        _searchQuery = params.search;
+      }
+
       const requisitions = ATSStore.getRequisitions();
       const applications = ATSStore.getApplications({
         status: _activeStatus,
@@ -197,7 +201,7 @@ const CandidatesPage = (() => {
 
       return `
         <div class="table-responsive">
-          <table class="data-table data-table-compact">
+          <table class="data-table data-table-compact table-sticky-actions">
             <thead>
               <tr>
                 <th>Ứng viên · vị trí</th>
@@ -477,6 +481,15 @@ const CandidatesPage = (() => {
                       <strong>Lưu ý nghiệp vụ:</strong> Kết quả sàng lọc thông minh là hệ thống tính toán hỗ trợ nhân sự đối chiếu với tiêu chí tuyển dụng của vị trí, không tự động loại bỏ ứng viên hoặc tự ý thay thế quyết định tuyển dụng của hội đồng.
                     </div>
                   </div>
+
+                  ${scr.autoApproved ? `
+                    <div class="alert alert-success mb-4">
+                      <i data-lucide="sparkles" class="icon-sm"></i>
+                      <div class="text-xs">
+                        <strong>AI đã tự động duyệt hồ sơ:</strong> đạt ${app.screeningScore || 0} điểm, bằng hoặc vượt ngưỡng ${scr.autoApproveThreshold || 80} điểm và không còn tiêu chí bắt buộc nào chưa đáp ứng. Hồ sơ được chuyển sang bước <strong>Đạt – Chờ phỏng vấn</strong>.
+                      </div>
+                    </div>
+                  ` : ''}
 
                   <div class="grid grid-cols-3 gap-4 mb-4">
                     <div class="p-4 border rounded text-center bg-gray-50">
@@ -933,7 +946,10 @@ const CandidatesPage = (() => {
             source
           });
 
-          UI.toast({ message: `Đã tiếp nhận hồ sơ thành công! AI Sàng lọc đánh giá: ${newApp.screeningScore}đ (${Helpers.getScreeningLabel(newApp.screeningResult)})`, type: 'success' });
+          const autoNote = newApp.screeningDetails?.autoApproved
+            ? ' AI đã tự động duyệt sang bước Đạt – Chờ phỏng vấn.'
+            : '';
+          UI.toast({ message: `Đã tiếp nhận hồ sơ thành công! AI Sàng lọc đánh giá: ${newApp.screeningScore}đ (${Helpers.getScreeningLabel(newApp.screeningResult)}).${autoNote}`, type: 'success' });
           UI.closeModal('modal-manual-upload');
           this.refresh();
         });

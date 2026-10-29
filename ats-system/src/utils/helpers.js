@@ -85,15 +85,17 @@ const Helpers = (() => {
   const PAGE_ACCESS = {
     director: [
       'dashboard', 'requisitions', 'candidates', 'interviews',
-      'reports', 'settings', 'postings', 'evaluations', 'screening', 'users'
+      'reports', 'settings', 'postings', 'evaluations', 'screening', 'users',
+      'profile', 'notifications'
     ],
     department_head: [
       'dashboard', 'requisitions', 'candidates', 'interviews',
-      'evaluations', 'reports'
+      'evaluations', 'reports', 'profile', 'notifications'
     ],
     hr: [
       'dashboard', 'requisitions', 'candidates', 'interviews',
-      'postings', 'reports', 'settings', 'evaluations', 'screening', 'users'
+      'postings', 'reports', 'settings', 'evaluations', 'screening', 'users',
+      'profile', 'notifications'
     ],
     candidate: ['portal', 'applications'],
   };
