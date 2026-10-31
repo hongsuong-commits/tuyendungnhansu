@@ -2022,23 +2022,34 @@ body.modal-open { overflow: hidden !important; }
 }
 
 /* Tra cá»©u tiáº¿n Ä‘á»™ â€” the single control in the hero */
-.portal-lookup { max-width: 660px; margin: 30px auto 0; }
-.portal-lookup-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  padding: 14px;
-  text-align: left;
+.portal-lookup { max-width: 600px; margin: 20px auto 0; }
+.portal-lookup-inner {
+  background: #ffffff;
+  border: 1px solid #d6dde8;
+  border-radius: 10px;
+  padding-bottom: 13px;
+  padding-top: 10px;
+  padding-left: 17px;
+  padding-right: 17px;
+  width: 100%;
+  max-width: 590px;
+  margin: 0 auto;
+  box-shadow: 0 6px 24px rgba(22,58,95,0.06);
+  box-sizing: border-box;
+  text-align: center;
 }
 .portal-lookup-title {
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 25px;
+  font-weight: 800;
   color: var(--title);
-  margin: 0 0 8px;
+  padding-bottom: 10px;
+  margin: 0 0 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
+  line-height: 1.2;
+  text-align: center;
 }
 .portal-lookup-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .portal-lookup-input-wrap { position: relative; display: block; }
@@ -2559,13 +2570,29 @@ body.modal-open { overflow: hidden !important; }
 ::-webkit-scrollbar-thumb { background: #cfd4da; border-radius: 6px; border: 2px solid var(--ground); }
 ::-webkit-scrollbar-thumb:hover { background: #b6bcc4; }
 
+.portal-search-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(22,58,95,0.08);
+  padding: 14px 16px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.portal-search-container .portal-job-search-row { width: 100%; }
+
 /* Hero: thanh tìm kiếm công việc (thay thế tra cứu tiến độ hồ sơ) */
 .portal-job-search { max-width: 860px; margin: 26px auto 0; width: 100%; box-sizing: border-box; }
 .portal-job-search-row {
   display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
 }
 .portal-job-search-form { display: flex; align-items: stretch; gap: 8px; justify-content: center; }
-.portal-job-search-input-wrap { position: relative; display: block; flex: 1 1 auto; min-width: 0; }
+.portal-job-search-input-wrap { position: relative; display: block; flex: 1 1 55%; min-width: 0; }
 .portal-job-search-input-wrap .portal-search-icon {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
   width: 15px; height: 15px; color: var(--faint); pointer-events: none;
@@ -2581,7 +2608,7 @@ body.modal-open { overflow: hidden !important; }
   outline: none; border-color: var(--navy-mid); box-shadow: 0 0 0 3px rgba(74, 144, 194, 0.24);
 }
 .portal-job-search-select {
-  height: 44px; min-width: 170px; padding: 0 12px;
+  height: 44px; flex: 0 0 30%; min-width: 120px; max-width: 220px; padding: 0 12px;
   border: 1px solid var(--control); border-radius: var(--radius-control);
   background: var(--surface); color: var(--text);
   font-family: var(--font); font-size: 14px; cursor: pointer;
@@ -2590,21 +2617,19 @@ body.modal-open { overflow: hidden !important; }
   outline: none; border-color: var(--navy-mid); box-shadow: 0 0 0 3px rgba(74, 144, 194, 0.24);
 }
 .portal-job-search-btn {
-  height: 44px; padding: 0 24px; white-space: nowrap;
+  height: 44px; padding: 0 24px; white-space: nowrap; flex: 0 0 15%; min-width: 100px;
 }
 @media (max-width: 1023px) and (min-width: 640px) {
-  .portal-job-search-row {
-    flex-wrap: wrap;
-  }
-  .portal-job-search-input-wrap {
-    flex: 1 1 100%;
-    min-width: 100%;
-  }
-  .portal-job-search-select,
-  .portal-job-search-btn {
-    flex: 0 0 auto;
-    width: auto;
-  }
+  .portal-search-container { padding: 10px 12px; }
+  .portal-job-search-row { gap: 8px; }
+  .portal-job-search-select { flex: 0 0 28%; min-width: 110px; }
+  .portal-job-search-btn { flex: 0 0 16%; min-width: 90px; padding: 0 12px; }
+}
+@media (max-width: 640px) {
+  .portal-search-container { flex-direction: column; gap: 8px; padding: 12px 14px; }
+  .portal-job-search-row { flex-direction: column; gap: 8px; }
+  .portal-job-search-select, .portal-job-search-btn { width: 100%; flex: 1 1 100%; }
+  .portal-job-search-input-wrap { width: 100%; }
 }
 @media (max-width: 640px) {
   .portal-job-search-form { flex-direction: column; }

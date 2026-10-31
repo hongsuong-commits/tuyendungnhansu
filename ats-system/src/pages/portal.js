@@ -27,8 +27,9 @@ const PortalPage = (() => {
     return `
       <div class="portal-job-search">
         <form id="form-hero-job-search" class="portal-job-search-form">
-          <div class="portal-job-search-row">
-            <div class="portal-job-search-input-wrap">
+          <div class="portal-search-container">
+            <div class="portal-job-search-row">
+              <div class="portal-job-search-input-wrap">
               <i data-lucide="search" class="portal-search-icon"></i>
               <input type="text" id="hero-job-query" class="portal-job-search-input" placeholder="Tìm theo vị trí hoặc kỹ năng…" value="${_searchKeyword || ''}">
             </div>
@@ -40,6 +41,7 @@ const PortalPage = (() => {
               <i data-lucide="search" class="icon-xs"></i> Tìm việc
             </button>
           </div>
+          </div>
         </form>
       </div>
     `;
@@ -48,11 +50,11 @@ const PortalPage = (() => {
   function renderLookupForm() {
     return `
       <div class="portal-lookup">
-        <div class="portal-lookup-card">
-          <p class="portal-lookup-title">
-            <i data-lucide="search" class="icon-xs"></i> Tra cứu tiến độ hồ sơ ứng tuyển
-          </p>
-          <form id="form-hero-lookup" class="portal-lookup-form">
+        <div class="portal-lookup-inner">
+            <p class="portal-lookup-title">
+              <i data-lucide="search" class="icon-xs"></i> Tra cứu tiến độ hồ sơ ứng tuyển
+            </p>
+            <form id="form-hero-lookup" class="portal-lookup-form">
             <div class="portal-lookup-input-wrap">
               <i data-lucide="mail" class="portal-search-icon"></i>
               <input type="text" id="hero-track-query" class="portal-lookup-input" placeholder="Nhập email hoặc số điện thoại đã dùng khi nộp CV" value="${_trackingQuery}">
