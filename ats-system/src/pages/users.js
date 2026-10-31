@@ -11,140 +11,108 @@ const UsersPage = (() => {
 
       const users = ATSStore.getUsers();
 
+      /* Quyền đọc trong một dòng: full = toàn bộ, act = thao tác, read = chỉ xem, none = không có */
+      const matrix = [
+        { feature: 'Tổng quan tuyển dụng', director: ['full', 'Toàn bộ'], hod: ['act', 'Phòng ban'], hr: ['full', 'Đầy đủ'], candidate: ['none', '—'] },
+        { feature: 'Yêu cầu tuyển dụng', director: ['act', 'Duyệt'], hod: ['act', 'Tạo · phòng ban'], hr: ['act', 'Toàn quyền'], candidate: ['none', '—'] },
+        { feature: 'Tin đăng & kênh tuyển', director: ['read', 'Xem'], hod: ['read', 'Xem phòng ban'], hr: ['act', 'Xuất bản'], candidate: ['none', '—'] },
+        { feature: 'Đọc CV & sàng lọc', director: ['read', 'Xem'], hod: ['read', 'Xem phòng ban'], hr: ['act', 'Thiết lập'], candidate: ['none', '—'] },
+        { feature: 'Phỏng vấn & đánh giá', director: ['act', 'Vòng 3'], hod: ['act', 'Vòng 2'], hr: ['act', 'Điều phối'], candidate: ['read', 'Nhận thư mời'] },
+        { feature: 'Quyết định tuyển', director: ['act', 'Phê duyệt'], hod: ['act', 'Đề xuất'], hr: ['act', 'Gửi offer'], candidate: ['read', 'Nhận kết quả'] },
+        { feature: 'Báo cáo & thống kê', director: ['full', 'Toàn bộ'], hod: ['none', '—'], hr: ['act', 'Nghiệp vụ'], candidate: ['none', '—'] }
+      ];
+      const roleKeys = ['director', 'hod', 'hr', 'candidate'];
+
       return `
         <div class="page-container">
           <div class="page-header">
-            <div>
-              <h1 class="page-title">Quản lý người dùng & Phân quyền</h1>
-              <p class="page-subtitle">Kiểm soát quyền truy cập hệ thống theo 4 vai trò chức năng bảo đảm an toàn dữ liệu</p>
+            <div class="page-heading">
+              <h1 class="page-title">Người dùng & phân quyền</h1>
+              <p class="page-subtitle">Bốn vai trò chức năng và phạm vi truy cập của từng vai trò trên hệ thống</p>
             </div>
             <div class="page-actions">
               <button class="btn btn-primary" id="btn-add-user">
-                <i data-lucide="user-plus" class="icon-sm"></i> Thêm tài khoản mới
+                <i data-lucide="user-plus" class="icon-sm"></i> Thêm tài khoản
               </button>
             </div>
           </div>
 
-          <!-- Role Permissions Matrix Card -->
+          <!-- Ma trận phân quyền -->
           <div class="card mb-4">
-            <div class="card-header py-3">
-              <h3 class="card-title text-sm flex items-center gap-2">
-                <i data-lucide="shield" class="icon-sm text-primary"></i>
-                Ma trận phân quyền chi tiết (Access Control Matrix)
-              </h3>
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Ma trận phân quyền</h3>
+                <p class="card-subtitle">Phạm vi của từng vai trò trên bảy nhóm chức năng</p>
+              </div>
             </div>
             <div class="card-body card-body-no-padding">
               <div class="table-responsive">
-                <table class="data-table data-table-compact text-xs">
+                <table class="data-table data-table-compact matrix-table">
                   <thead>
                     <tr>
-                      <th>Chức năng hệ thống</th>
-                      <th class="text-center">Giám đốc (Director)</th>
-                      <th class="text-center">Trưởng phòng (HOD)</th>
-                      <th class="text-center">Nhân viên nhân sự (HR)</th>
-                      <th class="text-center">Ứng viên (Candidate)</th>
+                      <th>Chức năng</th>
+                      <th class="text-center">Giám đốc</th>
+                      <th class="text-center">Trưởng phòng</th>
+                      <th class="text-center">Nhân sự</th>
+                      <th class="text-center">Ứng viên</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td><strong>Dashboard tổng quan</strong></td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Xem toàn bộ</td>
-                      <td class="text-center text-info"><i data-lucide="check" class="icon-xs inline"></i> Xem phòng ban mình</td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Đầy đủ quyền</td>
-                      <td class="text-center text-danger"><i data-lucide="x" class="icon-xs inline"></i> Không truy cập</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Yêu cầu tuyển dụng</strong></td>
-                      <td class="text-center text-primary"><i data-lucide="check" class="icon-xs inline"></i> Phê duyệt / Từ chối</td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Tạo & theo dõi phòng ban</td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Quản lý & tạo tin</td>
-                      <td class="text-center text-danger"><i data-lucide="x" class="icon-xs inline"></i> Không truy cập</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Đăng tin & Kênh tuyển dụng</strong></td>
-                      <td class="text-center text-muted"><i data-lucide="eye" class="icon-xs inline"></i> Xem tin đăng</td>
-                      <td class="text-center text-muted"><i data-lucide="eye" class="icon-xs inline"></i> Xem tin phòng ban</td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Toàn quyền xuất bản</td>
-                      <td class="text-center text-danger"><i data-lucide="x" class="icon-xs inline"></i> Chỉ xem trên Cổng Portal</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Đọc CV & Sàng lọc tự động</strong></td>
-                      <td class="text-center text-muted"><i data-lucide="eye" class="icon-xs inline"></i> Xem kết quả</td>
-                      <td class="text-center text-muted"><i data-lucide="eye" class="icon-xs inline"></i> Xem kết quả phòng ban</td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Thiết lập tiêu chí & Duyệt</td>
-                      <td class="text-center text-danger"><i data-lucide="x" class="icon-xs inline"></i> Không truy cập</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Lịch phỏng vấn & Đánh giá</strong></td>
-                      <td class="text-center text-info"><i data-lucide="check" class="icon-xs inline"></i> Phỏng vấn Vòng 3 (Final)</td>
-                      <td class="text-center text-info"><i data-lucide="check" class="icon-xs inline"></i> Phỏng vấn Vòng 2 (Chuyên môn)</td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Điều phối, tạo lịch, gửi email</td>
-                      <td class="text-center text-muted">Nhận thư mời phỏng vấn</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Quyết định tuyển dụng cuối cùng</strong></td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Phê duyệt tuyển dụng chính thức</td>
-                      <td class="text-center text-info"><i data-lucide="check" class="icon-xs inline"></i> Đề xuất tuyển dụng</td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Gửi đề xuất & Phát hành Offer</td>
-                      <td class="text-center text-muted">Nhận kết quả tuyển dụng</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Báo cáo & Thống kê</strong></td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Toàn quyền xem báo cáo</td>
-                      <td class="text-center text-danger"><i data-lucide="x" class="icon-xs inline"></i> Không có quyền</td>
-                      <td class="text-center text-success"><i data-lucide="check" class="icon-xs inline"></i> Báo cáo nghiệp vụ & xuất CSV</td>
-                      <td class="text-center text-danger"><i data-lucide="x" class="icon-xs inline"></i> Không truy cập</td>
-                    </tr>
+                    ${matrix.map(m => `
+                      <tr>
+                        <td>${m.feature}</td>
+                        ${roleKeys.map(k => {
+                          const [kind, label] = m[k];
+                          const cls = kind === 'none' ? ' is-none' : (kind === 'full' ? ' is-full' : '');
+                          return `<td class="text-center"><span class="perm${cls}">${label}</span></td>`;
+                        }).join('')}
+                      </tr>
+                    `).join('')}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
 
-          <!-- Users List Table -->
+          <!-- Danh sách tài khoản -->
           <div class="card">
-            <div class="card-header flex items-center justify-between">
-              <h3 class="card-title text-sm">Danh sách tài khoản hệ thống (${users.length} tài khoản)</h3>
+            <div class="card-header">
+              <h3 class="card-title">Tài khoản hệ thống</h3>
+              <span class="card-note">${users.length} tài khoản</span>
             </div>
             <div class="card-body card-body-no-padding">
               <div class="table-responsive">
-                <table class="data-table table-sticky-actions">
+                <table class="data-table table-sticky-actions accounts-table">
                   <thead>
                     <tr>
-                      <th class="text-center" style="width: 45px;">STT</th>
-                      <th>Họ tên & Tài khoản</th>
-                      <th>Vai trò</th>
-                      <th>Phòng ban</th>
-                      <th>Email liên hệ</th>
-                      <th>Số điện thoại</th>
-                      <th>Trạng thái</th>
-                      <th class="text-right">Chuyển vai trò test</th>
+                      <th>Tài khoản</th>
+                      <th>Vai trò · phòng ban</th>
+                      <th class="text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
-                    ${users.map((u, i) => `
-                      <tr>
-                        <td class="text-center font-medium">${i + 1}</td>
-                        <td>
-                          <strong>${u.fullName}</strong>
-                          <div class="text-xs text-muted font-mono">@${u.username}</div>
-                        </td>
-                        <td>
-                          <span class="badge ${u.role === 'director' ? 'badge-primary' : (u.role === 'hr' ? 'badge-success' : 'badge-info')} font-bold">
-                            ${Helpers.getRoleLabel(u.role)}
-                          </span>
-                        </td>
-                        <td>${u.department}</td>
-                        <td class="text-xs font-mono">${u.email}</td>
-                        <td class="text-xs font-mono">${u.phone || '—'}</td>
-                        <td><span class="badge badge-success">Hoạt động</span></td>
-                        <td class="text-right">
-                          <button class="btn btn-xs ${currentUser.username === u.username ? 'btn-secondary disabled' : 'btn-outline'} btn-switch-user" data-username="${u.username}" title="Đăng nhập nhanh vai trò này">
-                            <i data-lucide="log-in" class="icon-xs"></i> ${currentUser.username === u.username ? 'Đang dùng' : 'Chuyển sang'}
-                          </button>
-                        </td>
-                      </tr>
-                    `).join('')}
+                    ${users.map((u) => {
+                      const isCurrent = currentUser.username === u.username;
+                      return `
+                        <tr>
+                          <td>
+                            <span class="table-name">${u.fullName}</span>
+                            <span class="table-sub font-mono">@${u.username} · ${u.email}</span>
+                          </td>
+                          <td>
+                            <span class="badge badge-secondary">${Helpers.getRoleLabel(u.role)}</span>
+                            <span class="table-sub">${u.department}${u.title ? ` · ${u.title}` : ''}</span>
+                          </td>
+                          <td class="text-right">
+                            <div class="table-actions">
+                              <button class="btn btn-xs ${isCurrent ? 'btn-secondary' : 'btn-outline'} btn-switch-user" data-username="${u.username}" ${isCurrent ? 'disabled' : ''} title="${isCurrent ? 'Đang đăng nhập' : 'Đăng nhập nhanh vai trò này'}">
+                                <i data-lucide="log-in" class="icon-xs"></i> ${isCurrent ? 'Đang dùng' : 'Chuyển sang'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
                   </tbody>
                 </table>
               </div>

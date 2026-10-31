@@ -5,25 +5,81 @@
  */
 
 const PortalPage = (() => {
-  let _activeDept = 'all';
-  let _searchKeyword = '';
   let _viewMode = 'jobs'; // 'jobs' | 'track'
+  let _searchKeyword = '';
+  let _activeDept = 'all';
   let _trackingQuery = '';
+
+  /**
+   * Job cards show the position name only: no "Tuyển dụng" prefix,
+   * no technology parenthetical and no salary suffix.
+   */
+  function cleanJobTitle(title) {
+    return String(title || '')
+      .replace(/^\s*(tuyển\s*dụng|tuyen\s*dung|hiring|tuyển)\s*[:|-]?\s*/i, '')
+      .replace(/\s*\([^)]*\)\s*/g, ' ')
+      .replace(/\s*[-–—|]\s*(lương|thu\s*nhập|salary|mức\s*lương).*$/i, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
+  function renderJobSearch(departments) {
+    return `
+      <div class="portal-job-search">
+        <form id="form-hero-job-search" class="portal-job-search-form">
+          <div class="portal-job-search-row">
+            <div class="portal-job-search-input-wrap">
+              <i data-lucide="search" class="portal-search-icon"></i>
+              <input type="text" id="hero-job-query" class="portal-job-search-input" placeholder="Tìm theo vị trí hoặc kỹ năng…" value="${_searchKeyword || ''}">
+            </div>
+            <select id="hero-job-dept" class="portal-job-search-select">
+              <option value="all">Tất cả phòng ban</option>
+              ${departments.map(d => `<option value="${d}" ${_activeDept === d ? 'selected' : ''}>${d}</option>`).join('')}
+            </select>
+            <button type="submit" class="btn btn-primary portal-job-search-btn">
+              <i data-lucide="search" class="icon-xs"></i> Tìm việc
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+  }
+
+  function renderLookupForm() {
+    return `
+      <div class="portal-lookup">
+        <div class="portal-lookup-card">
+          <p class="portal-lookup-title">
+            <i data-lucide="search" class="icon-xs"></i> Tra cứu tiến độ hồ sơ ứng tuyển
+          </p>
+          <form id="form-hero-lookup" class="portal-lookup-form">
+            <div class="portal-lookup-input-wrap">
+              <i data-lucide="mail" class="portal-search-icon"></i>
+              <input type="text" id="hero-track-query" class="portal-lookup-input" placeholder="Nhập email hoặc số điện thoại đã dùng khi nộp CV" value="${_trackingQuery}">
+            </div>
+            <button type="submit" class="btn btn-primary portal-lookup-btn">
+              <i data-lucide="search" class="icon-xs"></i> Tra cứu
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+  }
 
   return {
     render(params = {}) {
       const postings = ATSStore.getPostings().filter(p => p.status === 'published');
       const departments = ATSStore.getDepartments();
 
-      let filteredJobs = postings;
-      if (_activeDept !== 'all') {
-        filteredJobs = filteredJobs.filter(p => p.department === _activeDept);
+      let jobs = postings;
+      if (_activeDept && _activeDept !== 'all') {
+        jobs = jobs.filter(j => j.department === _activeDept);
       }
       if (_searchKeyword) {
         const q = _searchKeyword.toLowerCase();
-        filteredJobs = filteredJobs.filter(p =>
-          (p.title && p.title.toLowerCase().includes(q)) ||
-          (p.description && p.description.toLowerCase().includes(q))
+        jobs = jobs.filter(j =>
+          (j.title && j.title.toLowerCase().includes(q)) ||
+          (j.description && j.description.toLowerCase().includes(q))
         );
       }
 
@@ -54,45 +110,27 @@ const PortalPage = (() => {
             </div>
           </header>
 
-          <!-- Hero Banner -->
+          <!-- Hero: tiêu đề căn giữa + thanh tìm việc / tra cứu theo từng chế độ -->
           <section class="portal-hero">
             <div class="portal-hero-content">
-              <span class="portal-hero-tag">Gia nhập đội ngũ nhân tài</span>
-              <h1 class="portal-hero-title">Kiến tạo tương lai cùng SmartATS Solutions</h1>
-              <p class="portal-hero-subtitle">Môi trường làm việc năng động, đãi ngộ cạnh tranh và lộ trình phát triển rõ ràng</p>
+              <h1 class="portal-hero-title">Hồ sơ của bạn được đọc, không chỉ được nhận.</h1>
+              <p class="portal-hero-subtitle">${postings.length} vị trí đang mở. Nộp CV trực tuyến, theo dõi từng vòng và nhận phản hồi qua email.</p>
 
-              <!-- Search Bar inside Hero -->
-              <div class="portal-search-card">
-                <div class="portal-search-input-wrap">
-                  <i data-lucide="search" class="portal-search-icon"></i>
-                  <input type="text" id="portal-search-job" class="portal-search-input" placeholder="Tìm kiếm vị trí tuyển dụng, kỹ năng..." value="${_searchKeyword}">
-                </div>
-
-                <div class="portal-search-select-wrap">
-                  <i data-lucide="building" class="portal-search-icon"></i>
-                  <select id="portal-dept-select" class="portal-search-select">
-                    <option value="all" ${_activeDept === 'all' ? 'selected' : ''}>Tất cả phòng ban</option>
-                    ${departments.map(d => `<option value="${d}" ${_activeDept === d ? 'selected' : ''}>${d}</option>`).join('')}
-                  </select>
-                </div>
-
-                <button class="btn btn-primary portal-search-btn" id="btn-portal-search">
-                  Tìm kiếm việc làm
-                </button>
-              </div>
+              ${_viewMode === 'track' ? renderLookupForm() : renderJobSearch(departments)}
             </div>
           </section>
 
           <!-- Main Body -->
           <main class="portal-main-container">
-            ${_viewMode === 'track' ? this._renderTrackingSection() : this._renderJobListSection(filteredJobs)}
+            ${_viewMode === 'track' ? this._renderTrackingSection() : this._renderJobListSection(jobs)}
           </main>
 
           <!-- Public Footer -->
           <footer class="portal-footer">
             <div class="portal-footer-content">
-              <p>© 2026 SmartATS Solutions Việt Nam - Hệ thống Quản lý Tuyển dụng Thông minh.</p>
-              <p class="text-xs text-muted mt-1">Trụ sở: Tòa nhà Landmark, Cầu Giấy, Hà Nội • Hotline: 1900 xxxx • Email: hr@smartats.vn</p>
+              <p><strong>SmartATS Solutions Việt Nam</strong> — Hệ thống Quản lý Tuyển dụng Thông minh.</p>
+              <p>Trụ sở: ${(ATSStore.getSettings().companyAddress) || 'Tòa nhà Landmark, Cầu Giấy, Hà Nội'}</p>
+              <p>Hotline: ${(ATSStore.getSettings().hotline) || '1900 xxxx'}&nbsp;&nbsp;&nbsp;Email: ${(ATSStore.getSettings().companyEmail) || 'hr@smartats.vn'}</p>
             </div>
           </footer>
 
@@ -104,49 +142,48 @@ const PortalPage = (() => {
 
     _renderJobListSection(jobs) {
       if (!jobs || jobs.length === 0) {
+        const filtered = _searchKeyword || (_activeDept && _activeDept !== 'all');
         return `
           <div class="empty-state py-12">
             <i data-lucide="search-x" class="empty-state-icon"></i>
-            <h3 class="empty-state-title">Không tìm thấy vị trí tuyển dụng phù hợp</h3>
-            <p class="empty-state-description">Vui lòng thử lại với từ khóa khác hoặc chọn tất cả phòng ban.</p>
+            <h3 class="empty-state-title">${filtered ? 'Không tìm thấy vị trí phù hợp' : 'Hiện chưa có vị trí nào đang mở'}</h3>
+            <p class="empty-state-description">${filtered ? 'Thử từ khóa khác hoặc chọn lại phòng ban.' : 'Các vị trí mới sẽ xuất hiện tại đây ngay khi được đăng tuyển.'}</p>
+            ${filtered ? '<button class="btn btn-sm btn-outline mt-3" id="btn-portal-reset-search">Xóa bộ lọc</button>' : ''}
           </div>
         `;
       }
 
       const jobCards = jobs.map(j => `
-        <div class="portal-job-card">
-          <div class="portal-job-card-header">
-            <div>
-              <span class="badge badge-secondary font-mono text-xs mb-1">${j.code}</span>
-              <h3 class="portal-job-title">${j.title}</h3>
-              <div class="portal-job-dept">${j.department}</div>
-            </div>
-            <span class="portal-job-salary">${j.salary}</span>
+        <article class="portal-job-card">
+          <span class="portal-job-code">${j.code}</span>
+          <h3 class="portal-job-title">${cleanJobTitle(j.title)}</h3>
+          <div class="portal-job-dept">${j.department}</div>
+          <span class="portal-job-salary">${j.salary || 'Thỏa thuận'}</span>
+
+          <div class="portal-job-meta">
+            <span class="portal-tag"><i data-lucide="map-pin"></i>${j.location}</span>
+            <span class="portal-tag"><i data-lucide="clock"></i>${j.workType}</span>
+            <span class="portal-tag"><i data-lucide="calendar"></i>Hạn nộp ${Helpers.formatDate(j.deadline)}</span>
           </div>
 
-          <div class="portal-job-badges">
-            <span class="portal-tag"><i data-lucide="map-pin" class="icon-xs"></i> ${j.location}</span>
-            <span class="portal-tag"><i data-lucide="clock" class="icon-xs"></i> ${j.workType}</span>
-            <span class="portal-tag"><i data-lucide="calendar" class="icon-xs"></i> Hạn: ${Helpers.formatDate(j.deadline)}</span>
-          </div>
-
-          <p class="portal-job-desc">${Helpers.truncate(j.description || '', 130)}</p>
+          <p class="portal-job-desc">${Helpers.truncate(j.description || '', 132)}</p>
 
           <div class="portal-job-card-footer">
-            <button class="btn btn-outline btn-sm btn-job-detail" data-id="${j.id}">
-              Xem chi tiết JD
+            <button class="btn btn-sm btn-job-detail" data-id="${j.id}">
+              <i data-lucide="file-text" class="icon-xs"></i> Chi tiết JD
             </button>
             <button class="btn btn-primary btn-sm btn-job-apply" data-id="${j.id}">
-              <i data-lucide="send" class="icon-xs"></i> Ứng tuyển ngay
+              Ứng tuyển
             </button>
           </div>
-        </div>
+        </article>
       `).join('');
 
       return `
         <div>
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-gray-900">Vị trí đang tuyển dụng (${jobs.length} công việc)</h2>
+          <div class="portal-list-head">
+            <h2 class="portal-list-title">Vị trí đang mở</h2>
+            <span class="portal-list-meta">${jobs.length} vị trí</span>
           </div>
           <div class="portal-jobs-grid">
             ${jobCards}
@@ -157,9 +194,9 @@ const PortalPage = (() => {
 
     _renderTrackingSection() {
       const allApps = ATSStore.getApplications();
+      const q = _trackingQuery.trim().toLowerCase();
       let matchedApps = [];
-      if (_trackingQuery.trim()) {
-        const q = _trackingQuery.trim().toLowerCase();
+      if (q) {
         matchedApps = allApps.filter(a => {
           const cand = ATSStore.getCandidateById(a.candidateId) || {};
           return (cand.email && cand.email.toLowerCase().includes(q)) ||
@@ -169,83 +206,75 @@ const PortalPage = (() => {
       }
 
       return `
-        <div class="portal-track-container max-w-3xl mx-auto py-6">
-          <div class="card mb-6">
-            <div class="card-header py-4 text-center">
-              <h2 class="text-lg font-bold text-gray-900">Tra cứu tiến độ hồ sơ ứng tuyển</h2>
-              <p class="text-xs text-muted mt-1">Nhập địa chỉ Email hoặc Số điện thoại bạn đã dùng khi nộp CV để kiểm tra trạng thái</p>
+        <div class="portal-track-container py-4">
+          ${!q ? `
+            <div class="empty-state">
+              <i data-lucide="search" class="empty-state-icon"></i>
+              <h3 class="empty-state-title">Tra cứu tiến độ hồ sơ ứng tuyển</h3>
+              <p class="empty-state-description">Nhập email hoặc số điện thoại bạn đã dùng khi nộp CV vào ô tra cứu phía trên để xem trạng thái hồ sơ.</p>
             </div>
-            <div class="card-body">
-              <form id="form-tracking-search" class="flex gap-2">
-                <input type="text" id="input-track-query" class="form-input flex-1" placeholder="Nhập email (ví dụ: nam.vu@gmail.com) hoặc SĐT..." value="${_trackingQuery}">
-                <button type="submit" class="btn btn-primary">
-                  <i data-lucide="search" class="icon-xs"></i> Tra cứu
-                </button>
-              </form>
+          ` : `
+            <div class="portal-list-head">
+              <h2 class="portal-list-title">Kết quả tra cứu</h2>
+              <span class="portal-list-meta">${matchedApps.length} hồ sơ khớp “${_trackingQuery.trim()}”</span>
             </div>
-          </div>
+            ${matchedApps.length > 0 ? matchedApps.map(app => {
+              const cand = ATSStore.getCandidateById(app.candidateId) || {};
+              const ivs = (ATSStore.getInterviews() || []).filter(i => i.candidateId === app.candidateId);
 
-          ${_trackingQuery.trim() ? `
-            <div class="space-y-4">
-              <h3 class="font-bold text-sm text-gray-800">Kết quả tìm kiếm (${matchedApps.length} hồ sơ):</h3>
-              ${matchedApps.length > 0 ? matchedApps.map(app => {
-                const cand = ATSStore.getCandidateById(app.candidateId) || {};
-                const ivs = (ATSStore.getInterviews() || []).filter(i => i.candidateId === app.candidateId);
-
-                return `
-                  <div class="card p-4">
-                    <div class="flex items-center justify-between border-b pb-3 mb-3">
-                      <div>
-                        <h4 class="font-bold text-base text-gray-900">${app.candidateName || cand.fullName}</h4>
-                        <div class="text-xs text-muted">Vị trí: <strong class="text-primary">${app.positionTitle}</strong> • Nộp ngày: ${Helpers.formatDate(app.appliedDate)}</div>
-                      </div>
-                      <div>
-                        ${Helpers.statusBadge(app.status)}
-                      </div>
+              return `
+                <div class="card p-4 mb-3">
+                  <div class="flex items-center justify-between border-b pb-3 mb-3">
+                    <div>
+                      <h4 class="font-bold text-base">${app.candidateName || cand.fullName}</h4>
+                      <div class="text-xs text-muted">Vị trí: <strong class="text-primary">${app.positionTitle}</strong> • Nộp ngày: ${Helpers.formatDate(app.appliedDate)}</div>
                     </div>
-
-                    <!-- Pipeline Stepper -->
-                    <div class="pipeline-stepper mb-4 text-xs">
-                      <div class="step-item ${app.status !== 'rejected' ? 'step-completed' : ''}">
-                        <div class="step-dot"><i data-lucide="check" class="icon-xs"></i></div>
-                        <div class="step-label">Tiếp nhận CV</div>
-                      </div>
-                      <div class="step-item ${app.status !== 'pending_review' && app.status !== 'rejected' ? 'step-completed' : (app.status === 'pending_review' ? 'step-active' : '')}">
-                        <div class="step-dot"><i data-lucide="file-check" class="icon-xs"></i></div>
-                        <div class="step-label">Duyệt hồ sơ</div>
-                      </div>
-                      <div class="step-item ${app.status === 'interview_scheduled' || app.status === 'proposed' || app.status === 'hired' ? 'step-completed' : (app.status === 'passed_screening' ? 'step-active' : '')}">
-                        <div class="step-dot"><i data-lucide="calendar" class="icon-xs"></i></div>
-                        <div class="step-label">Phỏng vấn</div>
-                      </div>
-                      <div class="step-item ${app.status === 'hired' ? 'step-completed' : (app.status === 'proposed' ? 'step-active' : '')}">
-                        <div class="step-dot"><i data-lucide="award" class="icon-xs"></i></div>
-                        <div class="step-label">Tuyển dụng</div>
-                      </div>
-                    </div>
-
-                    ${ivs.length > 0 ? `
-                      <div class="bg-blue-50 border border-blue-200 p-3 rounded text-xs space-y-1">
-                        <strong class="text-primary flex items-center gap-1"><i data-lucide="calendar" class="icon-xs"></i> Lịch phỏng vấn của bạn:</strong>
-                        ${ivs.map(i => `
-                          <div>• <strong>${i.round}:</strong> ${Helpers.formatDate(i.date)} (${i.startTime} - ${i.endTime}) - Hình thức: ${i.type === 'online' ? 'Trực tuyến' : 'Trực tiếp tại VP'}</div>
-                        `).join('')}
-                      </div>
-                    ` : ''}
-
-                    <div class="text-xs text-muted mt-3">
-                      Lần cập nhật gần nhất: ${Helpers.formatDateTime(app.statusHistory ? app.statusHistory[app.statusHistory.length - 1]?.timestamp : app.appliedDate)}
+                    <div>
+                      ${Helpers.statusBadge(app.status)}
                     </div>
                   </div>
-                `;
-              }).join('') : `
-                <div class="card p-6 text-center text-muted">
-                  <i data-lucide="inbox" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
-                  <p class="text-sm">Không tìm thấy hồ sơ nào khớp với thông tin "${_trackingQuery}".</p>
+
+                  <!-- Pipeline Stepper -->
+                  <div class="pipeline-stepper mb-4 text-xs">
+                    <div class="step-item ${app.status !== 'rejected' ? 'step-completed' : ''}">
+                      <div class="step-dot"><i data-lucide="check" class="icon-xs"></i></div>
+                      <div class="step-label">Tiếp nhận CV</div>
+                    </div>
+                    <div class="step-item ${app.status !== 'pending_review' && app.status !== 'rejected' ? 'step-completed' : (app.status === 'pending_review' ? 'step-active' : '')}">
+                      <div class="step-dot"><i data-lucide="file-check" class="icon-xs"></i></div>
+                      <div class="step-label">Duyệt hồ sơ</div>
+                    </div>
+                    <div class="step-item ${app.status === 'interview_scheduled' || app.status === 'proposed' || app.status === 'hired' ? 'step-completed' : (app.status === 'passed_screening' ? 'step-active' : '')}">
+                      <div class="step-dot"><i data-lucide="calendar" class="icon-xs"></i></div>
+                      <div class="step-label">Phỏng vấn</div>
+                    </div>
+                    <div class="step-item ${app.status === 'hired' ? 'step-completed' : (app.status === 'proposed' ? 'step-active' : '')}">
+                      <div class="step-dot"><i data-lucide="award" class="icon-xs"></i></div>
+                      <div class="step-label">Tuyển dụng</div>
+                    </div>
+                  </div>
+
+                  ${ivs.length > 0 ? `
+                    <div class="portal-iv-note">
+                      <strong class="flex items-center gap-1"><i data-lucide="calendar" class="icon-xs"></i> Lịch phỏng vấn của bạn:</strong>
+                      ${ivs.map(i => `
+                        <div>• <strong>${i.round}:</strong> ${Helpers.formatDate(i.date)} (${i.startTime} - ${i.endTime}) - Hình thức: ${i.type === 'online' ? 'Trực tuyến' : 'Trực tiếp tại VP'}</div>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+
+                  <div class="text-xs text-muted mt-3">
+                    Lần cập nhật gần nhất: ${Helpers.formatDateTime(app.statusHistory ? app.statusHistory[app.statusHistory.length - 1]?.timestamp : app.appliedDate)}
+                  </div>
                 </div>
-              `}
-            </div>
-          ` : ''}
+              `;
+            }).join('') : `
+              <div class="card p-6 text-center text-muted">
+                <i data-lucide="inbox" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
+                <p class="text-sm">Không tìm thấy hồ sơ nào khớp với thông tin “${_trackingQuery.trim()}”.</p>
+              </div>
+            `}
+          `}
         </div>
       `;
     },
@@ -262,21 +291,30 @@ const PortalPage = (() => {
         this.refresh();
       });
 
-      // Search & Filter
-      document.getElementById('portal-dept-select')?.addEventListener('change', (e) => {
-        _activeDept = e.target.value;
-        this.refresh();
-      });
-
-      document.getElementById('btn-portal-search')?.addEventListener('click', () => {
-        _searchKeyword = document.getElementById('portal-search-job')?.value || '';
-        this.refresh();
-      });
-
-      // Tracking form submit
-      document.getElementById('form-tracking-search')?.addEventListener('submit', (e) => {
+      // Tìm kiếm công việc (thanh tìm kiếm ở hero)
+      document.getElementById('form-hero-job-search')?.addEventListener('submit', (e) => {
         e.preventDefault();
-        _trackingQuery = document.getElementById('input-track-query')?.value || '';
+        _searchKeyword = document.getElementById('hero-job-query')?.value || '';
+        _activeDept = document.getElementById('hero-job-dept')?.value || 'all';
+        _viewMode = 'jobs';
+        this.refresh();
+        const results = document.querySelector('.portal-main-container');
+        if (results) results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      // Tra cứu tiến độ hồ sơ (thanh tra cứu ở hero)
+      document.getElementById('form-hero-lookup')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        _trackingQuery = (document.getElementById('hero-track-query')?.value || '').trim();
+        _viewMode = 'track';
+        this.refresh();
+        const results = document.querySelector('.portal-main-container');
+        if (results) results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      document.getElementById('btn-portal-reset-search')?.addEventListener('click', () => {
+        _searchKeyword = '';
+        _activeDept = 'all';
         this.refresh();
       });
 
@@ -317,31 +355,32 @@ const PortalPage = (() => {
               <div class="modal-header">
                 <div>
                   <span class="badge badge-secondary font-mono text-xs mb-1">${post.code}</span>
-                  <h3 class="modal-title">${post.title}</h3>
-                  <div class="text-xs text-muted mt-0.5">${post.department} • <strong class="text-success">${post.salary}</strong></div>
+                  <h3 class="modal-title">${cleanJobTitle(post.title)}</h3>
+                  <div class="text-xs text-muted mt-0.5">${post.department} • <strong class="text-primary">${post.salary}</strong></div>
                 </div>
                 <button type="button" class="modal-close" onclick="UI.closeModal('modal-public-jd')">&times;</button>
               </div>
 
               <div class="modal-body text-xs space-y-4">
-                <div class="bg-gray-50 p-3 rounded flex flex-wrap gap-4 border">
-                  <div><span class="text-muted">Địa điểm:</span> <strong>${post.location}</strong></div>
-                  <div><span class="text-muted">Hình thức:</span> <strong>${post.workType}</strong></div>
-                  <div><span class="text-muted">Hạn nộp hồ sơ:</span> <strong>${Helpers.formatDate(post.deadline)}</strong></div>
+                <div class="jd-facts">
+                  <div><span>Địa điểm:</span> <strong>${post.location}</strong></div>
+                  <div><span>Hình thức:</span> <strong>${post.workType}</strong></div>
+                  <div><span>Hạn nộp hồ sơ:</span> <strong>${Helpers.formatDate(post.deadline)}</strong></div>
+                  <div><span>Mức lương:</span> <strong>${post.salary}</strong></div>
                 </div>
 
                 <div>
-                  <h4 class="font-bold text-sm text-gray-900 mb-2">1. Mô tả công việc</h4>
+                  <h4 class="jd-section-title">1. Mô tả công việc</h4>
                   <div class="jd-content-box">${Helpers.formatJDText(post.description)}</div>
                 </div>
 
                 <div>
-                  <h4 class="font-bold text-sm text-gray-900 mb-2">2. Yêu cầu ứng viên</h4>
+                  <h4 class="jd-section-title">2. Yêu cầu ứng viên</h4>
                   <div class="jd-content-box">${Helpers.formatJDText(post.requirements)}</div>
                 </div>
 
                 <div>
-                  <h4 class="font-bold text-sm text-gray-900 mb-2">3. Quyền lợi & Chế độ đãi ngộ</h4>
+                  <h4 class="jd-section-title">3. Quyền lợi & Chế độ đãi ngộ</h4>
                   <div class="jd-content-box">${Helpers.formatJDText(post.benefits)}</div>
                 </div>
               </div>
@@ -376,7 +415,7 @@ const PortalPage = (() => {
               <div class="modal-header">
                 <div>
                   <h3 class="modal-title">Ứng tuyển trực tuyến</h3>
-                  <div class="text-xs text-muted mt-0.5">${post.title} · ${post.department}</div>
+                  <div class="text-xs text-muted mt-0.5">${cleanJobTitle(post.title)} · ${post.department}</div>
                 </div>
                 <button type="button" class="modal-close" onclick="UI.closeModal('modal-portal-apply')">&times;</button>
               </div>
@@ -384,9 +423,7 @@ const PortalPage = (() => {
               <form id="form-portal-apply">
                 <div class="modal-body text-xs">
                   <!-- Section 1: Thông tin cá nhân -->
-                  <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <i data-lucide="user" class="icon-xs text-primary"></i> 1. Thông tin cá nhân
-                  </h4>
+                  <h4 class="form-section-title">Thông tin cá nhân</h4>
                   <div class="grid grid-cols-2 gap-4 mb-3">
                     <div class="form-group">
                       <label class="form-label required">Họ và tên</label>
@@ -404,8 +441,8 @@ const PortalPage = (() => {
                   </div>
 
                   <!-- Section 2: Học vấn & Kinh nghiệm -->
-                  <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5 pt-2 border-t">
-                    <i data-lucide="briefcase" class="icon-xs text-primary"></i> 2. Học vấn & Kinh nghiệm làm việc
+                  <h4 class="form-section-title">
+                    Học vấn & kinh nghiệm làm việc
                   </h4>
                   <div class="grid grid-cols-2 gap-4 mb-3">
                     <div class="form-group">
@@ -419,26 +456,18 @@ const PortalPage = (() => {
                   </div>
 
                   <!-- Section 3: Upload CV / Dán văn bản CV (Nằm phía dưới phần Kinh nghiệm) -->
-                  <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5 pt-2 border-t">
-                    <i data-lucide="file-text" class="icon-xs text-primary"></i> 3. Tải lên tệp CV hoặc Dán văn bản CV
+                  <h4 class="form-section-title">
+                    Tệp CV
                   </h4>
                   <div class="form-group mb-2">
-                    <div class="border-2 border-dashed border-blue-300 p-4 rounded text-center bg-blue-50 hover:bg-blue-100 transition cursor-pointer mb-2" id="portal-cv-dropzone">
-                      <i data-lucide="upload-cloud" class="w-8 h-8 text-primary mx-auto mb-1"></i>
+                    <div class="cv-dropzone" id="portal-cv-dropzone">
+                      <i data-lucide="upload" class="icon-md"></i>
                       <div class="text-xs text-gray-700">Kéo thả tệp CV (.txt, .pdf, .docx) vào đây hoặc <label for="portal-file-input" class="text-primary font-bold cursor-pointer underline">chọn tệp từ thiết bị</label></div>
                       <input type="file" id="portal-file-input" class="hidden" accept=".txt,.pdf,.doc,.docx">
                     </div>
 
-                    <textarea id="portal-raw-cv" name="rawResumeText" class="form-textarea font-mono text-xs" rows="5" placeholder="Dán toàn bộ nội dung CV tại đây để hệ thống ứng dụng NLP tự động phân tích từ khóa, đối chiếu tiêu chí và trích xuất thông tin..."></textarea>
-
-                    <div class="flex justify-between items-center mt-2">
-                      <button type="button" class="btn btn-xs btn-outline" id="btn-portal-autofill">
-                        <i data-lucide="sparkles" class="icon-xs text-primary"></i> Tự động phân tích & điền thông tin bằng NLP
-                      </button>
-                      <button type="button" class="text-xs text-primary font-medium hover:underline" id="btn-portal-sample-cv">
-                        + Dán nội dung CV mẫu có sẵn
-                      </button>
-                    </div>
+                    <input type="hidden" id="portal-raw-cv" name="rawResumeText" value="">
+                    <p class="portal-cv-note" id="portal-cv-status">Hệ thống sẽ đọc tệp và điền sẵn thông tin cá nhân, học vấn, kinh nghiệm.</p>
                   </div>
                 </div>
 
@@ -460,33 +489,31 @@ const PortalPage = (() => {
         UI.openModal('modal-portal-apply');
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        // Sample CV Fill
-        document.getElementById('btn-portal-sample-cv')?.addEventListener('click', () => {
-          document.getElementById('portal-raw-cv').value = `HỌ VÀ TÊN: TRẦN VĂN QUANG
-Email: quang.tran@gmail.com - SĐT: 0988776655
-Học vấn: Đại học Bách Khoa Hà Nội
-Kinh nghiệm: 4 năm làm Frontend Developer với React, TypeScript, Next.js, Redux, Tailwind CSS.`;
-          this.autofillPortalForm();
-        });
-
-        // Autofill button
-        document.getElementById('btn-portal-autofill')?.addEventListener('click', () => {
-          this.autofillPortalForm();
-        });
-
-        // File drop/change
+        // File drop/change — extract real text from .txt, .pdf and .docx before parsing
         const fileInput = document.getElementById('portal-file-input');
         if (fileInput) {
-          fileInput.addEventListener('change', (e) => {
+          fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (re) => {
-              const text = re.target.result;
-              document.getElementById('portal-raw-cv').value = text;
-              this.autofillPortalForm();
-            };
-            reader.readAsText(file);
+            const status = document.getElementById('portal-cv-status');
+            if (status) status.textContent = `Đang đọc ${file.name}…`;
+            try {
+              const text = await CVFile.extractText(file);
+              if (!text || !text.trim()) {
+                throw new Error('Tệp không có nội dung văn bản đọc được.');
+              }
+              const hidden = document.getElementById('portal-raw-cv');
+              if (hidden) hidden.value = text;
+              const filled = this.autofillPortalForm(text);
+              if (status) {
+                status.textContent = filled
+                  ? `Đã đọc ${file.name} và điền thông tin tìm thấy. Vui lòng kiểm tra lại trước khi gửi.`
+                  : `Đã đọc ${file.name} nhưng chưa nhận diện được thông tin. Vui lòng nhập tay.`;
+              }
+            } catch (err) {
+              if (status) status.textContent = `Không đọc được ${file.name}. Vui lòng dùng tệp .pdf, .docx hoặc .txt rõ ràng.`;
+              UI.toast({ message: err && err.message ? err.message : 'Không đọc được tệp CV.', type: 'warning' });
+            }
           });
         }
 
@@ -535,20 +562,21 @@ Kinh nghiệm: 4 năm làm Frontend Developer với React, TypeScript, Next.js, 
       }
     },
 
-    autofillPortalForm() {
-      const text = document.getElementById('portal-raw-cv')?.value || '';
-      if (!text.trim()) {
-        UI.toast({ message: 'Vui lòng dán văn bản CV trước.', type: 'warning' });
-        return;
-      }
+    autofillPortalForm(sourceText) {
+      const text = sourceText || document.getElementById('portal-raw-cv')?.value || '';
+      if (!text.trim()) return false;
       const parsed = ATSStore.parseCVText(text);
-      if (parsed.name && document.getElementById('portal-name')) document.getElementById('portal-name').value = parsed.name;
-      if (parsed.email && document.getElementById('portal-email')) document.getElementById('portal-email').value = parsed.email;
-      if (parsed.phone && document.getElementById('portal-phone')) document.getElementById('portal-phone').value = parsed.phone;
-      if (parsed.education && document.getElementById('portal-edu')) document.getElementById('portal-edu').value = parsed.education;
-      if (parsed.experienceYears && document.getElementById('portal-exp')) document.getElementById('portal-exp').value = parsed.experienceYears;
-
-      UI.toast({ message: 'NLP đã tự động nhận diện và điền đầy đủ thông tin từ CV!', type: 'success' });
+      let filled = false;
+      const setValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && value) { el.value = value; filled = true; }
+      };
+      setValue('portal-name', parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' ? parsed.name : '');
+      setValue('portal-email', parsed.email);
+      setValue('portal-phone', parsed.phone);
+      setValue('portal-edu', parsed.education && parsed.education !== 'Đang cập nhật' ? parsed.education : '');
+      setValue('portal-exp', parsed.experienceYears > 0 ? parsed.experienceYears : '');
+      return filled;
     }
   };
 })();

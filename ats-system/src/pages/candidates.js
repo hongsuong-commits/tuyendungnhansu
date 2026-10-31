@@ -182,8 +182,8 @@ const CandidatesPage = (() => {
             <td>${Helpers.statusBadge(app.status)}</td>
             <td class="text-right">
               <div class="table-actions">
-                <button class="btn btn-xs btn-outline btn-view-candidate" data-id="${app.id}" title="Xem chi tiết hồ sơ">
-                  <i data-lucide="eye" class="icon-xs"></i> Xem
+                <button class="btn btn-xs btn-icon btn-outline btn-view-candidate" data-id="${app.id}" title="Xem chi tiết hồ sơ" aria-label="Xem chi tiết hồ sơ">
+                  <i data-lucide="eye" class="icon-xs"></i>
                 </button>
                 ${canReview && app.status === 'pending_review' ? `
                   <button class="btn btn-xs btn-icon btn-outline btn-quick-approve" data-id="${app.id}" title="Duyệt vào phỏng vấn" aria-label="Duyệt hồ sơ">
@@ -725,8 +725,13 @@ const CandidatesPage = (() => {
         type: newStatus === 'rejected' ? 'danger' : 'info',
         confirmText: 'Xác nhận chuyển',
         onConfirm: () => {
-          ATSStore.updateApplicationStatus(appId, newStatus, defaultNote);
-          UI.toast({ message: `Đã cập nhật trạng thái: ${statusLabel}`, type: 'success' });
+          const updated = ATSStore.updateApplicationStatus(appId, newStatus, defaultNote);
+          const cand = updated ? (ATSStore.getCandidateById(updated.candidateId) || {}) : {};
+          UI.toast({
+            message: `Đã cập nhật trạng thái: ${statusLabel}${cand.fullName ? ` (${cand.fullName})` : ''}.`,
+            type: 'success',
+            duration: 5000
+          });
           UI.closeModal('modal-cand-detail');
           this.refresh();
         }
@@ -743,7 +748,7 @@ const CandidatesPage = (() => {
                 <button type="button" class="modal-close" onclick="UI.closeModal('modal-reject-reason')">&times;</button>
               </div>
               <div class="modal-body">
-                <p class="text-sm text-gray-700 mb-3">Vui lòng nêu rõ lý do từ chối để lưu vào hồ sơ và phục vụ việc gửi thông báo nếu cần:</p>
+                <p class="text-sm text-gray-700 mb-3">Vui lòng nêu rõ lý do từ chối để lưu lại trong hồ sơ ứng viên:</p>
                 <div class="form-group mb-3">
                   <label class="form-label required">Lý do từ chối</label>
                   <select id="select-reject-preset" class="form-select mb-2" onchange="document.getElementById('input-reject-reason').value = this.value">
@@ -777,8 +782,12 @@ const CandidatesPage = (() => {
 
     confirmReject(appId) {
       const reason = document.getElementById('input-reject-reason')?.value || 'Không phù hợp tiêu chí tuyển dụng';
-      ATSStore.updateApplicationStatus(appId, 'rejected', reason);
-      UI.toast({ message: 'Đã từ chối hồ sơ ứng viên thành công.', type: 'warning' });
+      const updated = ATSStore.updateApplicationStatus(appId, 'rejected', reason);
+      UI.toast({
+        message: 'Đã từ chối hồ sơ ứng viên.',
+        type: 'warning',
+        duration: 5000
+      });
       UI.closeModal('modal-reject-reason');
       UI.closeModal('modal-cand-detail');
       this.refresh();

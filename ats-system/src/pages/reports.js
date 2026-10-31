@@ -3,9 +3,8 @@
  * Cấu trúc báo cáo:
  * 1. Các chỉ số tổng quan (KPI)
  * 2. Bảng chi tiết tỷ lệ chuyển đổi (Conversion Rate)
- * 3. Thời gian & Chi phí tuyển dụng
- * 4. Hiệu quả nguồn tuyển dụng (Sourcing Efficiency)
- * 5. Thời gian đăng tin & Cảnh báo tin tồn đọng
+ * 3. Hiệu quả nguồn tuyển dụng (Sourcing Efficiency)
+ * 4. Thời gian đăng tin & Cảnh báo tin tồn đọng
  */
 
 const ReportsPage = (() => {
@@ -29,7 +28,6 @@ const ReportsPage = (() => {
       const ov = reportData.overview || {};
       const funnel = reportData.funnel || [];
       const sourcing = reportData.sourcing || [];
-      const tc = reportData.timeAndCost || {};
       const postings = reportData.postings || [];
 
       const totalApps = ov.totalApplications || 0;
@@ -41,334 +39,195 @@ const ReportsPage = (() => {
         ? sourcingWithData.reduce((best, s) => (s.hired > (best?.hired || 0) ? s : best), null)
         : null;
 
+      const periodLabel = TIME_LABELS[_timeFilter] || 'Toàn bộ thời gian';
+      const deptLabel = _deptFilter === 'all' ? 'Tất cả phòng ban' : _deptFilter;
+      const readingLine = totalApps === 0
+        ? `Chưa có hồ sơ nào trong kỳ đã chọn. Đổi kỳ báo cáo hoặc phòng ban để xem số liệu khác.`
+        : `${totalApps} hồ sơ trong kỳ · ${ov.interviewedCount || 0} đã phỏng vấn · ${hiredCount} nhận việc · ${ov.activePositions || 0} vị trí đang mở.`;
+
       return `
         <div class="page-container">
-          <div class="page-header mb-4">
-            <div>
-              <h1 class="page-title">Báo cáo tuyển dụng & Tỷ lệ chuyển đổi</h1>
-              <p class="page-subtitle">Theo dõi KPI, tỷ lệ chuyển đổi, thời gian – chi phí tuyển dụng và hiệu quả từng nguồn ứng viên</p>
+          <div class="page-header">
+            <div class="page-heading">
+              <h1 class="page-title">Báo cáo tuyển dụng</h1>
+              <p class="page-subtitle">Phễu chuyển đổi và hiệu quả từng nguồn ứng viên theo kỳ đã chọn</p>
             </div>
             <div class="page-actions">
-              <button class="btn btn-primary" id="btn-export-report-csv">
-                <i data-lucide="download" class="icon-sm"></i> Xuất báo cáo CSV
+              <button class="btn btn-outline" id="btn-export-report-csv">
+                <i data-lucide="download" class="icon-sm"></i> Xuất CSV
               </button>
             </div>
           </div>
 
-          <!-- Filter Bar -->
-          <div class="card mb-4">
-            <div class="card-body py-3">
-              <div class="filter-toolbar">
-                <div class="filter-group">
-                  <label class="filter-label font-bold text-gray-700">Khoảng thời gian:</label>
-                  <select id="report-time-filter" class="form-select">
-                    <option value="all" ${_timeFilter === 'all' ? 'selected' : ''}>Toàn bộ thời gian</option>
-                    <option value="this_month" ${_timeFilter === 'this_month' ? 'selected' : ''}>Tháng này</option>
-                    <option value="this_quarter" ${_timeFilter === 'this_quarter' ? 'selected' : ''}>Quý này</option>
-                    <option value="this_year" ${_timeFilter === 'this_year' ? 'selected' : ''}>Năm nay</option>
-                  </select>
-                </div>
+          <!-- Kỳ báo cáo: một dải lọc mảnh, không phải một thẻ riêng -->
+          <div class="report-bar">
+            <div class="report-bar-field">
+              <label class="filter-label" for="report-time-filter">Kỳ báo cáo</label>
+              <select id="report-time-filter" class="form-select">
+                <option value="all" ${_timeFilter === 'all' ? 'selected' : ''}>Toàn bộ thời gian</option>
+                <option value="this_month" ${_timeFilter === 'this_month' ? 'selected' : ''}>Tháng này</option>
+                <option value="this_quarter" ${_timeFilter === 'this_quarter' ? 'selected' : ''}>Quý này</option>
+                <option value="this_year" ${_timeFilter === 'this_year' ? 'selected' : ''}>Năm nay</option>
+              </select>
+            </div>
 
-                <div class="filter-group">
-                  <label class="filter-label font-bold text-gray-700">Phòng ban:</label>
-                  <select id="report-dept-filter" class="form-select">
-                    <option value="all" ${_deptFilter === 'all' ? 'selected' : ''}>Tất cả phòng ban</option>
-                    ${departments.map(d => `<option value="${d}" ${_deptFilter === d ? 'selected' : ''}>${d}</option>`).join('')}
-                  </select>
-                </div>
+            <div class="report-bar-field">
+              <label class="filter-label" for="report-dept-filter">Phòng ban</label>
+              <select id="report-dept-filter" class="form-select">
+                <option value="all" ${_deptFilter === 'all' ? 'selected' : ''}>Tất cả phòng ban</option>
+                ${departments.map(d => `<option value="${d}" ${_deptFilter === d ? 'selected' : ''}>${d}</option>`).join('')}
+              </select>
+            </div>
 
-                <div class="ml-auto text-xs text-muted flex items-center gap-1.5">
-                  <i data-lucide="refresh-cw" class="icon-xs"></i>
-                  ${TIME_LABELS[_timeFilter] || 'Toàn bộ thời gian'} · ${_deptFilter === 'all' ? 'Tất cả phòng ban' : _deptFilter}
-                </div>
-              </div>
+            <p class="report-bar-note">Đang tính: ${periodLabel} · ${deptLabel}</p>
+          </div>
+
+          <!-- Các chỉ số của kỳ -->
+          <div class="metric-strip metric-strip--6">
+            <div class="metric">
+              <span class="metric-label">Hồ sơ tiếp nhận</span>
+              <span class="metric-value">${totalApps}</span>
+              <span class="metric-note">Tổng đầu vào</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Chờ xem xét</span>
+              <span class="metric-value">${ov.reviewingCount || 0}</span>
+              <span class="metric-note">Chưa xử lý</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Đã phỏng vấn</span>
+              <span class="metric-value">${ov.interviewedCount || 0}</span>
+              <span class="metric-note">Qua vòng CV</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Đề xuất</span>
+              <span class="metric-value">${ov.proposedCount || 0}</span>
+              <span class="metric-note">Chờ offer</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Nhận việc</span>
+              <span class="metric-value">${hiredCount}</span>
+              <span class="metric-note">Đã tuyển</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Tỷ lệ tuyển</span>
+              <span class="metric-value">${overallConversionRate}<span class="metric-unit">%</span></span>
+              <span class="metric-note">Trên tổng hồ sơ</span>
             </div>
           </div>
 
-          <!-- 1. CÁC CHỈ SỐ TỔNG QUAN (KPI) -->
-          <div class="mb-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-              <i data-lucide="gauge" class="icon-xs text-primary"></i> 1. Các chỉ số tổng quan (KPI)
-            </h2>
-            <div class="stat-cards-grid">
-              <div class="stat-card stat-card-blue">
-                <div class="stat-card-icon"><i data-lucide="users"></i></div>
-                <div class="stat-card-content">
-                  <p class="stat-card-value">${totalApps}</p>
-                  <p class="stat-card-label">Tổng hồ sơ ứng tuyển</p>
-                </div>
-              </div>
+          <p class="page-note">${readingLine}</p>
 
-              <div class="stat-card stat-card-orange">
-                <div class="stat-card-icon"><i data-lucide="clock"></i></div>
-                <div class="stat-card-content">
-                  <p class="stat-card-value">${ov.reviewingCount || 0}</p>
-                  <p class="stat-card-label">Chờ duyệt / Xem xét</p>
-                </div>
-              </div>
-
-              <div class="stat-card stat-card-purple">
-                <div class="stat-card-icon"><i data-lucide="calendar"></i></div>
-                <div class="stat-card-content">
-                  <p class="stat-card-value">${ov.interviewedCount || 0}</p>
-                  <p class="stat-card-label">Đã tham gia phỏng vấn</p>
-                </div>
-              </div>
-
-              <div class="stat-card stat-card-cyan">
-                <div class="stat-card-icon"><i data-lucide="send"></i></div>
-                <div class="stat-card-content">
-                  <p class="stat-card-value">${ov.proposedCount || 0}</p>
-                  <p class="stat-card-label">Đề xuất / Thư mời việc</p>
-                </div>
-              </div>
-
-              <div class="stat-card stat-card-emerald">
-                <div class="stat-card-icon"><i data-lucide="user-check"></i></div>
-                <div class="stat-card-content">
-                  <p class="stat-card-value">${hiredCount}</p>
-                  <p class="stat-card-label">Ứng viên đã tuyển</p>
-                </div>
-              </div>
-
-              <div class="stat-card stat-card-green">
-                <div class="stat-card-icon"><i data-lucide="percent"></i></div>
-                <div class="stat-card-content">
-                  <p class="stat-card-value">${overallConversionRate}%</p>
-                  <p class="stat-card-label">Tỷ lệ tuyển thành công</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. BẢNG CHI TIẾT TỶ LỆ CHUYỂN ĐỔI (CONVERSION RATE) -->
+          <!-- Phễu chuyển đổi: mỗi vòng là một dòng, thu hẹp theo số ứng viên còn lại -->
           <div class="space-y-4">
             <div class="card">
-              <div class="card-header flex items-center justify-between">
+              <div class="card-header">
                 <div>
-                  <h3 class="card-title text-sm font-bold flex items-center gap-2">
-                    <i data-lucide="filter" class="icon-sm text-primary"></i> 2. Bảng chi tiết tỷ lệ chuyển đổi qua các giai đoạn (Funnel Conversion Rate)
-                  </h3>
-                  <p class="text-xs text-muted mt-0.5">Tỷ lệ chuyển đổi lũy tiến và tỷ lệ hao hụt ứng viên theo từng nấc thang tuyển dụng</p>
+                  <h3 class="card-title">Phễu tuyển dụng</h3>
+                  <p class="card-subtitle">Số ứng viên còn lại sau mỗi vòng và số rơi rụng so với vòng liền trước</p>
                 </div>
-                <span class="badge badge-primary font-mono text-xs">5 Giai đoạn</span>
-              </div>
-              <div class="card-body card-body-no-padding">
-                <div class="table-responsive">
-                  <table class="data-table" id="table-funnel-report">
-                    <thead>
-                      <tr>
-                        <th class="text-center" style="width: 50px;">STT</th>
-                        <th>Giai đoạn tuyển dụng</th>
-                        <th class="text-center">Số lượng ứng viên</th>
-                        <th class="text-center">Tỷ lệ chuyển đổi vòng</th>
-                        <th class="text-center">Tỷ lệ rơi rụng (Drop Rate)</th>
-                        <th class="text-center">Tỷ lệ tích lũy đầu vào</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${funnel.map((f, i) => {
-                        const totalInput = funnel[0]?.count || 1;
-                        const cumPct = Math.round((f.count / totalInput) * 100);
-                        return `
-                          <tr>
-                            <td class="text-center font-bold text-gray-400">${i + 1}</td>
-                            <td>
-                              <strong class="text-gray-900">${f.stage}</strong>
-                            </td>
-                            <td class="text-center font-extrabold text-sm text-primary">${f.count} ứng viên</td>
-                            <td class="text-center">
-                              <span class="badge badge-success font-bold text-xs">${f.rate}</span>
-                            </td>
-                            <td class="text-center">
-                              <span class="badge ${f.dropRate === '0%' ? 'badge-secondary' : 'badge-danger'} font-bold text-xs">${f.dropRate}</span>
-                            </td>
-                            <td class="text-center">
-                              <div class="flex items-center justify-center gap-2">
-                                <div class="w-16 bg-gray-200 rounded-full h-2 overflow-hidden inline-block">
-                                  <div class="bg-primary h-2 rounded-full" style="width: ${cumPct}%"></div>
-                                </div>
-                                <span class="text-xs font-semibold">${cumPct}%</span>
-                              </div>
-                            </td>
-                          </tr>
-                        `;
-                      }).join('')}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- 3. THỜI GIAN & CHI PHÍ TUYỂN DỤNG -->
-            <div class="card">
-              <div class="card-header flex items-center justify-between">
-                <div>
-                  <h3 class="card-title text-sm font-bold flex items-center gap-2">
-                    <i data-lucide="timer" class="icon-sm text-primary"></i> 3. Thời gian & Chi phí tuyển dụng (Time & Cost to Hire)
-                  </h3>
-                  <p class="text-xs text-muted mt-0.5">Thời gian trung bình từ khi nhận hồ sơ đến khi ứng viên nhận việc và chi phí phân bổ theo vị trí</p>
-                </div>
-                <span class="badge badge-secondary text-xs">Ước tính demo</span>
               </div>
               <div class="card-body">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                  <div class="p-3 border rounded bg-gray-50">
-                    <p class="text-xs text-muted">Thời gian tuyển trung bình</p>
-                    <p class="text-2xl font-extrabold text-primary mt-1">
-                      ${hiredCount > 0 && tc.avgTimeToHireDays > 0
-                        ? `${tc.avgTimeToHireDays} <span class="text-sm font-medium">ngày</span>`
-                        : '<span class="text-base font-semibold">Chưa đủ dữ liệu</span>'}
-                    </p>
-                    <p class="text-2xs text-muted mt-1">Tính từ hồ sơ tiếp nhận đến khi chuyển trạng thái Đã tuyển</p>
-                  </div>
-                  <div class="p-3 border rounded bg-gray-50">
-                    <p class="text-xs text-muted">Tổng chi phí tuyển dụng</p>
-                    <p class="text-2xl font-extrabold text-primary mt-1">${Helpers.formatCurrency(tc.totalRecruitmentCost || 0)}</p>
-                    <p class="text-2xs text-muted mt-1">Ngân sách ước tính cho kỳ báo cáo</p>
-                  </div>
-                  <div class="p-3 border rounded bg-gray-50">
-                    <p class="text-xs text-muted">Chi phí / ứng viên nhận việc</p>
-                    <p class="text-2xl font-extrabold text-primary mt-1">${hiredCount > 0 ? Helpers.formatCurrency(tc.avgCostPerHire || 0) : 'Chưa có dữ liệu'}</p>
-                    <p class="text-2xs text-muted mt-1">${hiredCount > 0 ? `Trên ${hiredCount} ứng viên đã tuyển` : 'Cần thêm ứng viên đã tuyển để tính'}</p>
-                  </div>
+                <div class="ledger">
+                  ${funnel.map((f, i) => {
+                    const totalInput = funnel[0]?.count || 1;
+                    const width = f.count > 0 ? Math.max(3, Math.round((f.count / totalInput) * 100)) : 0;
+                    const isLast = i === funnel.length - 1;
+                    const tone = [1, 0.82, 0.66, 0.52, 0.4][i] ?? 0.4;
+                    return `
+                      <div class="ledger-row${isLast ? ' is-final' : ''}">
+                        <div class="ledger-label">
+                          ${f.stage}
+                          <span class="ledger-note">${i === 0 ? 'Đầu vào của phễu' : (f.count === 0 ? 'Chưa có ứng viên ở vòng này' : `${f.rate} so với vòng trước`)}</span>
+                        </div>
+                        <div class="ledger-bar"><span style="width:${width}%; opacity:${tone}"></span></div>
+                        <div class="ledger-value">${f.count}</div>
+                        <div class="ledger-meta">${i === 0 ? '—' : (f.dropRate === '0%' ? 'không rơi' : `−${f.dropRate} rơi`)}</div>
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
-
-                <div class="table-responsive">
-                  <table class="data-table data-table-compact">
-                    <thead>
-                      <tr>
-                        <th>Vị trí tuyển dụng</th>
-                        <th class="col-compact">Phòng ban</th>
-                        <th class="text-center">Thời gian xử lý TB (ngày)</th>
-                        <th class="text-right">Chi phí ước tính</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${(tc.positionsTime || []).length === 0 ? `
-                        <tr><td colspan="4" class="text-center text-muted py-4">Chưa có vị trí phù hợp với bộ lọc.</td></tr>
-                      ` : (tc.positionsTime || []).map(p => `
-                        <tr>
-                          <td><strong class="text-gray-900">${p.position}</strong></td>
-                          <td class="col-compact text-sm text-muted">${p.department || '—'}</td>
-                          <td class="text-center font-semibold">${p.avgDays > 0 ? p.avgDays : '—'}</td>
-                          <td class="text-right font-mono text-sm">${Helpers.formatCurrency(p.cost || 0)}</td>
-                        </tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
-                </div>
-                <p class="text-2xs text-muted mt-3">
-                  <i data-lucide="info" class="icon-xs"></i>
-                  Chi phí là số liệu mô phỏng phục vụ trình diễn; khi kết nối ngân sách thực tế, hệ thống sẽ lấy từ phân bổ chi phí tuyển dụng của từng yêu cầu.
-                </p>
+              </div>
+              <div class="card-footer">
+                <span>${funnel.length} vòng · tính trên ${totalApps} hồ sơ đầu vào</span>
+                <span>Rơi rụng = số mất đi so với vòng liền trước</span>
               </div>
             </div>
 
-            <!-- 4. HIỆU QUẢ NGUỒN TUYỂN DỤNG -->
+            <!-- Hiệu quả nguồn tuyển dụng -->
             <div class="card">
-              <div class="card-header flex items-center justify-between">
+              <div class="card-header">
                 <div>
-                  <h3 class="card-title text-sm font-bold flex items-center gap-2">
-                    <i data-lucide="share-2" class="icon-sm text-primary"></i> 4. Hiệu quả nguồn tuyển dụng (Sourcing Efficiency)
-                  </h3>
-                  <p class="text-xs text-muted mt-0.5">So sánh số lượng, tỷ lệ đạt sàng lọc, phỏng vấn và tuyển thành công theo từng nguồn</p>
+                  <h3 class="card-title">Nguồn tuyển dụng</h3>
+                  <p class="card-subtitle">Tỷ lệ hồ sơ theo nguồn và số ứng viên nhận việc</p>
                 </div>
-                ${bestSource ? `<span class="badge badge-success text-xs">Nguồn hiệu quả nhất: ${bestSource.sourceName}</span>` : ''}
+                ${bestSource ? `<span class="card-note">Dẫn đầu: ${bestSource.sourceName}</span>` : ''}
+              </div>
+              <div class="card-body">
+                ${sourcing.every(s => !s.totalApps) ? `
+                  <p class="ledger-empty">Chưa có hồ sơ nào trong kỳ để so sánh nguồn.</p>
+                ` : `
+                  <div class="ledger">
+                    ${sourcing.map(s => {
+                      const width = totalApps > 0 ? Math.round((s.totalApps / totalApps) * 100) : 0;
+                      return `
+                        <div class="ledger-row">
+                          <div class="ledger-label">
+                            ${s.sourceName}
+                            <span class="ledger-note">${s.totalApps} hồ sơ · ${s.passed} đạt · ${s.interviewed} phỏng vấn</span>
+                          </div>
+                          <div class="ledger-bar"><span style="width:${width}%;${s.totalApps === 0 ? ' opacity:0;' : ''}"></span></div>
+                          <div class="ledger-value">${s.hired}</div>
+                          <div class="ledger-meta">${s.conversionRate || '0%'} chuyển đổi</div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                `}
+              </div>
+              <div class="card-footer">
+                <span>Cột số: ứng viên nhận việc</span>
+                <span>Tỷ lệ tính trên hồ sơ từng nguồn</span>
+              </div>
+            </div>
+
+            <!-- Tuổi tin đăng -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Tuổi tin đăng</h3>
+                  <p class="card-subtitle">Tin quá 25 ngày được nhắc sắp hết hạn, quá 30 ngày bị đánh dấu tồn đọng</p>
+                </div>
+                <span class="card-note">${postings.length} tin trong kỳ</span>
               </div>
               <div class="card-body card-body-no-padding">
                 <div class="table-responsive">
                   <table class="data-table data-table-compact">
                     <thead>
                       <tr>
-                        <th>Nguồn tuyển dụng</th>
-                        <th class="text-center">Hồ sơ</th>
-                        <th class="col-optional text-center">Đạt sàng lọc</th>
-                        <th class="col-compact text-center">Phỏng vấn</th>
-                        <th class="text-center">Nhận việc</th>
-                        <th class="text-center">Tỷ lệ chuyển đổi</th>
-                        <th class="text-right">Chi phí</th>
-                        <th class="col-optional text-right">Chi phí / tuyển</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${sourcing.map(s => `
-                        <tr>
-                          <td>
-                            <strong class="text-gray-900">${s.sourceName}</strong>
-                            ${s.totalApps === 0 ? '<div class="text-2xs text-muted">Chưa có hồ sơ trong kỳ</div>' : ''}
-                          </td>
-                          <td class="text-center font-semibold">${s.totalApps}</td>
-                          <td class="col-optional text-center">
-                            <span class="badge badge-info text-xs">${s.passRate || '0%'}</span>
-                          </td>
-                          <td class="col-compact text-center">${s.interviewed}</td>
-                          <td class="text-center font-bold text-success">${s.hired}</td>
-                          <td class="text-center">
-                            <span class="badge ${s.hired > 0 ? 'badge-success' : 'badge-secondary'} text-xs">${s.conversionRate || '0%'}</span>
-                          </td>
-                          <td class="text-right font-mono text-sm">${s.cost}</td>
-                          <td class="col-optional text-right font-mono text-sm">${s.costPerHire ? Helpers.formatCurrency(s.costPerHire) : '—'}</td>
-                        </tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- 5. THỜI GIAN ĐĂNG TIN & CẢNH BÁO TIN TỒN ĐỌNG -->
-            <div class="card">
-              <div class="card-header flex items-center justify-between">
-                <div>
-                  <h3 class="card-title text-sm font-bold flex items-center gap-2">
-                    <i data-lucide="calendar-clock" class="icon-sm text-primary"></i> 5. Thời gian đăng tin & Cảnh báo tin tồn đọng
-                  </h3>
-                  <p class="text-xs text-muted mt-0.5">Tin đăng trên 25 ngày được cảnh báo sắp hết hạn, trên 30 ngày được đánh dấu tồn đọng cần xử lý</p>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="badge badge-warning text-xs">Sắp hết hạn: 25–30 ngày</span>
-                  <span class="badge badge-danger text-xs">Tồn đọng: &gt; 30 ngày</span>
-                </div>
-              </div>
-              <div class="card-body card-body-no-padding">
-                <div class="table-responsive">
-                  <table class="data-table data-table-compact">
-                    <thead>
-                      <tr>
-                        <th class="text-center">Tin tuyển dụng</th>
-                        <th class="col-compact">Phòng ban</th>
-                        <th class="col-compact text-center">Ngày đăng</th>
-                        <th class="text-center">Số ngày đăng</th>
-                        <th class="text-center">Hồ sơ</th>
-                        <th class="text-center">Trạng thái</th>
-                        <th class="text-center">Cảnh báo</th>
+                        <th>Tin tuyển dụng</th>
+                        <th>Ngày đăng</th>
+                        <th class="text-right">Số ngày</th>
+                        <th class="text-right">Hồ sơ</th>
+                        <th class="text-right">Cảnh báo</th>
                       </tr>
                     </thead>
                     <tbody>
                       ${postings.length === 0 ? `
-                        <tr><td colspan="7" class="text-center text-muted py-4">Chưa có tin tuyển dụng phù hợp với bộ lọc.</td></tr>
+                        <tr><td colspan="5" class="table-empty">Chưa có tin tuyển dụng phù hợp với bộ lọc.</td></tr>
                       ` : postings.map(p => `
                         <tr>
-                          <td class="cell-wrap report-title-cell text-center">
-                            <strong class="text-gray-900">${p.title}</strong>
-                            <div class="text-2xs text-muted font-mono">${p.code || ''}</div>
+                          <td>
+                            <span class="table-name">${Helpers.truncate(p.title, 34)}</span>
+                            <span class="table-sub">${p.code || '—'} · ${p.department || '—'} · ${p.status === 'published' ? 'Đang đăng' : (p.status === 'draft' ? 'Nháp' : 'Đã đóng')}</span>
                           </td>
-                          <td class="col-compact text-sm text-muted">${p.department || '—'}</td>
-                          <td class="col-compact text-center text-sm">${Helpers.formatDate(p.publishedAt)}</td>
-                          <td class="text-center font-semibold">${p.daysActive}</td>
-                          <td class="text-center">${p.applicantsCount}</td>
-                          <td class="text-center">
-                            <span class="badge ${p.status === 'published' ? 'badge-success' : 'badge-secondary'} text-xs">
-                              ${p.status === 'published' ? 'Đang đăng' : (p.status === 'draft' ? 'Nháp' : 'Đã đóng')}
-                            </span>
-                          </td>
-                          <td class="text-center">
+                          <td>${Helpers.formatDate(p.publishedAt)}</td>
+                          <td class="text-right${p.isProlonged ? ' is-alert' : ''}">${p.daysActive}</td>
+                          <td class="text-right">${p.applicantsCount}</td>
+                          <td class="text-right">
                             ${p.isProlonged
-                              ? '<span class="badge badge-danger text-xs">Tồn đọng &gt; 30 ngày</span>'
-                              : (p.isExpiringSoon
-                                ? '<span class="badge badge-warning text-xs">Sắp hết hạn</span>'
-                                : '<span class="badge badge-secondary text-xs">Bình thường</span>')}
+                              ? '<span class="mark is-alert">Tồn đọng</span>'
+                              : (p.isExpiringSoon ? '<span class="mark is-warn">Sắp hết hạn</span>' : '<span class="mark">Bình thường</span>')}
                           </td>
                         </tr>
                       `).join('')}
@@ -398,7 +257,6 @@ const ReportsPage = (() => {
       document.getElementById('btn-export-report-csv')?.addEventListener('click', () => {
         const reportData = ATSStore.getRecruitmentReport({ timeRange: _timeFilter, department: _deptFilter });
         const ov = reportData.overview || {};
-        const tc = reportData.timeAndCost || {};
         const funnel = reportData.funnel || [];
         const sourcing = reportData.sourcing || [];
         const postings = reportData.postings || [];
@@ -422,24 +280,14 @@ const ReportsPage = (() => {
         });
 
         rows.push(
-          { group: 'Thời gian & Chi phí', item: 'Thời gian tuyển trung bình', value: (ov.hiredCount || 0) > 0 && tc.avgTimeToHireDays > 0 ? `${tc.avgTimeToHireDays} ngày` : 'Chưa đủ dữ liệu' },
-          { group: 'Thời gian & Chi phí', item: 'Tổng chi phí tuyển dụng', value: Helpers.formatCurrency(tc.totalRecruitmentCost || 0) },
-          { group: 'Thời gian & Chi phí', item: 'Chi phí / ứng viên nhận việc', value: (ov.hiredCount || 0) > 0 ? Helpers.formatCurrency(tc.avgCostPerHire || 0) : 'Chưa có dữ liệu' }
+          { group: 'Tổng quan', item: 'Tỷ lệ tuyển trên tổng hồ sơ', value: (ov.totalApplications || 0) > 0 ? `${Math.round(((ov.hiredCount || 0) / ov.totalApplications) * 100)}%` : '0%' }
         );
-
-        (tc.positionsTime || []).forEach(p => {
-          rows.push({
-            group: 'Thời gian & Chi phí',
-            item: p.position,
-            value: `${p.department || '—'} · ${p.avgDays || 0} ngày · ${Helpers.formatCurrency(p.cost || 0)}`
-          });
-        });
 
         sourcing.forEach(s => {
           rows.push({
             group: 'Hiệu quả nguồn',
             item: s.sourceName,
-            value: `${s.totalApps} hồ sơ · ${s.passed} đạt sàng lọc · ${s.interviewed} phỏng vấn · ${s.hired} nhận việc · ${s.conversionRate} chuyển đổi · ${s.cost}`
+            value: `${s.totalApps} hồ sơ · ${s.passed} đạt sàng lọc · ${s.interviewed} phỏng vấn · ${s.hired} nhận việc · ${s.conversionRate} chuyển đổi`
           });
         });
 

@@ -106,17 +106,16 @@ const RequisitionsPage = (() => {
         return `
           <tr>
             <td>
-              <a href="javascript:void(0)" class="table-name btn-view-req" data-id="${r.id}" title="${r.title}">${Helpers.truncate(r.title, 34)}</a>
-              <span class="table-sub">${r.code} · ${r.department}</span>
+              <a href="javascript:void(0)" class="table-name btn-view-req" data-id="${r.id}" title="${r.title}">${Helpers.truncate(r.title, 32)}</a>
+              <span class="table-sub">${r.code} · ${r.department} · ${r.quantity} người</span>
             </td>
-            <td class="col-compact"><span class="table-sub">${r.quantity} người</span></td>
-            <td class="col-compact"><span class="table-sub">${r.salary || 'Thỏa thuận'}</span></td>
+            <td class="col-optional"><span class="table-sub" title="${r.salary || 'Thỏa thuận'}">${Helpers.compactSalary(r.salary)}</span></td>
             <td><span class="table-sub">${Helpers.formatDate(r.deadline)}</span></td>
             <td>${Helpers.statusBadge(r.status)}</td>
             <td class="text-right">
               <div class="table-actions">
-                <button class="btn btn-xs btn-outline btn-view-req" data-id="${r.id}" title="Xem chi tiết">
-                  <i data-lucide="eye" class="icon-xs"></i> Xem
+                <button class="btn btn-xs btn-icon btn-outline btn-view-req" data-id="${r.id}" title="Xem chi tiết" aria-label="Xem chi tiết">
+                  <i data-lucide="eye" class="icon-xs"></i>
                 </button>
 
                 ${canApprove ? `
@@ -151,8 +150,7 @@ const RequisitionsPage = (() => {
             <thead>
               <tr>
                 <th>Yêu cầu · phòng ban</th>
-                <th class="col-compact">Số lượng</th>
-                <th class="col-compact">Mức lương</th>
+                <th class="col-optional">Mức lương</th>
                 <th>Hạn nộp</th>
                 <th>Trạng thái</th>
                 <th class="text-right">Thao tác</th>

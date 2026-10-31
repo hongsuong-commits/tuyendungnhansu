@@ -207,6 +207,35 @@ const Helpers = (() => {
       return Math.round(Number(value)) + '%';
     },
 
+    /**
+     * Rút gọn khoảng lương để vừa một cột bảng:
+     * "20.000.000 - 30.000.000 VNĐ" -> "20–30 tr", "15 - 25 triệu VNĐ + Hoa hồng" -> "15–25 tr + HH"
+     */
+    compactSalary(raw) {
+      if (!raw) return 'Thỏa thuận';
+      const text = String(raw);
+      if (/thỏa thuận/i.test(text)) return 'Thỏa thuận';
+
+      const toMillions = (token) => {
+        const value = Number(String(token).replace(/[^\d]/g, ''));
+        if (!Number.isFinite(value) || value === 0) return null;
+        if (value >= 1000000) return Math.round(value / 100000) / 10;
+        if (value >= 1000) return Math.round(value / 1000);
+        return value;
+      };
+
+      const values = (text.match(/\d[\d.,]*/g) || [])
+        .map(toMillions)
+        .filter((v) => v !== null);
+
+      if (!values.length) return text;
+
+      const bonus = /hoa hồng|hh/i.test(text) ? ' + HH' : '';
+      const fmt = (v) => String(v).replace('.', ',');
+      if (values.length === 1) return `${fmt(values[0])} tr${bonus}`;
+      return `${fmt(values[0])}–${fmt(values[1])} tr${bonus}`;
+    },
+
     // ═══════════════════════════════════════════════════════════════════
     // Validation
     // ═══════════════════════════════════════════════════════════════════

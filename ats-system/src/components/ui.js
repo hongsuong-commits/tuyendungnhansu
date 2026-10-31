@@ -261,6 +261,10 @@ const UI = (() => {
       modal.classList.add('active');
       document.body.classList.add('modal-open');
 
+      // Always open a dialog at its top, even if it was scrolled last time.
+      modal.scrollTop = 0;
+      modal.querySelectorAll('.modal__body, .modal-body').forEach(body => { body.scrollTop = 0; });
+
       // Click on backdrop outside modal content closes the modal
       if (!modal._backdropClickAttached) {
         modal._backdropClickAttached = true;
@@ -343,15 +347,15 @@ const UI = (() => {
       const html = `
         <div class="modal modal--sm" id="${confirmId}">
           <div class="modal__dialog modal-dialog modal-sm">
-            <div class="modal-content confirm-dialog-content" style="background: #ffffff !important; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #e2e8f0;">
+            <div class="modal-content confirm-dialog-content" style="background: #ffffff !important; border-radius: 10px; overflow: hidden; box-shadow: 0 18px 44px -16px rgba(11, 31, 58, 0.32); border: 1px solid #d7e4f1;">
               <div class="modal__body confirm-body p-6 text-center" style="background: #ffffff !important; padding: 28px 24px; text-align: center;">
                 <div class="confirm-icon confirm-icon--${esc(type)}" style="margin: 0 auto 16px;">
                   <i data-lucide="${iconMap[type] || 'alert-triangle'}"></i>
                 </div>
-                <h3 class="confirm-title" style="color: #0f172a !important; font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;">${esc(title)}</h3>
-                <p class="confirm-message" style="color: #475569 !important; font-size: 0.92rem; line-height: 1.6; margin: 0;">${esc(message)}</p>
+                <h3 class="confirm-title" style="color: #163a5f !important; font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;">${esc(title)}</h3>
+                <p class="confirm-message" style="color: #54687c !important; font-size: 0.92rem; line-height: 1.6; margin: 0;">${esc(message)}</p>
               </div>
-              <div class="modal__footer confirm-footer" style="background: #f8fafc !important; padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px;">
+              <div class="modal__footer confirm-footer" style="background: #f3f7fb !important; padding: 16px 24px; border-top: 1px solid #d7e4f1; display: flex; justify-content: flex-end; gap: 12px;">
                 <button class="btn btn-secondary" id="confirm-cancel-btn">${esc(cancelText)}</button>
                 <button class="btn btn-${type === 'danger' ? 'danger' : 'primary'}" id="confirm-ok-btn">${esc(confirmText)}</button>
               </div>
@@ -855,15 +859,8 @@ const UI = (() => {
       }
       initials = initials.toUpperCase();
 
-      // Generate a consistent color from name
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const colors = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#dc2626', '#7c3aed', '#db2777', '#2563eb'];
-      const bgColor = colors[Math.abs(hash) % colors.length];
-
-      return `<div class="avatar avatar--${esc(size)}" style="background-color:${bgColor}">
+      // Neutral avatar: one ink-on-grey treatment, no per-name rainbow
+      return `<div class="avatar avatar--${esc(size)}" style="background-color:var(--raised);color:var(--text)">
         <span class="avatar__initials">${esc(initials)}</span>
       </div>`;
     },

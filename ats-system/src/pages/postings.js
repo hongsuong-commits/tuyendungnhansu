@@ -108,6 +108,7 @@ const PostingsPage = (() => {
 
         // Channels Badges
         const ch = p.channels || {};
+        const channelCount = ['website', 'topcv', 'linkedin', 'vietnamworks'].filter(k => ch[k] && ch[k].active).length;
         const channelsHtml = `
           <div class="chip-row">
             ${ch.website?.active ? `<span class="badge badge-secondary text-2xs" title="Website Portal (đăng tin thật): ${ch.website.applicants || 0} hồ sơ">Web</span>` : ''}
@@ -119,14 +120,14 @@ const PostingsPage = (() => {
 
         return `
           <tr>
-            <td class="text-center">
-              <a href="javascript:void(0)" class="table-name btn-preview-post" data-id="${p.id}" title="${p.title}">${Helpers.truncate(p.title, 34)}</a>
-              <span class="table-sub">${p.code} · ${p.department} · ${p.salary || 'Thỏa thuận'}</span>
+            <td>
+              <a href="javascript:void(0)" class="table-name btn-preview-post" data-id="${p.id}" title="${p.title}">${Helpers.truncate(p.title, 32)}</a>
+              <span class="table-sub">${p.code} · ${p.department} · ${Helpers.compactSalary(p.salary)}</span>
             </td>
-            <td>${channelsHtml}</td>
+            <td class="col-optional">${channelsHtml}</td>
             <td>
               <span class="badge badge-secondary">${p.applicantsCount || 0} hồ sơ</span>
-              <span class="table-sub">${p.views || 0} lượt xem</span>
+              <span class="table-sub">${channelCount} kênh đang đăng</span>
             </td>
             <td><span class="table-sub">${Helpers.formatDate(p.deadline)}</span></td>
             <td>${Helpers.statusBadge(p.status)}</td>
@@ -157,8 +158,8 @@ const PostingsPage = (() => {
           <table class="data-table data-table-compact table-sticky-actions">
             <thead>
               <tr>
-                <th class="text-center">Tin tuyển dụng</th>
-                <th class="col-compact">Kênh đăng</th>
+                <th>Tin tuyển dụng</th>
+                <th class="col-optional">Kênh đăng</th>
                 <th>Ứng viên</th>
                 <th class="col-compact">Hạn nộp</th>
                 <th>Trạng thái</th>

@@ -128,10 +128,10 @@ const DashboardPage = {
       const count = Number(stageMap[s.key]) || 0;
       if (!count) return '';
       const tone = [1, 0.82, 0.66, 0.52, 0.4, 0.28][i];
-      return `<span style="width:${Math.max(share(count), 3)}%;background:rgba(29,95,191,${tone})" title="${s.label}: ${count} hồ sơ"></span>`;
+      return `<span style="width:${Math.max(share(count), 3)}%;background:rgba(29,93,145,${tone})" title="${s.label}: ${count} hồ sơ"></span>`;
     }).join('');
     const rejectedSegment = rejected
-      ? `<span style="width:${Math.max(share(rejected), 3)}%;background:repeating-linear-gradient(135deg,#e3e6ea 0 4px,#d3d7dd 4px 8px)" title="Dừng tuyển dụng: ${rejected} hồ sơ"></span>`
+      ? `<span style="width:${Math.max(share(rejected), 3)}%;background:#bdd2e6" title="Dừng tuyển dụng: ${rejected} hồ sơ"></span>`
       : '';
 
     return `

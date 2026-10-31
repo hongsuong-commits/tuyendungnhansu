@@ -75,7 +75,7 @@ const ScreeningPage = (() => {
                     <div>
                       <span class="text-muted">Kỹ năng bắt buộc:</span>
                       <div class="flex flex-wrap gap-1 mt-0.5">
-                        ${(activeReq.skills || []).map(s => `<span class="badge badge-primary text-xs">${s}</span>`).join('')}
+                        ${(activeReq.skills || []).map(s => `<span class="badge badge-secondary text-xs">${s}</span>`).join('')}
                       </div>
                     </div>
                   </div>
@@ -245,18 +245,17 @@ const ScreeningPage = (() => {
             <td class="col-optional"><span class="badge badge-secondary text-2xs">${app.source || 'Website'}</span></td>
             <td>
               <span class="badge ${scoreBadge}">${score}%</span>
-              <span class="table-sub">${Helpers.getScreeningLabel(app.screeningResult)}</span>
+              <span class="table-sub">${Helpers.getScreeningLabel(app.screeningResult)} · ${metCount}/${metCount + unmetCount} tiêu chí</span>
             </td>
-            <td>
-              <span class="table-sub"><span class="text-positive">${metCount} đạt</span>${unmetCount > 0 ? ` · <span class="text-negative">${unmetCount} thiếu</span>` : ''}</span>
-              <span class="table-sub">${Helpers.truncate(scr.summary || '—', 40)}</span>
+            <td class="col-optional">
+              <span class="table-sub">${Helpers.truncate(scr.summary || '—', 46)}</span>
             </td>
             <td>${Helpers.statusBadge(app.status)}</td>
-            <td class="col-compact"><span class="table-sub">${Helpers.formatDate(scr.processedAt || app.appliedDate)}</span></td>
+            <td class="col-optional"><span class="table-sub">${Helpers.formatDate(scr.processedAt || app.appliedDate)}</span></td>
             <td class="text-right">
               <div class="table-actions">
-                <button class="btn btn-xs btn-outline btn-view-scr-detail" data-id="${app.id}" title="Xem chi tiết phân tích">
-                  <i data-lucide="file-search" class="icon-xs"></i> Xem
+                <button class="btn btn-xs btn-icon btn-outline btn-view-scr-detail" data-id="${app.id}" title="Xem chi tiết phân tích" aria-label="Xem chi tiết phân tích">
+                  <i data-lucide="file-search" class="icon-xs"></i>
                 </button>
                 <button class="btn btn-xs btn-icon btn-outline btn-mark-manual" data-id="${app.id}" title="Đánh dấu cần kiểm tra thủ công" aria-label="Đánh dấu cần kiểm tra">
                   <i data-lucide="flag" class="icon-xs"></i>
@@ -275,9 +274,9 @@ const ScreeningPage = (() => {
                 <th>Ứng viên</th>
                 <th class="col-optional">Nguồn</th>
                 <th>Điểm · phân loại</th>
-                <th>Tiêu chí đối chiếu</th>
+                <th class="col-optional">Kết luận sàng lọc</th>
                 <th>Trạng thái</th>
-                <th class="col-compact">Xử lý lúc</th>
+                <th class="col-optional">Xử lý lúc</th>
                 <th class="text-right">Thao tác</th>
               </tr>
             </thead>
@@ -762,19 +761,20 @@ CHỨNG CHỈ:
         });
 
         // File upload input change
-        document.getElementById('live-scan-file-input')?.addEventListener('change', (e) => {
+        document.getElementById('live-scan-file-input')?.addEventListener('change', async (e) => {
           const file = e.target.files && e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const content = ev.target.result || '';
+          try {
+            const content = await CVFile.extractText(file);
             const textarea = document.getElementById('live-scan-text');
             if (textarea) {
               textarea.value = content;
               runAnalysis(true);
             }
-          };
-          reader.readAsText(file);
+          } catch (err) {
+            UI.toast({ message: err && err.message ? err.message : 'Không đọc được tệp CV.', type: 'warning' });
+          }
+          e.target.value = '';
         });
 
         // Automatic real-time analysis on typing or pasting

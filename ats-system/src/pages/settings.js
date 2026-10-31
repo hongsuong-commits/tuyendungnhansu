@@ -159,6 +159,10 @@ const SettingsPage = (() => {
                     <label class="form-label">Trụ sở chính</label>
                     <input type="text" id="settings-company-address" class="form-input text-xs" value="${settings.companyAddress || 'Tòa nhà Landmark, Cầu Giấy, Hà Nội'}">
                   </div>
+                  <div class="form-group">
+                    <label class="form-label">Hotline</label>
+                    <input type="text" id="settings-company-hotline" class="form-input text-xs" value="${settings.hotline || '1900 xxxx'}" placeholder="1900 xxxx">
+                  </div>
                   <button type="button" class="btn btn-xs btn-outline w-full" id="btn-save-company-info">
                     <i data-lucide="save" class="icon-xs"></i> Lưu thông tin
                   </button>
@@ -230,6 +234,7 @@ const SettingsPage = (() => {
         const companyName = (document.getElementById('settings-company-name')?.value || '').trim();
         const companyEmail = (document.getElementById('settings-company-email')?.value || '').trim();
         const companyAddress = (document.getElementById('settings-company-address')?.value || '').trim();
+        const hotline = (document.getElementById('settings-company-hotline')?.value || '').trim();
 
         if (!companyName || !companyEmail) {
           UI.toast({ message: 'Vui lòng nhập tên công ty và email HR.', type: 'warning' });
@@ -240,7 +245,7 @@ const SettingsPage = (() => {
           return;
         }
 
-        ATSStore.updateSettings({ companyName, companyEmail, companyAddress });
+        ATSStore.updateSettings({ companyName, companyEmail, companyAddress, hotline: hotline || '1900 xxxx' });
         UI.toast({ message: 'Đã lưu thông tin doanh nghiệp!', type: 'success' });
       });
 

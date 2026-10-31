@@ -20,7 +20,6 @@ const LoginPage = (() => {
             </a>
 
             <div class="login-aside-body">
-              <p class="login-kicker">Hệ thống quản lý tuyển dụng · SmartATS Solutions</p>
               <p class="login-aside-title">Mỗi hồ sơ đi đúng một lối.</p>
               <p class="login-aside-text">Từ yêu cầu tuyển dụng, tin tuyển, sàng lọc CV đến lịch phỏng vấn và quyết định nhận việc — một dòng chảy duy nhất cho nhân sự, trưởng phòng và ban giám đốc.</p>
             </div>

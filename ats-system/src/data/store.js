@@ -1035,13 +1035,14 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     companyName: 'SmartATS Solutions Việt Nam',
     companyEmail: 'hr@smartats.vn',
     companyAddress: 'Tòa nhà Landmark, Cầu Giấy, Hà Nội',
+    hotline: '1900 xxxx',
     integrations: {
       websitePortal: { active: true, name: 'Cổng tuyển dụng Doanh nghiệp' },
       topcv: { active: true, name: 'TopCV Open API (Mô phỏng)' },
       linkedin: { active: true, name: 'LinkedIn Jobs Integration (Mô phỏng)' },
       vietnamworks: { active: false, name: 'VietnamWorks API' },
       googleMeet: { active: true, name: 'Google Meet Auto Link' },
-      smtpEmail: { active: false, name: 'Hệ thống gửi Email tự động' }
+      smtpEmail: { active: true, name: 'Hệ thống gửi Email tự động' }
     }
   };
 
@@ -1062,6 +1063,17 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     } catch (e) {
       console.error('[ATSStore] Error loading storage:', e);
       resetToDefault();
+    }
+
+    // ── schema top-up for stores saved before the e-mail outbox existed ──
+    if (_data) {
+      if (!Array.isArray(_data.emailLog)) _data.emailLog = [];
+      if (!Array.isArray(_data.interviews)) _data.interviews = [];
+      if (!Array.isArray(_data.evaluations)) _data.evaluations = [];
+      if (_data.settings && !_data.settings.hotline) _data.settings.hotline = '1900 xxxx';
+      if (_data.settings && _data.settings.integrations && _data.settings.integrations.smtpEmail) {
+        _data.settings.integrations.smtpEmail.active = true;
+      }
     }
 
     // Load active session user
@@ -1098,6 +1110,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       interviews: JSON.parse(JSON.stringify(INITIAL_INTERVIEWS)),
       evaluations: JSON.parse(JSON.stringify(INITIAL_EVALUATIONS)),
       notifications: JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS)),
+      emailLog: [],
       settings: JSON.parse(JSON.stringify(INITIAL_SETTINGS))
     };
     saveState();
@@ -1126,34 +1139,63 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         };
       }
 
-      const cleanText = text.trim();
+      // Normalise Unicode (PDF/DOCX exports often use decomposed Vietnamese),
+      // strip control characters and NBSP before any heuristic runs.
+      const cleanText = (text.normalize ? text.normalize('NFC') : text)
+        .replace(/\r\n?/g, '\n')
+        .replace(/\u00a0/g, ' ')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ' ')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      const cleanupValue = (value) => String(value || '')
+        .replace(/^[\s\-•*|]+/, '')
+        .split(/\s{2,}|\s*[|•]\s*|\s+[-–—]\s+|\t/)[0]
+        .replace(/[.,;:]+$/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const isLikelyName = (value) => {
+        if (!value || value.length < 3 || value.length > 60) return false;
+        if (/@|\d|https?:|www\./i.test(value)) return false;
+        if (/(email|phone|address|developer|engineer|manager|sales|intern|resume|curriculum|kinh nghiệm|học vấn|kỹ năng|chứng chỉ|liên hệ|thông tin)/i.test(value)) return false;
+        const words = value.split(/\s+/);
+        if (words.length < 2 || words.length > 6) return false;
+        return words.every(word => /^[A-ZÀ-Ỹ][A-ZÀ-Ỹa-zà-ỹ'’.]*$/u.test(word));
+      };
 
       // Extract Email
       const emailMatch = cleanText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-      const email = emailMatch ? emailMatch[0] : '';
+      const email = emailMatch ? emailMatch[0].replace(/[.,;]+$/, '') : '';
 
-      // Extract Phone
-      const phoneMatch = cleanText.match(/(?:\+?84|0)[35789]\d{8}/);
-      const phone = phoneMatch ? phoneMatch[0] : '';
+      // Extract Phone (accepts +84, spaces, dots and dashes)
+      let phone = '';
+      const phoneCandidates = cleanText.match(/(?:\+?84[\s.-]?|0)(?:\d[\s.-]?){9}\b/g) || [];
+      for (const raw of phoneCandidates) {
+        const digits = raw.replace(/\D/g, '');
+        const local = digits.startsWith('84') ? `0${digits.slice(2)}` : digits;
+        if (/^0[35789]\d{8}$/.test(local)) { phone = local; break; }
+      }
 
-      // Extract Name (heuristic: first non-empty line or text following 'HỌ VÀ TÊN' / 'Name')
+      // Extract Name — labelled field first, then the first plausible person-name line
       let name = '';
-      const nameRegex = /(?:HỌ VÀ TÊN|HỌ TÊN|Full Name|Name)\s*[:\-]\s*([^\n\r]+)/i;
-      const nameMatch = cleanText.match(nameRegex);
-      if (nameMatch && nameMatch[1]) {
-        name = nameMatch[1].trim();
-      } else {
-        const lines = cleanText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        if (lines.length > 0 && lines[0].length < 40 && !lines[0].includes('@') && !lines[0].includes('http')) {
-          name = lines[0].replace(/^(CV|Curriculum Vitae|Hồ sơ xin việc)[:\s-]*/i, '').trim();
+      const nameLabel = cleanText.match(/(?:HỌ\s*(?:VÀ\s*)?TÊN|HỌ\s*TÊN|FULL\s*NAME|NAME|ỨNG\s*VIÊN)\s*[:：\-]\s*([^\n]{2,80})/i);
+      if (nameLabel) name = cleanupValue(nameLabel[1]);
+      if (!name) {
+        const lines = cleanText.split('\n').map(line => line.trim()).filter(Boolean).slice(0, 14);
+        for (const line of lines) {
+          const candidate = cleanupValue(line);
+          if (isLikelyName(candidate)) { name = candidate; break; }
         }
       }
 
       // Extract Experience Years
       let experienceYears = 1;
-      const expMatch = cleanText.match(/(\d+(?:\.\d+)?)\s*(?:năm|year)/i);
+      const expMatch = cleanText.match(/(\d+(?:[.,]\d+)?)\s*\+?\s*(?:năm|years?)\b/i);
       if (expMatch && expMatch[1]) {
-        experienceYears = parseFloat(expMatch[1]);
+        experienceYears = parseFloat(String(expMatch[1]).replace(',', '.'));
       } else {
         // Count year spans like 2021 - 2024
         const yearSpans = [...cleanText.matchAll(/(20\d\d)\s*[-–]\s*(20\d\d|nay|hiện tại|present)/gi)];
@@ -1169,15 +1211,18 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         }
       }
 
-      // Extract Education
+      // Extract Education — prefer the labelled field, then a university line
       let education = 'Đại học';
-      if (/bách khoa|đại học|cử nhân|kỹ sư|university|bachelor/i.test(cleanText)) {
-        const eduLine = cleanText.split('\n').find(l => /đại học|university|cử nhân|học viện/i.test(l));
-        education = eduLine ? eduLine.trim().substring(0, 80) : 'Đại học';
-      } else if (/cao đẳng|college/i.test(cleanText)) {
-        education = 'Cao đẳng';
+      const eduLabel = cleanText.match(/(?:HỌC\s*VẤN|TRÌNH\s*ĐỘ|EDUCATION)\s*[:：]?\s*\n?\s*([^\n]{2,120})/i);
+      if (eduLabel && eduLabel[1]) {
+        education = cleanupValue(eduLabel[1]).substring(0, 90) || 'Đại học';
       } else if (/thạc sĩ|master/i.test(cleanText)) {
         education = 'Thạc sĩ';
+      } else if (/cao đẳng|college/i.test(cleanText)) {
+        education = 'Cao đẳng';
+      } else if (/bách khoa|đại học|cử nhân|kỹ sư|university|bachelor/i.test(cleanText)) {
+        const eduLine = cleanText.split('\n').map(l => l.trim()).find(l => /đại học|university|cử nhân|học viện/i.test(l));
+        education = eduLine ? eduLine.substring(0, 80) : 'Đại học';
       }
 
       // Known Skills Dictionary
@@ -1493,6 +1538,176 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       };
     }
   };
+
+  // ─────────────────────────────────────────────────────────────
+  // Candidate e-mail automation (outbox)
+  // Hiring events write a ready-to-send message here by themselves —
+  // HR never has to compose or send anything by hand.
+  // ─────────────────────────────────────────────────────────────
+  const EMAIL_TYPE_META = {
+    interview_invite: { label: 'Mời phỏng vấn', icon: 'calendar-plus', tone: 'info' },
+    interview_reschedule: { label: 'Đổi lịch phỏng vấn', icon: 'calendar-clock', tone: 'warning' },
+    interview_cancel: { label: 'Hủy lịch phỏng vấn', icon: 'calendar-x', tone: 'danger' },
+    evaluation_result: { label: 'Kết quả đánh giá', icon: 'clipboard-check', tone: 'info' },
+    decision: { label: 'Quyết định tuyển dụng', icon: 'award', tone: 'success' }
+  };
+
+  const INTERVIEW_TYPE_LABEL = { online: 'Trực tuyến (Google Meet)', onsite: 'Trực tiếp tại văn phòng' };
+
+  function candidateEmailOf(ctx) {
+    const candidate = ctx.candidate || {};
+    return candidate.email || ctx.email || '';
+  }
+
+  function composeCandidateEmail(type, ctx) {
+    const candidate = ctx.candidate || {};
+    const application = ctx.application || {};
+    const interview = ctx.interview || null;
+    const evaluation = ctx.evaluation || null;
+    const name = candidate.fullName || application.candidateName || 'bạn';
+    const position = (interview && interview.positionTitle) || application.positionTitle || 'vị trí ứng tuyển';
+    const company = (_data.settings && _data.settings.companyName) || 'SmartATS Solutions Việt Nam';
+    const signature = `Phòng Nhân sự ${company}`;
+    const signOff = `Trân trọng,\n${signature}`;
+    const interviewFacts = interview ? [
+      { label: 'Thời gian', value: `${interview.startTime} – ${interview.endTime}, ${Helpers.formatDate(interview.date)}` },
+      { label: 'Vòng', value: interview.round || '' },
+      { label: 'Hình thức', value: INTERVIEW_TYPE_LABEL[interview.type] || interview.type || '' },
+      { label: 'Địa điểm / Liên kết', value: interview.location || '' },
+      { label: 'Hội đồng', value: (interview.interviewers || []).join(', ') }
+    ] : [];
+
+    switch (type) {
+      case 'interview_invite':
+        return {
+          subject: `[SmartATS] Thư mời phỏng vấn vị trí ${position}${interview && interview.round ? ` (${interview.round})` : ''}`,
+          greeting: `Kính gửi ${name},`,
+          paragraphs: [
+            `Cảm ơn bạn đã quan tâm và ứng tuyển vào vị trí ${position} tại ${company}.`,
+            `Hồ sơ của bạn đã vượt qua vòng sàng lọc. Chúng tôi trân trọng kính mời bạn tham dự buổi phỏng vấn với các thông tin sau:`
+          ],
+          facts: interviewFacts,
+          closing: `Bạn vui lòng phản hồi email này để xác nhận tham dự. Nếu cần điều chỉnh, hãy cho chúng tôi biết trước 24 giờ.\n\n${signOff}`
+        };
+
+      case 'interview_reschedule':
+        return {
+          subject: `[SmartATS] Thay đổi lịch phỏng vấn vị trí ${position}`,
+          greeting: `Kính gửi ${name},`,
+          paragraphs: [
+            `Buổi phỏng vấn cho vị trí ${position} vừa được điều chỉnh. Rất mong bạn thông cảm cho sự thay đổi này.`,
+            `Lịch phỏng vấn mới của bạn như sau:`
+          ],
+          facts: interviewFacts,
+          closing: `Nếu khung giờ mới không phù hợp, bạn vui lòng phản hồi email để chúng tôi sắp xếp lại.\n\n${signOff}`
+        };
+
+      case 'interview_cancel':
+        return {
+          subject: `[SmartATS] Hủy lịch phỏng vấn vị trí ${position}`,
+          greeting: `Kính gửi ${name},`,
+          paragraphs: [
+            `Buổi phỏng vấn vị trí ${position}${interview && interview.date ? ` dự kiến vào ${Helpers.formatDate(interview.date)}` : ''} đã bị hủy.`,
+            ctx.note ? `Lý do: ${ctx.note}` : '',
+            `Bộ phận Tuyển dụng sẽ liên hệ lại với bạn nếu có lịch mới hoặc bước tiếp theo.`
+          ].filter(Boolean),
+          facts: [],
+          closing: signOff
+        };
+
+      case 'evaluation_result': {
+        const score = evaluation && evaluation.overallScore != null ? `${evaluation.overallScore}/100` : '';
+        const verdict = evaluation && evaluation.recommendation === 'reject'
+          ? 'Chưa đạt ở vòng này'
+          : 'Đạt yêu cầu, chuyển sang bước tiếp theo';
+        return {
+          subject: `[SmartATS] Kết quả đánh giá phỏng vấn vị trí ${position}`,
+          greeting: `Kính gửi ${name},`,
+          paragraphs: [
+            `Hội đồng phỏng vấn đã hoàn tất phần đánh giá của bạn cho vị trí ${position}.`,
+            evaluation && evaluation.comment ? `Nhận xét từ hội đồng: “${evaluation.comment}”` : '',
+            `Kết quả này sẽ được chuyển tới bộ phận Tuyển dụng để xem xét bước tiếp theo.`
+          ].filter(Boolean),
+          facts: [
+            { label: 'Vòng đánh giá', value: (evaluation && evaluation.round) || '' },
+            { label: 'Người đánh giá', value: (evaluation && evaluation.evaluatorName) || '' },
+            { label: 'Điểm tổng', value: score },
+            { label: 'Kết luận', value: verdict }
+          ],
+          closing: `Cảm ơn bạn đã dành thời gian cho buổi phỏng vấn.\n\n${signOff}`
+        };
+      }
+
+      case 'decision': {
+        const hired = ctx.status === 'hired';
+        return {
+          subject: hired
+            ? `[SmartATS] Chúc mừng! Bạn đã trúng tuyển vị trí ${position}`
+            : `[SmartATS] Kết quả ứng tuyển vị trí ${position}`,
+          greeting: `Kính gửi ${name},`,
+          paragraphs: hired
+            ? [
+                `Chúc mừng bạn! Sau khi hoàn tất quy trình tuyển dụng, chúng tôi vui mừng thông báo bạn đã trúng tuyển vị trí ${position} tại ${company}.`,
+                ctx.note ? `Ghi chú từ bộ phận Tuyển dụng: ${ctx.note}` : '',
+                `Bộ phận Nhân sự sẽ liên hệ để trao đổi về thư mời làm việc và ngày bắt đầu trong thời gian sớm nhất.`
+              ].filter(Boolean)
+            : [
+                `Cảm ơn bạn đã ứng tuyển và dành thời gian tham gia quy trình tuyển dụng cho vị trí ${position} tại ${company}.`,
+                `Sau khi cân nhắc kỹ lưỡng, chúng tôi rất tiếc phải thông báo hồ sơ của bạn chưa phù hợp với vị trí này ở thời điểm hiện tại.`,
+                ctx.note ? `Ghi chú từ bộ phận Tuyển dụng: ${ctx.note}` : '',
+                `Hồ sơ của bạn sẽ được lưu lại và chúng tôi sẽ liên hệ khi có vị trí phù hợp hơn.`
+              ].filter(Boolean),
+          facts: [{ label: 'Vị trí', value: position }, { label: 'Kết quả', value: hired ? 'Trúng tuyển' : 'Không đạt' }],
+          closing: signOff
+        };
+      }
+
+      default:
+        return null;
+    }
+  }
+
+  function dispatchCandidateEmail(type, ctx = {}) {
+    const candidate = ctx.candidate || {};
+    const to = candidateEmailOf({ ...ctx, candidate });
+    if (!to) return null;
+
+    const message = composeCandidateEmail(type, ctx);
+    if (!message) return null;
+
+    const record = {
+      id: 'mail_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      type,
+      typeLabel: (EMAIL_TYPE_META[type] || {}).label || 'Thông báo',
+      icon: (EMAIL_TYPE_META[type] || {}).icon || 'mail',
+      status: 'sent',
+      to,
+      recipientName: candidate.fullName || (ctx.application && ctx.application.candidateName) || to,
+      from: (_data.settings && _data.settings.companyEmail) || 'hr@smartats.vn',
+      subject: message.subject,
+      greeting: message.greeting,
+      paragraphs: message.paragraphs,
+      facts: message.facts,
+      closing: message.closing,
+      candidateId: candidate.id || (ctx.application && ctx.application.candidateId) || null,
+      applicationId: (ctx.application && ctx.application.id) || null,
+      relatedId: (ctx.interview && ctx.interview.id) || (ctx.evaluation && ctx.evaluation.id) || null,
+      createdAt: new Date().toISOString()
+    };
+
+    _data.emailLog = _data.emailLog || [];
+    _data.emailLog.unshift(record);
+    saveState();
+    return record;
+  }
+
+  function findCandidateFor(application) {
+    if (!application) return {};
+    return (_data.candidates || []).find(c => c.id === application.candidateId) || {
+      fullName: application.candidateName,
+      email: application.email
+    };
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Public Store API
@@ -1871,7 +2086,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       return (_data.applications || []).find(a => a.id === id);
     },
 
-    updateApplicationStatus(applicationId, newStatus, note = '') {
+    updateApplicationStatus(applicationId, newStatus, note = '', options = {}) {
       const app = this.getApplicationById(applicationId);
       if (!app) return null;
 
@@ -1887,6 +2102,24 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       });
 
       saveState();
+
+      // A hiring decision always reaches the candidate by e-mail, no manual step.
+      if (
+        options.notify !== false &&
+        oldStatus !== newStatus &&
+        (newStatus === 'hired' || newStatus === 'rejected')
+      ) {
+        const candidate = findCandidateFor(app);
+        const mail = dispatchCandidateEmail('decision', {
+          candidate,
+          application: app,
+          status: newStatus,
+          note
+        });
+        if (mail) app.decisionEmailId = mail.id;
+        saveState();
+      }
+
       return app;
     },
 
@@ -2029,7 +2262,13 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       return (_data.interviews || []).find(i => i.id === id);
     },
 
-    checkInterviewConflict(date, startTime, endTime, interviewers = [], excludeId = null) {
+    /**
+     * Detect a scheduling clash before an interview is written.
+     * Two kinds are reported:
+     *  – interviewerConflict: a panellist is already booked in that slot
+     *  – candidateConflict:   the same candidate is already booked in that slot
+     */
+    checkInterviewConflict(date, startTime, endTime, interviewers = [], excludeId = null, candidateId = null) {
       const conflicts = [];
       const ivs = (_data.interviews || []).filter(i => i.date === date && i.id !== excludeId && i.status !== 'cancelled');
 
@@ -2037,10 +2276,13 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         // Time overlap condition: (StartA < EndB) and (EndA > StartB)
         if (startTime < iv.endTime && endTime > iv.startTime) {
           const sharedInterviewers = (iv.interviewers || []).filter(inv => interviewers.includes(inv));
-          if (sharedInterviewers.length > 0) {
+          const sameCandidate = !!candidateId && iv.candidateId === candidateId;
+          if (sharedInterviewers.length > 0 || sameCandidate) {
             conflicts.push({
               interview: iv,
-              conflictingInterviewers: sharedInterviewers
+              conflictingInterviewers: sharedInterviewers,
+              interviewerConflict: sharedInterviewers.length > 0,
+              candidateConflict: sameCandidate
             });
           }
         }
@@ -2050,6 +2292,20 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     },
 
     createInterview(data) {
+      // A candidate can never hold two interviews in the same slot.
+      const candidateClash = this.checkInterviewConflict(
+        data.date, data.startTime, data.endTime, data.interviewers || [], null, data.candidateId
+      ).find(c => c.candidateConflict);
+
+      if (candidateClash) {
+        const clash = candidateClash.interview;
+        return {
+          success: false,
+          conflict: candidateClash,
+          message: `Không thể xếp lịch: ${data.candidateName || 'ứng viên'} đã có lịch phỏng vấn ${clash.startTime} – ${clash.endTime} ngày ${Helpers.formatDate(clash.date)} (${clash.round}). Vui lòng chọn khung giờ khác.`
+        };
+      }
+
       const code = Helpers.generateCode('LPV');
       const newIv = {
         id: 'iv_' + Date.now(),
@@ -2062,12 +2318,19 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       _data.interviews.unshift(newIv);
 
       // Auto update candidate application status to interview_scheduled
+      let app = null;
       if (data.candidateId && data.requisitionId) {
-        const app = (_data.applications || []).find(a => a.candidateId === data.candidateId && a.requisitionId === data.requisitionId);
+        app = (_data.applications || []).find(a => a.candidateId === data.candidateId && a.requisitionId === data.requisitionId);
         if (app && app.status !== 'interview_scheduled') {
           this.updateApplicationStatus(app.id, 'interview_scheduled', `Đã tạo lịch phỏng vấn ${code} (${data.round})`);
         }
       }
+
+      // Automatic invitation e-mail to the candidate.
+      const candidate = (data.candidateId && (_data.candidates || []).find(c => c.id === data.candidateId))
+        || { fullName: data.candidateName, email: data.email };
+      const invite = dispatchCandidateEmail('interview_invite', { candidate, application: app, interview: newIv });
+      if (invite) newIv.inviteEmailId = invite.id;
 
       saveState();
       return newIv;
@@ -2075,12 +2338,44 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
     updateInterview(id, updates) {
       const idx = (_data.interviews || []).findIndex(i => i.id === id);
-      if (idx !== -1) {
-        _data.interviews[idx] = { ..._data.interviews[idx], ...updates };
-        saveState();
-        return _data.interviews[idx];
+      if (idx === -1) return null;
+
+      const prev = _data.interviews[idx];
+      const next = { ...prev, ...updates };
+      const timingChanged = ['date', 'startTime', 'endTime'].some(key =>
+        Object.prototype.hasOwnProperty.call(updates, key) && String(updates[key]) !== String(prev[key] ?? '')
+      );
+
+      if (timingChanged) {
+        const candidateClash = this.checkInterviewConflict(
+          next.date, next.startTime, next.endTime, next.interviewers || [], id, next.candidateId
+        ).find(c => c.candidateConflict);
+
+        if (candidateClash) {
+          const clash = candidateClash.interview;
+          return {
+            success: false,
+            conflict: candidateClash,
+            message: `Không thể đổi lịch: ${next.candidateName || 'ứng viên'} đã có lịch phỏng vấn ${clash.startTime} – ${clash.endTime} ngày ${Helpers.formatDate(clash.date)} (${clash.round}).`
+          };
+        }
       }
-      return null;
+
+      _data.interviews[idx] = next;
+      saveState();
+
+      if (timingChanged) {
+        const candidate = (_data.candidates || []).find(c => c.id === next.candidateId)
+          || { fullName: next.candidateName };
+        const app = (_data.applications || []).find(a => a.candidateId === next.candidateId && a.requisitionId === next.requisitionId);
+        const mail = dispatchCandidateEmail('interview_reschedule', { candidate, application: app, interview: next });
+        if (mail) {
+          _data.interviews[idx].rescheduleEmailId = mail.id;
+          saveState();
+        }
+      }
+
+      return _data.interviews[idx];
     },
 
     cancelInterview(id, reason = '') {
@@ -2088,6 +2383,12 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       if (!iv) return null;
       iv.status = 'cancelled';
       iv.cancelReason = reason;
+
+      const candidate = (_data.candidates || []).find(c => c.id === iv.candidateId)
+        || { fullName: iv.candidateName };
+      const mail = dispatchCandidateEmail('interview_cancel', { candidate, interview: iv, note: reason });
+      if (mail) iv.cancelEmailId = mail.id;
+
       saveState();
       return iv;
     },
@@ -2110,16 +2411,28 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       _data.evaluations.unshift(newEval);
 
       // If recommendation is proposed, update application status
+      let app = null;
       if (data.candidateId && data.requisitionId) {
-        const app = (_data.applications || []).find(a => a.candidateId === data.candidateId && a.requisitionId === data.requisitionId);
+        app = (_data.applications || []).find(a => a.candidateId === data.candidateId && a.requisitionId === data.requisitionId);
         if (app) {
           if (data.finalDecision === 'Đề xuất tuyển dụng' || data.recommendation === 'continue') {
-            this.updateApplicationStatus(app.id, 'proposed', `Người phỏng vấn (${data.evaluatorName}) đề xuất tuyển dụng sau ${data.round}`);
+            // the evaluation e-mail below covers this step; skip a duplicate decision mail
+            this.updateApplicationStatus(app.id, 'proposed', `Người phỏng vấn (${data.evaluatorName}) đề xuất tuyển dụng sau ${data.round}`, { notify: false });
           } else if (data.recommendation === 'reject') {
-            this.updateApplicationStatus(app.id, 'rejected', `Người phỏng vấn (${data.evaluatorName}) đánh giá không đạt tiêu chí`);
+            this.updateApplicationStatus(app.id, 'rejected', `Người phỏng vấn (${data.evaluatorName}) đánh giá không đạt tiêu chí`, { notify: false });
           }
         }
       }
+
+      // Automatic result e-mail to the candidate.
+      const candidate = (data.candidateId && (_data.candidates || []).find(c => c.id === data.candidateId))
+        || { fullName: data.candidateName };
+      const mail = dispatchCandidateEmail('evaluation_result', {
+        candidate,
+        application: app,
+        evaluation: newEval
+      });
+      if (mail) newEval.resultEmailId = mail.id;
 
       saveState();
       return newEval;
@@ -2319,6 +2632,44 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         notif.read = true;
         saveState();
       }
+    },
+
+    // ── Candidate e-mail outbox ────────────────────────────────
+    getEmails(filters = {}) {
+      let list = [...(_data.emailLog || [])];
+      if (filters.type && filters.type !== 'all') {
+        list = list.filter(m => m.type === filters.type);
+      }
+      if (filters.search) {
+        const q = String(filters.search).trim().toLowerCase();
+        list = list.filter(m =>
+          (m.subject || '').toLowerCase().includes(q) ||
+          (m.to || '').toLowerCase().includes(q) ||
+          (m.recipientName || '').toLowerCase().includes(q)
+        );
+      }
+      return list;
+    },
+
+    getEmailById(id) {
+      return (_data.emailLog || []).find(m => m.id === id) || null;
+    },
+
+    getEmailsByApplication(applicationId) {
+      return (_data.emailLog || []).filter(m => m.applicationId === applicationId);
+    },
+
+    getEmailCounts() {
+      const list = _data.emailLog || [];
+      const count = (type) => list.filter(m => m.type === type).length;
+      return {
+        all: list.length,
+        interview_invite: count('interview_invite'),
+        interview_reschedule: count('interview_reschedule'),
+        interview_cancel: count('interview_cancel'),
+        evaluation_result: count('evaluation_result'),
+        decision: count('decision')
+      };
     },
 
     // ── Settings ───────────────────────────────────────────────

@@ -202,6 +202,85 @@ assert(ATSStore.getApplicationById(onlineApp.id).status === 'interview_scheduled
 const conflicts = ATSStore.checkInterviewConflict('2026-11-10', '10:30', '12:00', ['Lê Văn Hùng']);
 assert(conflicts.length > 0, 'Hệ thống tự động phát hiện trùng lịch của người phỏng vấn Lê Văn Hùng');
 
+// Kiểm tra trùng lịch ỨNG VIÊN (cùng ứng viên, khác hội đồng)
+const candConflicts = ATSStore.checkInterviewConflict(
+  '2026-11-10', '10:30', '12:00', ['Nguyễn Thu Hà'], null, onlineApp.candidateId
+);
+assert(
+  candConflicts.some(c => c.candidateConflict),
+  'checkInterviewConflict phát hiện trùng lịch của chính ứng viên dù hội đồng khác nhau'
+);
+
+const ivCountBeforeClash = ATSStore.getInterviews().length;
+const blockedIv = ATSStore.createInterview({
+  candidateId: onlineApp.candidateId,
+  candidateName: onlineApp.candidateName,
+  requisitionId: newReq.id,
+  positionTitle: newReq.title,
+  round: 'Vòng 3 - Trùng giờ',
+  date: '2026-11-10',
+  startTime: '11:00',
+  endTime: '12:00',
+  type: 'onsite',
+  location: 'Phòng họp 3',
+  interviewers: ['Nguyễn Thu Hà']
+});
+assert(
+  blockedIv && blockedIv.success === false,
+  'Chặn tạo lịch thứ hai cho cùng ứng viên trong khung giờ trùng'
+);
+assert(
+  typeof blockedIv.message === 'string' && blockedIv.message.includes('Không thể xếp lịch'),
+  'Thông báo lỗi trùng lịch ứng viên rõ ràng: ' + (blockedIv.message || '').slice(0, 60) + '...'
+);
+assert(
+  ATSStore.getInterviews().length === ivCountBeforeClash,
+  'Không có lịch nào bị ghi vào hệ thống khi phát hiện trùng lịch ứng viên'
+);
+
+// ── TEST 9b: Email tự động gửi ứng viên ─────────────────────────────────────
+console.log('\n--- LUỒNG 9B: EMAIL TỰ ĐỘNG CHO ỨNG VIÊN ---');
+const inviteMail = ATSStore.getEmails({ type: 'interview_invite' })
+  .find(m => m.relatedId === newIv.id || m.to === onlineCandidate.email);
+assert(!!inviteMail, 'Tự động gửi email mời phỏng vấn tới ' + onlineCandidate.email);
+assert(inviteMail && newIv.inviteEmailId === inviteMail.id, 'Lịch phỏng vấn lưu liên kết tới email mời đã gửi');
+
+const rescheduledIv = ATSStore.updateInterview(newIv.id, {
+  date: '2026-11-12',
+  startTime: '14:00',
+  endTime: '15:30'
+});
+assert(rescheduledIv && rescheduledIv.id === newIv.id, 'Đổi lịch phỏng vấn thành công sang lịch mới');
+const rescheduleMail = ATSStore.getEmails({ type: 'interview_reschedule' })
+  .find(m => m.relatedId === newIv.id);
+assert(!!rescheduleMail, 'Tự động gửi email thông báo thay đổi lịch phỏng vấn');
+
+// Ứng viên được phép có vòng khác vào khung giờ KHÔNG trùng
+const secondIv = ATSStore.createInterview({
+  candidateId: onlineApp.candidateId,
+  candidateName: onlineApp.candidateName,
+  requisitionId: newReq.id,
+  positionTitle: newReq.title,
+  round: 'Vòng 3 - Trao đổi với Ban Giám đốc',
+  date: '2026-11-13',
+  startTime: '09:00',
+  endTime: '10:00',
+  type: 'online',
+  location: 'https://meet.google.com/ats-round-3',
+  interviewers: ['Nguyễn Thu Hà']
+});
+assert(secondIv && secondIv.id && secondIv.success !== false, 'Vẫn cho phép vòng phỏng vấn khác vào khung giờ không trùng');
+
+const clashReschedule = ATSStore.updateInterview(newIv.id, {
+  date: '2026-11-13',
+  startTime: '09:30',
+  endTime: '10:30'
+});
+assert(
+  clashReschedule && clashReschedule.success === false,
+  'Chặn đổi lịch về khung giờ mà ứng viên đã có lịch khác'
+);
+
 // ── TEST 10: Nhập phiếu đánh giá & Quyết định tuyển dụng ─────────────────────
 console.log('\n--- LUỒNG 10: PHIẾU ĐÁNH GIÁ & QUYẾT ĐỊNH TUYỂN DỤNG ---');
 const newEval = ATSStore.createEvaluation({
@@ -224,6 +303,25 @@ assert(ATSStore.getApplicationById(onlineApp.id).status === 'proposed', 'Hồ s�
 // Xác nhận tuyển dụng
 ATSStore.updateApplicationStatus(onlineApp.id, 'hired', 'Giám đốc phê duyệt Offer và tuyển dụng chính thức');
 assert(ATSStore.getApplicationById(onlineApp.id).status === 'hired', 'Ứng viên được chuyển sang trạng thái Đã tuyển thành công');
+
+// Email kết quả đánh giá + email quyết định tuyển dụng đều tự động
+const evalMail = ATSStore.getEmails({ type: 'evaluation_result' })
+  .find(m => m.relatedId === newEval.id || m.applicationId === onlineApp.id);
+assert(!!evalMail, 'Tự động gửi email kết quả đánh giá tới ứng viên');
+assert(
+  ATSStore.getEmailsByApplication(onlineApp.id).filter(m => m.type === 'decision' && m.subject.includes('trúng tuyển')).length === 1,
+  'Đề xuất tuyển dụng không sinh email quyết định trùng; chỉ gửi đúng một email khi chốt Đã tuyển'
+);
+const hiredMail = ATSStore.getEmails({ type: 'decision' })
+  .find(m => m.applicationId === onlineApp.id && m.subject.includes('trúng tuyển'));
+assert(hiredMail && hiredMail.to === onlineCandidate.email, 'Email quyết định trúng tuyển gửi đúng địa chỉ ứng viên: ' + (hiredMail ? hiredMail.to : ''));
+assert(
+  !!hiredMail.subject && (hiredMail.facts || []).length > 0,
+  'Email quyết định có tiêu đề và bảng thông tin đầy đủ'
+);
+
+const mailCounts = ATSStore.getEmailCounts();
+assert(mailCounts.all >= 4, 'Hộp thư tự động ghi nhận đủ các email đã gửi: ' + mailCounts.all);
 
 // ── TEST 11: Số liệu Dashboard & Báo cáo tuyển dụng động ─────────────────────
 console.log('\n--- LUỒNG 11: THỐNG KÊ DASHBOARD & BÁO CÁO ĐỘNG ---');
