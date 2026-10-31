@@ -176,14 +176,37 @@ const InterviewsPage = (() => {
     },
 
     _renderWeekCalendar(interviews) {
-      const HOUR_H = 56;          // must match .week-grid --hour-h in design.css
-      const DAY_START = 7 * 60;   // 07:00
-      const DAY_END = 18 * 60;    // grid closes after the 17:00 row
-      const HOURS = 11;           // 07:00 → 17:00
+      // ── Calendar configuration (single source of truth) ──────────────
+      const HOUR_H = 56;                 // must match .week-grid --hour-h in design.css
+      const PIXELS_PER_MINUTE = HOUR_H / 60;
+      const DAY_START_MIN = 7 * 60;      // 07:00
+      const DAY_END_MIN = 18 * 60;       // grid closes after 17:00 row
+      const HOURS = 11;                  // 07:00 → 18:00
+      const MIN_EVENT_MIN = 20;          // tối thiểu 20 phút để đảm bảo đủ không gian hiển thị nội dung
 
       const toMin = (t) => {
         const [h, m] = String(t || '0:0').split(':').map(Number);
         return (h || 0) * 60 + (m || 0);
+      };
+
+      // Tính vị trí & chiều cao sự kiện chỉ dựa trên thời gian (không phụ thuộc nội dung)
+      const calcEventPos = (startTime, endTime) => {
+        const start = toMin(startTime);
+        const end = Math.max(toMin(endTime), start + MIN_EVENT_MIN);
+        const clampedStart = Math.max(start, DAY_START_MIN);
+        const clampedEnd = Math.min(end, DAY_END_MIN);
+        if (clampedEnd <= clampedStart) return null;
+        return {
+          top: (clampedStart - DAY_START_MIN) * PIXELS_PER_MINUTE,
+          height: (clampedEnd - clampedStart) * PIXELS_PER_MINUTE,
+        };
+      };
+
+      // Xác định lớp hiển thị nội dung theo chiều cao sự kiện
+      const sizeClassForDuration = (durationMin) => {
+        if (durationMin >= 60) return 'size-large';
+        if (durationMin >= 30) return 'size-medium';
+        return 'size-small';
       };
 
       const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
@@ -237,20 +260,23 @@ const InterviewsPage = (() => {
         const laneCount = Math.max(laneEnds.length, 1);
 
         const cards = placed.map(({ iv, start, end, lane }) => {
-          const top = Math.max(0, ((start - DAY_START) / 60) * HOUR_H) + 2;
-          const rawHeight = ((Math.min(end, DAY_END) - Math.max(start, DAY_START)) / 60) * HOUR_H - 4;
-          const height = Math.max(rawHeight, 38);
+          const pos = calcEventPos(iv.startTime, iv.endTime);
+          if (!pos) return '';
+          const durationMin = end - start;
+          const sizeClass = sizeClassForDuration(durationMin);
           const left = `calc(${(lane / laneCount) * 100}% + 4px)`;
           const width = `calc(${100 / laneCount}% - 8px)`;
           return `
-            <div class="week-iv-card ${iv.type === 'online' ? 'is-online' : ''}"
-                 style="top:${top}px;height:${height}px;left:${left};width:${width};"
+            <div class="week-iv-card ${iv.type === 'online' ? 'is-online' : ''} ${sizeClass}"
+                 style="top:${pos.top}px;height:${pos.height}px;left:${left};width:${width};"
                  onclick="InterviewsPage.showDetailModal('${iv.id}')"
                  title="${iv.startTime}–${iv.endTime} · ${iv.candidateName} · ${iv.round}">
-              <span class="week-iv-time">${iv.startTime} – ${iv.endTime}</span>
-              <span class="week-iv-name">${iv.candidateName}</span>
-              <span class="week-iv-pos">${iv.positionTitle || ''}</span>
-              <span class="week-iv-meta">${iv.round || ''}${iv.type === 'online' ? ' · Online' : ''}</span>
+              <div class="week-iv-content">
+                <span class="week-iv-time">${iv.startTime} – ${iv.endTime}</span>
+                <span class="week-iv-name">${iv.candidateName}</span>
+                <span class="week-iv-pos">${iv.positionTitle || ''}</span>
+                <span class="week-iv-meta">${iv.round || ''}${iv.type === 'online' ? ' · Online' : ''}</span>
+              </div>
             </div>
           `;
         }).join('');
@@ -274,7 +300,7 @@ const InterviewsPage = (() => {
               </button>
               <div>
                 <h3 class="week-toolbar-title">${weekLabel}</h3>
-                <span class="week-toolbar-range">Khung giờ ${String(DAY_START / 60).padStart(2, '0')}:00 – 17:00</span>
+                <span class="week-toolbar-range">Khung giờ ${String(DAY_START_MIN / 60).padStart(2, '0')}:00 – 17:00</span>
               </div>
               <button class="btn btn-sm btn-ghost btn-icon" id="btn-next-week" title="Tuần tới">
                 <i data-lucide="chevron-right" class="icon-sm"></i>

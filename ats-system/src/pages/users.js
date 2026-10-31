@@ -74,51 +74,6 @@ const UsersPage = (() => {
             </div>
           </div>
 
-          <!-- Danh sách tài khoản -->
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Tài khoản hệ thống</h3>
-              <span class="card-note">${users.length} tài khoản</span>
-            </div>
-            <div class="card-body card-body-no-padding">
-              <div class="table-responsive">
-                <table class="data-table table-sticky-actions accounts-table">
-                  <thead>
-                    <tr>
-                      <th>Tài khoản</th>
-                      <th>Vai trò · phòng ban</th>
-                      <th class="text-right">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${users.map((u) => {
-                      const isCurrent = currentUser.username === u.username;
-                      return `
-                        <tr>
-                          <td>
-                            <span class="table-name">${u.fullName}</span>
-                            <span class="table-sub font-mono">@${u.username} · ${u.email}</span>
-                          </td>
-                          <td>
-                            <span class="badge badge-secondary">${Helpers.getRoleLabel(u.role)}</span>
-                            <span class="table-sub">${u.department}${u.title ? ` · ${u.title}` : ''}</span>
-                          </td>
-                          <td class="text-right">
-                            <div class="table-actions">
-                              <button class="btn btn-xs ${isCurrent ? 'btn-secondary' : 'btn-outline'} btn-switch-user" data-username="${u.username}" ${isCurrent ? 'disabled' : ''} title="${isCurrent ? 'Đang đăng nhập' : 'Đăng nhập nhanh vai trò này'}">
-                                <i data-lucide="log-in" class="icon-xs"></i> ${isCurrent ? 'Đang dùng' : 'Chuyển sang'}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
           <!-- Modals Container -->
           <div id="user-modals-container"></div>
         </div>

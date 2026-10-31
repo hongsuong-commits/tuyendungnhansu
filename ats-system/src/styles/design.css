@@ -1988,11 +1988,19 @@ body.modal-open { overflow: hidden !important; }
   padding: clamp(32px, 5vw, 64px) clamp(20px, 4vw, 48px) 8px;
   text-align: center;
   border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
 }
 .portal-hero-content {
+  width: 100%;
   max-width: 860px;
   margin: 0 auto;
   text-align: center;
+  box-sizing: border-box;
 }
 .portal-hero-title, .portal-hero h1 {
   font-size: clamp(28px, 3.4vw, 46px);
@@ -2281,15 +2289,15 @@ body.modal-open { overflow: hidden !important; }
 }
 .week-hour-label {
   height: var(--hour-h);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   padding-right: 8px;
   font-size: 11px;
   line-height: 1;
   color: var(--faint);
-  text-align: right;
   font-variant-numeric: tabular-nums;
-  transform: translateY(-6px);
 }
-.week-hour-label:first-child { transform: translateY(4px); }
 
 .week-col {
   position: relative;
@@ -2304,7 +2312,7 @@ body.modal-open { overflow: hidden !important; }
   position: absolute;
   left: 4px;
   right: 4px;
-  padding: 4px 6px 5px;
+  padding: 3px 6px;
   border: 1px solid #c9dff2;
   border-left: 3px solid var(--navy-mid);
   border-radius: 4px;
@@ -2314,15 +2322,74 @@ body.modal-open { overflow: hidden !important; }
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0;
+  box-sizing: border-box;
+  min-height: 0;
+  min-width: 0;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
+.week-iv-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+}
+.week-iv-card > * {
+  min-width: 0;
+  min-height: 0;
+}
 .week-iv-card:hover { background: #cfe2f4; border-color: var(--navy-light); border-left-color: var(--navy); }
-.week-iv-time { font-size: 10.5px; font-weight: 600; color: var(--navy-mid); font-variant-numeric: tabular-nums; }
-.week-iv-name { font-size: 11.5px; font-weight: 600; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.week-iv-pos { font-size: 10.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.week-iv-meta { margin-top: auto; display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--muted); }
+.week-iv-time {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--navy-mid);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  flex-shrink: 0;
+}
+.week-iv-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--navy);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.week-iv-pos {
+  font-size: 10.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.1;
+  flex-shrink: 0;
+}
+.week-iv-meta {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .week-iv-card.is-online { border-left-color: var(--navy-light); }
+
+/* ── Phân cấp nội dung theo kích thước sự kiện ────────────────────── */
+.week-iv-card.size-small .week-iv-pos,
+.week-iv-card.size-small .week-iv-meta {
+  display: none;
+}
+.week-iv-card.size-medium .week-iv-meta {
+  display: none;
+}
 @media (max-width: 900px) {
   .week-toolbar { padding: 10px 12px; }
   .week-toolbar-title { font-size: 12.5px; }
@@ -2493,9 +2560,12 @@ body.modal-open { overflow: hidden !important; }
 ::-webkit-scrollbar-thumb:hover { background: #b6bcc4; }
 
 /* Hero: thanh tìm kiếm công việc (thay thế tra cứu tiến độ hồ sơ) */
-.portal-job-search { max-width: 860px; margin: 26px auto 0; }
-.portal-job-search-form { display: flex; align-items: stretch; gap: 8px; }
-.portal-job-search-input-wrap { position: relative; display: block; flex: 1; min-width: 0; }
+.portal-job-search { max-width: 860px; margin: 26px auto 0; width: 100%; box-sizing: border-box; }
+.portal-job-search-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
+}
+.portal-job-search-form { display: flex; align-items: stretch; gap: 8px; justify-content: center; }
+.portal-job-search-input-wrap { position: relative; display: block; flex: 1 1 auto; min-width: 0; }
 .portal-job-search-input-wrap .portal-search-icon {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
   width: 15px; height: 15px; color: var(--faint); pointer-events: none;
@@ -2522,8 +2592,23 @@ body.modal-open { overflow: hidden !important; }
 .portal-job-search-btn {
   height: 44px; padding: 0 24px; white-space: nowrap;
 }
+@media (max-width: 1023px) and (min-width: 640px) {
+  .portal-job-search-row {
+    flex-wrap: wrap;
+  }
+  .portal-job-search-input-wrap {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+  .portal-job-search-select,
+  .portal-job-search-btn {
+    flex: 0 0 auto;
+    width: auto;
+  }
+}
 @media (max-width: 640px) {
   .portal-job-search-form { flex-direction: column; }
+  .portal-job-search-row { flex-direction: column; }
   .portal-job-search-select { min-width: auto; width: 100%; }
   .portal-job-search-btn { width: 100%; }
 }

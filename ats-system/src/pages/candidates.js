@@ -465,7 +465,7 @@ const CandidatesPage = (() => {
                   <div>
                     <div class="flex items-center justify-between mb-2">
                       <h4 class="font-bold text-sm text-gray-800">Nội dung CV gốc đã nộp</h4>
-                      <button class="btn btn-xs btn-outline" onclick="CandidatesPage.downloadMockCV('${cand.fullName}')">
+                      <button class="btn btn-xs btn-outline" onclick="CandidatesPage.downloadRealCV('${cand.id}', '${cand.fullName.replace(/'/g,"\\'")}')">
                         <i data-lucide="download" class="icon-xs"></i> Tải file CV
                       </button>
                     </div>
@@ -803,8 +803,28 @@ const CandidatesPage = (() => {
       this.showCandidateDetailModal(appId); // Refresh modal view
     },
 
-    downloadMockCV(fullName) {
-      UI.toast({ message: `Đang tải xuống bản sao CV của ứng viên: ${fullName}...`, type: 'info' });
+    downloadRealCV(candidateId, fullName) {
+      const cand = (ATSStore.getCandidateById ? ATSStore.getCandidateById(candidateId) : null) || (ATSStore.getCandidates ? ATSStore.getCandidates().find(c => c.id === candidateId) : null);
+      const text = cand && cand.rawResumeText ? cand.rawResumeText : null;
+      if (!text || !text.trim()) {
+        UI.toast({ message: 'Không tìm thấy file CV gốc cho ứng viên này.', type: 'warning' });
+        return;
+      }
+      const filename = (fullName || 'CV') + '.txt';
+      try {
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        UI.toast({ message: 'Đã bắt đầu tải CV xuống máy.', type: 'success' });
+      } catch (err) {
+        UI.toast({ message: 'Không thể tải CV. Vui lòng thử lại.', type: 'warning' });
+      }
     },
 
     showManualUploadModal() {
@@ -900,20 +920,25 @@ const CandidatesPage = (() => {
         UI.openModal('modal-manual-upload');
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        // Wire file input
+        // Wire file input — dùng CVFile.extractText để đọc đúng PDF/DOCX/TXT (không dùng readAsText với PDF nhị phân)
         const fileInput = document.getElementById('file-cv-input');
         if (fileInput) {
-          fileInput.addEventListener('change', (e) => {
+          fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (re) => {
-              const text = re.target.result;
+            try {
+              const text = await CVFile.extractText(file);
+              if (!text || !text.trim()) {
+                UI.toast({ message: `Tệp ${file.name} không có nội dung văn bản đọc được.`, type: 'warning' });
+                return;
+              }
               const textarea = document.getElementById('textarea-raw-cv');
               if (textarea) textarea.value = text;
               this.parseAndFillCV(text);
-            };
-            reader.readAsText(file);
+              UI.toast({ message: `Đã đọc nội dung từ ${file.name}.`, type: 'success' });
+            } catch (err) {
+              UI.toast({ message: err && err.message ? err.message : 'Không đọc được tệp CV.', type: 'warning' });
+            }
           });
         }
 

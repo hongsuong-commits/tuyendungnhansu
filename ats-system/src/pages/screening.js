@@ -117,31 +117,23 @@ const ScreeningPage = (() => {
                 <i data-lucide="sliders" class="icon-sm text-primary"></i>
                 Thiết lập tiêu chí lọc CV cho vị trí
               </h3>
-              <span class="badge badge-primary text-xs">Cấu hình HR</span>
+              <span class="badge badge-primary text-xs">Cấu hình HR${user.role !== 'hr' ? ' · Chỉ xem' : ''}</span>
             </div>
             <div class="card-body py-3">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 <div class="form-group">
                   <label class="form-label text-xs font-semibold">Từ khóa / Kỹ năng chuyên môn bắt buộc</label>
-                  <input type="text" id="criteria-skills-input" class="form-input text-xs"
-                         value="${activeReq ? (activeReq.skills || []).join(', ') : 'React, TypeScript, JavaScript'}"
-                         placeholder="React, TypeScript, Node.js, SQL...">
+                  ${user.role === 'hr' ? `<input type="text" id="criteria-skills-input" class="form-input text-xs" value="${activeReq ? (activeReq.skills || []).join(', ') : 'React, TypeScript, JavaScript'}" placeholder="React, TypeScript, Node.js, SQL...">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs text-gray-700">${activeReq ? (activeReq.skills || []).join(', ') : 'React, TypeScript, JavaScript'}</div>`}
                   <small class="text-2xs text-muted">Phân tách các từ khóa bằng dấu phẩy</small>
                 </div>
                 <div class="form-group">
                   <label class="form-label text-xs font-semibold">Số năm kinh nghiệm tối thiểu</label>
-                  <input type="number" id="criteria-exp-input" class="form-input text-xs" min="0" max="20" step="0.5"
-                         value="${activeReq ? (activeReq.minExperience || 2) : 2}">
+                  ${user.role === 'hr' ? `<input type="number" id="criteria-exp-input" class="form-input text-xs" min="0" max="20" step="0.5" value="${activeReq ? (activeReq.minExperience || 2) : 2}">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs text-gray-700 font-mono">${activeReq ? (activeReq.minExperience || 2) : 2}</div>`}
                   <small class="text-2xs text-muted">Số năm tối thiểu yêu cầu cho ứng viên</small>
                 </div>
                 <div class="form-group">
                   <label class="form-label text-xs font-semibold">Trình độ học vấn tối thiểu</label>
-                  <select id="criteria-edu-input" class="form-select text-xs">
-                    <option value="Đại học" ${!activeReq || activeReq.education === 'Đại học' ? 'selected' : ''}>Đại học chính quy trở lên</option>
-                    <option value="Cao đẳng" ${activeReq && activeReq.education === 'Cao đẳng' ? 'selected' : ''}>Cao đẳng chuyên nghiệp</option>
-                    <option value="Trung cấp" ${activeReq && activeReq.education === 'Trung cấp' ? 'selected' : ''}>Trung cấp / Chứng chỉ nghề</option>
-                    <option value="Không yêu cầu" ${activeReq && activeReq.education === 'Không yêu cầu' ? 'selected' : ''}>Không yêu cầu bằng cấp</option>
-                  </select>
+                  ${user.role === 'hr' ? `<select id="criteria-edu-input" class="form-select text-xs"><option value="Đại học" ${!activeReq || activeReq.education === 'Đại học' ? 'selected' : ''}>Đại học chính quy trở lên</option><option value="Cao đẳng" ${activeReq && activeReq.education === 'Cao đẳng' ? 'selected' : ''}>Cao đẳng chuyên nghiệp</option><option value="Trung cấp" ${activeReq && activeReq.education === 'Trung cấp' ? 'selected' : ''}>Trung cấp / Chứng chỉ nghề</option><option value="Không yêu cầu" ${activeReq && activeReq.education === 'Không yêu cầu' ? 'selected' : ''}>Không yêu cầu bằng cấp</option></select>` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs text-gray-700">${activeReq ? (activeReq.education || 'Đại học') : 'Đại học'}</div>`}
                   <small class="text-2xs text-muted">Bằng cấp tiêu chuẩn để tính điểm học vấn</small>
                 </div>
               </div>
@@ -150,33 +142,27 @@ const ScreeningPage = (() => {
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 pt-3 border-t items-end">
                 <div class="form-group">
                   <label class="form-label text-2xs font-semibold">Điểm Đạt (Pass)</label>
-                  <input type="number" id="criteria-pass-score" class="form-input text-xs font-bold text-success" min="0" max="100"
-                         value="${settings.scoreThresholds?.pass ?? 80}">
+                  ${user.role === 'hr' ? `<input type="number" id="criteria-pass-score" class="form-input text-xs font-bold text-success" min="0" max="100" value="${settings.scoreThresholds?.pass ?? 80}">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs font-mono font-bold text-success">${settings.scoreThresholds?.pass ?? 80}</div>`}
                 </div>
                 <div class="form-group">
                   <label class="form-label text-2xs font-semibold">Điểm Xem xét (Review)</label>
-                  <input type="number" id="criteria-review-score" class="form-input text-xs font-bold text-warning" min="0" max="100"
-                         value="${settings.scoreThresholds?.manual_check ?? 60}">
+                  ${user.role === 'hr' ? `<input type="number" id="criteria-review-score" class="form-input text-xs font-bold text-warning" min="0" max="100" value="${settings.scoreThresholds?.manual_check ?? 60}">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs font-mono font-bold text-warning">${settings.scoreThresholds?.manual_check ?? 60}</div>`}
                 </div>
                 <div class="form-group">
                   <label class="form-label text-2xs font-semibold">Tỷ trọng Kỹ năng (%)</label>
-                  <input type="number" id="weight-skills" class="form-input text-xs" min="0" max="100"
-                         value="${settings.screeningWeights?.skills ?? 40}">
+                  ${user.role === 'hr' ? `<input type="number" id="weight-skills" class="form-input text-xs" min="0" max="100" value="${settings.screeningWeights?.skills ?? 40}">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs font-mono">${settings.screeningWeights?.skills ?? 40}</div>`}
                 </div>
                 <div class="form-group">
                   <label class="form-label text-2xs font-semibold">Tỷ trọng Kinh nghiệm (%)</label>
-                  <input type="number" id="weight-exp" class="form-input text-xs" min="0" max="100"
-                         value="${settings.screeningWeights?.experience ?? 30}">
+                  ${user.role === 'hr' ? `<input type="number" id="weight-exp" class="form-input text-xs" min="0" max="100" value="${settings.screeningWeights?.experience ?? 30}">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs font-mono">${settings.screeningWeights?.experience ?? 30}</div>`}
                 </div>
                 <div class="form-group">
                   <label class="form-label text-2xs font-semibold">Tỷ trọng Học vấn (%)</label>
-                  <input type="number" id="weight-edu" class="form-input text-xs" min="0" max="100"
-                         value="${settings.screeningWeights?.education ?? 15}">
+                  ${user.role === 'hr' ? `<input type="number" id="weight-edu" class="form-input text-xs" min="0" max="100" value="${settings.screeningWeights?.education ?? 15}">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs font-mono">${settings.screeningWeights?.education ?? 15}</div>`}
                 </div>
                 <div class="form-group">
                   <label class="form-label text-2xs font-semibold">Tỷ trọng Chứng chỉ (%)</label>
-                  <input type="number" id="weight-cert" class="form-input text-xs" min="0" max="100"
-                         value="${settings.screeningWeights?.certifications ?? 15}">
+                  ${user.role === 'hr' ? `<input type="number" id="weight-cert" class="form-input text-xs" min="0" max="100" value="${settings.screeningWeights?.certifications ?? 15}">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs font-mono">${settings.screeningWeights?.certifications ?? 15}</div>`}
                 </div>
               </div>
               <div class="flex items-center justify-between gap-3 mt-3">
@@ -184,9 +170,7 @@ const ScreeningPage = (() => {
                   Tổng trọng số: <strong id="weight-total" class="font-mono">${(settings.screeningWeights?.skills ?? 40) + (settings.screeningWeights?.experience ?? 30) + (settings.screeningWeights?.education ?? 15) + (settings.screeningWeights?.certifications ?? 15)}%</strong>
                   · phải bằng 100%
                 </span>
-                <button type="button" class="btn btn-primary btn-sm" id="btn-save-criteria">
-                  <i data-lucide="save" class="icon-xs"></i> Lưu tiêu chí
-                </button>
+                ${user.role === 'hr' ? `<button type="button" class="btn btn-primary btn-sm" id="btn-save-criteria"><i data-lucide="save" class="icon-xs"></i> Lưu tiêu chí</button>` : `<span class="text-2xs text-muted italic">Chỉ nhân sự có thể lưu thay đổi</span>`}
               </div>
             </div>
           </div>
@@ -300,6 +284,11 @@ const ScreeningPage = (() => {
       const btnSaveCrit = document.getElementById('btn-save-criteria');
       if (btnSaveCrit) {
         btnSaveCrit.addEventListener('click', () => {
+          const currentUser = ATSStore.getCurrentUser();
+          if (!currentUser || currentUser.role !== 'hr') {
+            UI.toast({ message: 'Chỉ nhân sự (HR) có quyền lưu cấu hình sàng lọc.', type: 'warning' });
+            return;
+          }
           const skillsRaw = document.getElementById('criteria-skills-input')?.value || '';
           const minExp = parseFloat(document.getElementById('criteria-exp-input')?.value) || 0;
           const education = document.getElementById('criteria-edu-input')?.value || 'Đại học';
