@@ -265,10 +265,6 @@ const Layout = (() => {
                 <i data-lucide="user"></i>
                 <span>Hồ sơ cá nhân</span>
               </a>
-              <a href="#/settings" class="dropdown-item" data-action="settings">
-                <i data-lucide="settings"></i>
-                <span>Cài đặt</span>
-              </a>
               <div class="dropdown-divider"></div>
               <button class="dropdown-item dropdown-item-danger" data-action="logout" id="logoutBtn">
                 <i data-lucide="log-out"></i>

@@ -446,7 +446,7 @@ const PortalPage = (() => {
                   <h4 class="form-section-title">
                     Học vấn & kinh nghiệm làm việc
                   </h4>
-                  <div class="grid grid-cols-3 gap-4 mb-3">
+                  <div class="grid grid-cols-2 gap-4 mb-3">
                     <div class="form-group">
                       <label class="form-label">Trình độ học vấn</label>
                       <input type="text" name="education" id="portal-edu" class="form-input" value="Đại học" placeholder="Đại học / Cao đẳng...">
@@ -458,6 +458,10 @@ const PortalPage = (() => {
                         <option value="Nữ">Nữ</option>
                         <option value="Khác" selected>Khác</option>
                       </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Ngày sinh</label>
+                      <input type="date" name="dob" id="portal-dob" class="form-input">
                     </div>
                     <div class="form-group">
                       <label class="form-label required">Số năm kinh nghiệm (Năm)</label>
@@ -551,6 +555,7 @@ const PortalPage = (() => {
             email: fd.get('email'),
             phone: fd.get('phone'),
             gender: fd.get('gender') || 'Khác',
+            dob: fd.get('dob') || '',
             experienceYears,
             education: fd.get('education') || 'Đại học',
             skills: parsedFromCV.skills || [],
@@ -607,6 +612,7 @@ const PortalPage = (() => {
       setValue('portal-email', parsed.email);
       setValue('portal-phone', parsed.phone);
       setValue('portal-gender', parsed.gender && parsed.gender !== 'Khác' ? parsed.gender : '');
+      setValue('portal-dob', parsed.dob);
       setValue('portal-edu', parsed.education && parsed.education !== 'Đang cập nhật' ? parsed.education : '');
       if (parsed.experienceYears > 0) setValue('portal-exp', parsed.experienceYears);
 

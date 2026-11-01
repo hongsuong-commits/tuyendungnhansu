@@ -870,7 +870,7 @@ const CandidatesPage = (() => {
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-4 gap-4 mb-3">
+                  <div class="grid grid-cols-2 gap-4 mb-3">
                     <div class="form-group">
                       <label class="form-label required">Số điện thoại</label>
                       <input type="text" name="phone" id="upload-phone" class="form-input" required placeholder="098xxxxxxx">
@@ -879,6 +879,9 @@ const CandidatesPage = (() => {
                       <label class="form-label">Trình độ học vấn</label>
                       <input type="text" name="education" id="upload-edu" class="form-input" value="Đại học">
                     </div>
+                  </div>
+
+                  <div class="grid grid-cols-3 gap-4 mb-3">
                     <div class="form-group">
                       <label class="form-label">Giới tính</label>
                       <select name="gender" id="upload-gender" class="form-select">
@@ -886,6 +889,10 @@ const CandidatesPage = (() => {
                         <option value="Nữ">Nữ</option>
                         <option value="Khác" selected>Khác</option>
                       </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Ngày sinh</label>
+                      <input type="date" name="dob" id="upload-dob" class="form-input">
                     </div>
                     <div class="form-group">
                       <label class="form-label required">Số năm kinh nghiệm</label>
@@ -986,6 +993,7 @@ const CandidatesPage = (() => {
             email: fd.get('email'),
             phone: fd.get('phone'),
             gender: fd.get('gender') || 'Khác',
+            dob: fd.get('dob') || '',
             experienceYears,
             education: fd.get('education') || 'Đại học',
             skills: parsedFromCV.skills || [],
@@ -1015,6 +1023,7 @@ const CandidatesPage = (() => {
       if (parsed.email && document.getElementById('upload-email')) document.getElementById('upload-email').value = parsed.email;
       if (parsed.phone && document.getElementById('upload-phone')) document.getElementById('upload-phone').value = parsed.phone;
       if (parsed.gender && parsed.gender !== 'Khác' && document.getElementById('upload-gender')) document.getElementById('upload-gender').value = parsed.gender;
+      if (parsed.dob && document.getElementById('upload-dob')) document.getElementById('upload-dob').value = parsed.dob;
       if (parsed.education && parsed.education !== 'Đang cập nhật' && document.getElementById('upload-edu')) document.getElementById('upload-edu').value = parsed.education;
       if (parsed.experienceYears && document.getElementById('upload-exp')) document.getElementById('upload-exp').value = parsed.experienceYears;
       if (parsed.skills && document.getElementById('upload-skills')) document.getElementById('upload-skills').value = parsed.skills.join(', ');

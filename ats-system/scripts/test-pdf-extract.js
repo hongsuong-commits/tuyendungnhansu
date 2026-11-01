@@ -124,6 +124,7 @@ async function extractPdfText(filePath) {
   console.log('  Email        :', parsed.email);
   console.log('  Điện thoại   :', parsed.phone);
   console.log('  Giới tính    :', parsed.gender);
+  console.log('  Ngày sinh    :', parsed.dob);
   console.log('  Học vấn      :', parsed.education);
   console.log('  Kinh nghiệm  :', parsed.experienceYears, 'năm');
   console.log('  Kỹ năng      :', (parsed.skills || []).join(', '));
@@ -134,6 +135,7 @@ async function extractPdfText(filePath) {
   check('Email đúng', parsed.email === 'lanphuong.nguyen.test@gmail.com', parsed.email);
   check('Điện thoại đúng', parsed.phone === '0977123456', parsed.phone);
   check('Giới tính = Nữ', parsed.gender === 'Nữ', parsed.gender);
+  check('Ngày sinh = 1998-07-20', parsed.dob === '1998-07-20', parsed.dob);
   check('Học vấn có tên trường', /Đại học Bách Khoa/i.test(parsed.education || ''), parsed.education);
   check('Kinh nghiệm 2 - 8 năm', parsed.experienceYears >= 2 && parsed.experienceYears <= 8, parsed.experienceYears);
   check('Có kỹ năng React', (parsed.skills || []).includes('React'), parsed.skills);

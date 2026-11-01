@@ -1485,6 +1485,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           education: '',
           experienceYears: 0,
           gender: 'Khác',
+          dob: '',
           skills: [],
           certifications: []
         };
@@ -1554,6 +1555,29 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         else if (value === 'nữ' || value === 'nu' || value === 'female') gender = 'Nữ';
         else gender = 'Khác';
       }
+
+      // Extract Date of Birth — chỉ lấy khi CV ghi rõ ngày/tháng/năm.
+      let dob = '';
+      const toIsoDate = (y, m, d) => {
+        const year = Number(y);
+        const month = Number(m);
+        const day = Number(d);
+        if (!(year >= 1940 && year <= new Date().getFullYear())) return '';
+        if (!(month >= 1 && month <= 12)) return '';
+        if (!(day >= 1 && day <= 31)) return '';
+        const dt = new Date(Date.UTC(year, month - 1, day));
+        if (dt.getUTCFullYear() !== year || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) return '';
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      };
+      const DOB_LABEL = '(?:NGÀY\\s*SINH|SINH\\s*NGÀY|DOB|DATE\\s*OF\\s*BIRTH|BIRTH\\s*DATE)';
+      const dobDmy = cleanText.match(
+        new RegExp(`${DOB_LABEL}[^0-9]{0,14}(\\d{1,2})\\s*[\\/\\-.]\\s*(\\d{1,2})\\s*[\\/\\-.]\\s*(\\d{4})`, 'iu')
+      );
+      const dobYmd = cleanText.match(
+        new RegExp(`${DOB_LABEL}[^0-9]{0,14}(\\d{4})\\s*[\\/\\-.]\\s*(\\d{1,2})\\s*[\\/\\-.]\\s*(\\d{1,2})`, 'iu')
+      );
+      if (dobDmy) dob = toIsoDate(dobDmy[3], dobDmy[2], dobDmy[1]);
+      else if (dobYmd) dob = toIsoDate(dobYmd[1], dobYmd[2], dobYmd[3]);
 
       // Extract Experience Years
       let experienceYears = 1;
@@ -1641,6 +1665,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         email: email || '',
         phone: phone || '',
         gender,
+        dob,
         education: education || 'Đang cập nhật',
         experienceYears: Math.round(experienceYears * 10) / 10,
         skills: detectedSkills,

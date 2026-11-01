@@ -64,6 +64,8 @@ console.log('    Họ và tên      :', parsed.name);
 console.log('    Email          :', parsed.email);
 console.log('    Điện thoại     :', parsed.phone);
 console.log('    Học vấn        :', parsed.education);
+console.log('    Giới tính      :', parsed.gender);
+console.log('    Ngày sinh      :', parsed.dob);
 console.log('    Số năm kinh nghiệm:', parsed.experienceYears);
 console.log('    Kỹ năng        :', (parsed.skills || []).join(', '));
 console.log('    Chứng chỉ      :', (parsed.certifications || []).join(', '));
@@ -87,6 +89,8 @@ check('Trích xuất đúng họ tên', /TRẦN THỊ MINH THƯ/i.test(parsed.na
 check('Trích xuất đúng email', parsed.email === 'minhthu.tran.test@gmail.com', parsed.email);
 check('Trích xuất đúng số điện thoại', parsed.phone === '0912345678', parsed.phone);
 check('Nhận diện trình độ đại học', /đại học/i.test(parsed.education || ''), parsed.education);
+check('Nhận diện giới tính Nữ', parsed.gender === 'Nữ', parsed.gender);
+check('Nhận diện ngày sinh 1997-03-12', parsed.dob === '1997-03-12', parsed.dob);
 check('Số năm kinh nghiệm > 0 và hợp lý (2–6)', parsed.experienceYears >= 2 && parsed.experienceYears <= 6, parsed.experienceYears);
 check('Nhận diện kỹ năng React', (parsed.skills || []).includes('React'), parsed.skills);
 check('Nhận diện kỹ năng TypeScript', (parsed.skills || []).includes('TypeScript'), parsed.skills);

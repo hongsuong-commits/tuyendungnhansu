@@ -148,6 +148,11 @@ const SettingsPage = (() => {
                 </div>
                 <div class="card-body text-xs space-y-3">
                   <div class="form-group">
+                    <label class="form-label">Hotline</label>
+                    <input type="text" id="settings-company-hotline" class="form-input text-xs" value="${settings.hotline || '1900 xxxx'}" placeholder="1900 xxxx">
+                    <span class="form-help text-xs text-muted">Số này hiển thị ở chân trang cổng tuyển dụng và trong email gửi ứng viên.</span>
+                  </div>
+                  <div class="form-group">
                     <label class="form-label">Tên công ty / Tập đoàn</label>
                     <input type="text" id="settings-company-name" class="form-input text-xs" value="${settings.companyName || 'SmartATS Solutions Việt Nam'}">
                   </div>
@@ -158,10 +163,6 @@ const SettingsPage = (() => {
                   <div class="form-group">
                     <label class="form-label">Trụ sở chính</label>
                     <input type="text" id="settings-company-address" class="form-input text-xs" value="${settings.companyAddress || 'Tòa nhà Landmark, Cầu Giấy, Hà Nội'}">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Hotline</label>
-                    <input type="text" id="settings-company-hotline" class="form-input text-xs" value="${settings.hotline || '1900 xxxx'}" placeholder="1900 xxxx">
                   </div>
                   <button type="button" class="btn btn-xs btn-outline w-full" id="btn-save-company-info">
                     <i data-lucide="save" class="icon-xs"></i> Lưu thông tin
