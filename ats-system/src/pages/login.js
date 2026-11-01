@@ -38,7 +38,7 @@ const LoginPage = (() => {
             <div class="login-card" id="loginCard">
               <div class="login-header">
                 <h1 class="login-title">Đăng nhập</h1>
-                <p class="login-subtitle">Tài khoản nội bộ vào bảng điều khiển; tài khoản ứng viên mở Cổng tuyển dụng.</p>
+                <p class="login-subtitle">Dành cho tài khoản nội bộ của doanh nghiệp.</p>
               </div>
 
               <form class="login-form" id="loginForm" novalidate>
@@ -101,7 +101,7 @@ const LoginPage = (() => {
 
               <div class="login-footer-link">
                 <span>Bạn là ứng viên?</span>
-                <a href="#/portal" class="candidate-portal-link">Truy cập cổng ứng viên →</a>
+                <a href="#/portal" class="candidate-portal-link">Nộp hồ sơ tại cổng tuyển dụng →</a>
               </div>
             </div>
 
@@ -142,14 +142,9 @@ const LoginPage = (() => {
                       <td><code>head_sales</code></td>
                       <td><code>123456</code></td>
                     </tr>
-                    <tr class="demo-row" data-username="candidate" data-password="123456">
-                      <td><span class="demo-role-badge demo-role-candidate">Ứng viên</span></td>
-                      <td><code>candidate</code></td>
-                      <td><code>123456</code></td>
-                    </tr>
                   </tbody>
                 </table>
-                <p class="demo-note">Tài khoản ứng viên mở Cổng tuyển dụng công khai, không vào bảng điều khiển nội bộ.</p>
+                <p class="demo-note">Chỉ tài khoản nội bộ được đăng nhập. Ứng viên nộp và tra cứu hồ sơ tại cổng tuyển dụng công khai.</p>
               </div>
             </div>
 
@@ -299,13 +294,8 @@ const LoginPage = (() => {
             else if (UI.showToast) UI.showToast('Đăng nhập thành công!', 'success');
           }
 
-          // Navigate based on role
-          const currentUser = ATSStore.getCurrentUser();
-          if (currentUser && currentUser.role === 'candidate') {
-            Router.navigate('portal');
-          } else {
-            Router.navigate('dashboard');
-          }
+          // Navigate into the internal dashboard — candidates never log in here.
+          Router.navigate('dashboard');
         } else {
           // ── Login failed ─────────────────────────────────────────
           this.setLoading(false);

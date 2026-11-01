@@ -5,7 +5,8 @@
  */
 
 const InterviewsPage = (() => {
-  let _activeView = 'week'; // 'week' | 'list'
+  let _activeView = 'list'; // 'week' | 'list'
+  let _keepView = false;
   let _activeStatus = 'all';
   let _activeInterviewer = 'all';
   let _searchQuery = '';
@@ -24,6 +25,10 @@ const InterviewsPage = (() => {
     render(params = {}) {
       const user = ATSStore.getCurrentUser();
       if (!user) return '<div class="page-container"><p>Vui lòng đăng nhập.</p></div>';
+
+      // Mở màn hình từ menu → luôn vào dạng Danh sách trước.
+      if (!_keepView) _activeView = 'list';
+      _keepView = false;
 
       const interviews = ATSStore.getInterviews({
         status: _activeStatus,
@@ -272,10 +277,8 @@ const InterviewsPage = (() => {
                  onclick="InterviewsPage.showDetailModal('${iv.id}')"
                  title="${iv.startTime}–${iv.endTime} · ${iv.candidateName} · ${iv.round}">
               <div class="week-iv-content">
-                <span class="week-iv-time">${iv.startTime} – ${iv.endTime}</span>
                 <span class="week-iv-name">${iv.candidateName}</span>
                 <span class="week-iv-pos">${iv.positionTitle || ''}</span>
-                <span class="week-iv-meta">${iv.round || ''}${iv.type === 'online' ? ' · Online' : ''}</span>
               </div>
             </div>
           `;
@@ -414,6 +417,9 @@ const InterviewsPage = (() => {
     refresh() {
       const mainContent = document.getElementById('mainContent');
       if (mainContent) {
+        // Giữ nguyên chế độ xem khi người dùng tự chuyển Danh sách ↔ Lịch tuần;
+        // chỉ lần mở màn hình từ menu mới quay về mặc định Danh sách.
+        _keepView = true;
         mainContent.innerHTML = this.render();
         this.init();
         if (typeof lucide !== 'undefined') lucide.createIcons();

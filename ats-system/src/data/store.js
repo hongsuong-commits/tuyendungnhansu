@@ -62,19 +62,6 @@ const ATSStore = (() => {
       title: 'Trưởng phòng Kinh doanh Toàn quốc',
       status: 'active',
       avatar: 'PTM'
-    },
-    {
-      id: 'usr_cand_1',
-      username: 'candidate',
-      password: '123456',
-      fullName: 'Vũ Hoàng Nam',
-      email: 'nam.vu@gmail.com',
-      phone: '0978123456',
-      role: 'candidate',
-      department: 'Ứng viên',
-      title: 'Kỹ sư Phần mềm',
-      status: 'active',
-      avatar: 'VHN'
     }
   ];
 
@@ -1052,6 +1039,176 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
   let _data = null;
   let _currentUser = null;
 
+  // ── Đồng bộ máy chủ (PostgreSQL) ─────────────────────────────
+  // Giao diện đọc dữ liệu đồng bộ từ bộ nhớ; mọi thay đổi được đẩy lên
+  // API /api/sync ngay sau khi ghi, theo cơ chế so sánh khác biệt.
+  const SYNC_COLLECTIONS = [
+    'users', 'departments', 'requisitions', 'postings', 'candidates',
+    'applications', 'interviews', 'evaluations', 'notifications', 'emailLog'
+  ];
+  let _syncEnabled = false;
+  let _syncedSnapshot = null;
+  let _syncTimer = null;
+  let _syncing = false;
+  let _syncPending = false;
+
+  function cloneData(value) {
+    return value == null ? value : JSON.parse(JSON.stringify(value));
+  }
+
+  function departmentRecords() {
+    return (_data.departments || []).map((name, index) => ({
+      id: `dept_${index + 1}`,
+      name: typeof name === 'string' ? name : (name && name.name) || ''
+    }));
+  }
+
+  function serverSnapshot() {
+    const snapshot = {};
+    SYNC_COLLECTIONS.forEach((collection) => {
+      snapshot[collection] = collection === 'departments'
+        ? departmentRecords()
+        : cloneData(_data[collection] || []);
+    });
+    snapshot.settings = cloneData(_data.settings || null);
+    return snapshot;
+  }
+
+  function diffAgainstSynced(snapshot) {
+    if (!_syncedSnapshot) return null;
+
+    const upserts = {};
+    const deletes = {};
+
+    SYNC_COLLECTIONS.forEach((collection) => {
+      const previous = _syncedSnapshot[collection] || [];
+      const next = snapshot[collection] || [];
+      const previousMap = new Map(previous.filter(r => r && r.id).map(r => [r.id, JSON.stringify(r)]));
+      const nextIds = new Set();
+      const changed = [];
+
+      next.forEach((record) => {
+        if (!record || !record.id) return;
+        nextIds.add(record.id);
+        if (previousMap.get(record.id) !== JSON.stringify(record)) changed.push(record);
+      });
+
+      const removed = previous.filter(r => r && r.id && !nextIds.has(r.id)).map(r => r.id);
+
+      if (changed.length) upserts[collection] = changed;
+      if (removed.length) deletes[collection] = removed;
+    });
+
+    const settingsChanged = JSON.stringify(snapshot.settings) !== JSON.stringify(_syncedSnapshot.settings);
+    if (!Object.keys(upserts).length && !Object.keys(deletes).length && !settingsChanged) return null;
+
+    const payload = { upserts, deletes };
+    if (settingsChanged) payload.settings = snapshot.settings;
+    return payload;
+  }
+
+  function scheduleSync() {
+    if (!_syncEnabled || typeof fetch !== 'function') return;
+    if (_syncTimer) clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(() => {
+      _syncTimer = null;
+      flushSync();
+    }, 250);
+  }
+
+  async function flushSync() {
+    if (!_syncEnabled || typeof fetch !== 'function') return;
+    if (_syncing) {
+      _syncPending = true;
+      return;
+    }
+
+    const snapshot = serverSnapshot();
+    const payload = diffAgainstSynced(snapshot);
+    if (!payload) return;
+
+    _syncing = true;
+    try {
+      const res = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      _syncedSnapshot = snapshot;
+    } catch (err) {
+      console.warn('[ATSStore] Không đồng bộ được lên máy chủ:', err.message);
+      if (_syncTimer) clearTimeout(_syncTimer);
+      _syncTimer = setTimeout(() => {
+        _syncTimer = null;
+        flushSync();
+      }, 3000);
+    } finally {
+      _syncing = false;
+    }
+
+    if (_syncPending) {
+      _syncPending = false;
+      scheduleSync();
+    } else if (diffAgainstSynced(serverSnapshot())) {
+      scheduleSync();
+    }
+  }
+
+  /** Nạp toàn bộ dữ liệu từ PostgreSQL khi ứng dụng khởi động. */
+  async function init() {
+    if (typeof fetch !== 'function') return false;
+    try {
+      const res = await fetch('/api/state', { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = await res.json();
+      const incoming = payload && payload.data;
+      if (!incoming) throw new Error('Phản hồi API không hợp lệ');
+
+      // Máy chủ chưa có người dùng nghĩa là chưa nạp được dữ liệu mẫu:
+      // giữ dữ liệu cục bộ để hệ thống vẫn dùng được.
+      if (!Array.isArray(incoming.users) || incoming.users.length === 0) {
+        throw new Error('Cơ sở dữ liệu chưa có dữ liệu người dùng');
+      }
+
+      SYNC_COLLECTIONS.forEach((collection) => {
+        if (collection === 'departments') {
+          _data.departments = (incoming.departments || [])
+            .map(d => (typeof d === 'string' ? d : (d && d.name) || ''))
+            .filter(Boolean);
+          return;
+        }
+        _data[collection] = Array.isArray(incoming[collection]) ? incoming[collection] : [];
+      });
+
+      if (incoming.settings) _data.settings = incoming.settings;
+      if (_data.settings && !_data.settings.hotline) _data.settings.hotline = '1900 xxxx';
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(_data));
+      } catch (_) { /* bộ nhớ trình duyệt đầy */ }
+
+      // Tài khoản đang đăng nhập phải tồn tại trong dữ liệu máy chủ.
+      if (_currentUser) {
+        const fresh = (_data.users || []).find(u => u.id === _currentUser.id);
+        if (fresh) {
+          _currentUser = fresh;
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(fresh));
+        } else {
+          _currentUser = null;
+          localStorage.removeItem(CURRENT_USER_KEY);
+        }
+      }
+
+      _syncedSnapshot = serverSnapshot();
+      _syncEnabled = true;
+      return true;
+    } catch (err) {
+      console.warn('[ATSStore] Dùng dữ liệu cục bộ:', err.message);
+      return false;
+    }
+  }
+
   function loadState() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -1097,6 +1254,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     } catch (e) {
       console.error('[ATSStore] Error saving storage:', e);
     }
+    scheduleSync();
   }
 
   function resetToDefault() {
@@ -1549,7 +1707,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     interview_reschedule: { label: 'Đổi lịch phỏng vấn', icon: 'calendar-clock', tone: 'warning' },
     interview_cancel: { label: 'Hủy lịch phỏng vấn', icon: 'calendar-x', tone: 'danger' },
     evaluation_result: { label: 'Kết quả đánh giá', icon: 'clipboard-check', tone: 'info' },
-    decision: { label: 'Quyết định tuyển dụng', icon: 'award', tone: 'success' }
+    decision: { label: 'Quyết định tuyển dụng', icon: 'award', tone: 'success' },
+    custom: { label: 'Thư tuỳ chỉnh', icon: 'mail', tone: 'info' }
   };
 
   const INTERVIEW_TYPE_LABEL = { online: 'Trực tuyến (Google Meet)', onsite: 'Trực tiếp tại văn phòng' };
@@ -1658,6 +1817,18 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
                 `Hồ sơ của bạn sẽ được lưu lại và chúng tôi sẽ liên hệ khi có vị trí phù hợp hơn.`
               ].filter(Boolean),
           facts: [{ label: 'Vị trí', value: position }, { label: 'Kết quả', value: hired ? 'Trúng tuyển' : 'Không đạt' }],
+          closing: signOff
+        };
+      }
+
+      // Thư do HR tự soạn trong Hộp thư ứng viên.
+      case 'custom': {
+        const body = String(ctx.body || '').trim();
+        return {
+          subject: String(ctx.subject || '').trim() || `[SmartATS] Thông báo về hồ sơ ${position}`,
+          greeting: `Kính gửi ${name},`,
+          paragraphs: body ? body.split(/\n+/).map(line => line.trim()).filter(Boolean) : [],
+          facts: ctx.showPosition && position ? [{ label: 'Vị trí', value: position }] : [],
           closing: signOff
         };
       }
@@ -1810,7 +1981,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
     login(username, password) {
       const user = (_data.users || []).find(u => u.username === username.trim() && u.password === password.trim());
-      if (user) {
+      // Candidates never authenticate: they only use the public career portal.
+      if (user && user.role !== 'candidate') {
         this.setCurrentUser(user);
         return { success: true, user };
       }
@@ -2123,6 +2295,18 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       return app;
     },
 
+    markForManualReview(applicationId, note = '') {
+      const app = this.getApplicationById(applicationId);
+      if (!app) return null;
+
+      app.manualReview = true;
+      app.manualReviewAt = new Date().toISOString();
+      app.manualReviewBy = _currentUser ? (_currentUser.fullName || _currentUser.username) : 'Nhân sự';
+
+      this.updateApplicationStatus(applicationId, 'reviewing', note || 'Đánh dấu cần kiểm tra thủ công', { notify: false });
+      return this.getApplicationById(applicationId);
+    },
+
     addApplicationNote(applicationId, content) {
       const app = this.getApplicationById(applicationId);
       if (!app) return null;
@@ -2363,6 +2547,19 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
       _data.interviews[idx] = next;
       saveState();
+
+      // Lần đầu chuyển sang "Đã xác nhận": gửi thư mời tới email ứng viên đã đăng ký khi nộp CV.
+      const confirmedNow = String(next.status) === 'confirmed' && String(prev.status) !== 'confirmed';
+      if (confirmedNow && !next.inviteEmailId) {
+        const candidate = (_data.candidates || []).find(c => c.id === next.candidateId)
+          || { fullName: next.candidateName, email: next.email };
+        const app = (_data.applications || []).find(a => a.candidateId === next.candidateId && a.requisitionId === next.requisitionId);
+        const invite = dispatchCandidateEmail('interview_invite', { candidate, application: app, interview: next });
+        if (invite) {
+          _data.interviews[idx].inviteEmailId = invite.id;
+          saveState();
+        }
+      }
 
       if (timingChanged) {
         const candidate = (_data.candidates || []).find(c => c.id === next.candidateId)
@@ -2668,8 +2865,42 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         interview_reschedule: count('interview_reschedule'),
         interview_cancel: count('interview_cancel'),
         evaluation_result: count('evaluation_result'),
-        decision: count('decision')
+        decision: count('decision'),
+        custom: count('custom')
       };
+    },
+
+    /**
+     * HR chủ động soạn và gửi thư cho một ứng viên.
+     * Thư đi vào cùng hộp thư với các thư tự động, máy chủ sẽ gửi ngay
+     * sau khi bản ghi được đồng bộ lên PostgreSQL.
+     */
+    sendCandidateEmail({ candidateId, applicationId, subject, body } = {}) {
+      const candidate = (_data.candidates || []).find(c => c.id === candidateId);
+      if (!candidate) return { success: false, message: 'Không tìm thấy ứng viên cần gửi thư.' };
+      if (!candidate.email) return { success: false, message: 'Ứng viên này chưa có địa chỉ email.' };
+
+      const application = (_data.applications || []).find(a => a.id === applicationId)
+        || (_data.applications || []).find(a => a.candidateId === candidate.id)
+        || null;
+
+      if (!String(subject || '').trim()) {
+        return { success: false, message: 'Vui lòng nhập tiêu đề thư.' };
+      }
+      if (!String(body || '').trim()) {
+        return { success: false, message: 'Vui lòng nhập nội dung thư.' };
+      }
+
+      const record = dispatchCandidateEmail('custom', {
+        candidate,
+        application,
+        subject,
+        body,
+        showPosition: !!application
+      });
+      if (!record) return { success: false, message: 'Không soạn được thư. Vui lòng kiểm tra lại nội dung.' };
+
+      return { success: true, email: record };
     },
 
     // ── Settings ───────────────────────────────────────────────
@@ -2682,6 +2913,11 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       saveState();
       return _data.settings;
     },
+
+    // ── Đồng bộ máy chủ (PostgreSQL) ───────────────────────────
+    init,
+    syncNow() { return flushSync(); },
+    isServerBacked() { return _syncEnabled; },
 
     resetAllData() {
       resetToDefault();

@@ -123,9 +123,14 @@ const EvaluationsPage = (() => {
                         <td class="text-right font-mono">${row.evaluations.length}</td>
                         <td class="text-right">${renderAverage(row.average, row.evaluations.length)}</td>
                         <td class="text-right">
-                          <button class="btn btn-xs btn-outline btn-open-eval" data-id="${row.app.candidateId}">
-                            <i data-lucide="clipboard-list" class="icon-xs"></i> Xem phiếu
-                          </button>
+                          <div class="eval-row-actions">
+                            <button class="btn btn-xs btn-outline btn-open-eval" data-id="${row.app.candidateId}">
+                              <i data-lucide="clipboard-list" class="icon-xs"></i> Xem phiếu
+                            </button>
+                            <button class="btn btn-xs btn-primary btn-new-scorecard" data-id="${row.app.candidateId}">
+                              <i data-lucide="clipboard-check" class="icon-xs"></i> Nhập phiếu đánh giá
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     `).join('')}
@@ -302,6 +307,14 @@ const EvaluationsPage = (() => {
 
       document.getElementById('btn-create-scorecard')?.addEventListener('click', () => {
         this.showScorecardModal();
+      });
+
+      // Mọi vai trò đều có thể nhập phiếu đánh giá ngay từ danh sách ứng viên.
+      document.querySelectorAll('.btn-new-scorecard').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          _selectedCandId = e.currentTarget.getAttribute('data-id');
+          this.showScorecardModal();
+        });
       });
 
       document.getElementById('btn-propose-hire')?.addEventListener('click', () => {

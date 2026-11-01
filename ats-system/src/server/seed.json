@@ -1,0 +1,1337 @@
+{
+  "users": [
+    {
+      "id": "usr_director",
+      "username": "director",
+      "password": "123456",
+      "fullName": "Trần Đình Long",
+      "email": "director@smartats.vn",
+      "phone": "0903123456",
+      "role": "director",
+      "department": "Ban Giám Đốc",
+      "title": "Tổng Giám Đốc",
+      "status": "active",
+      "avatar": "TDL"
+    },
+    {
+      "id": "usr_hr1",
+      "username": "hr1",
+      "password": "123456",
+      "fullName": "Nguyễn Thu Hà",
+      "email": "ha.nguyen@smartats.vn",
+      "phone": "0912345678",
+      "role": "hr",
+      "department": "Phòng Nhân sự",
+      "title": "Trưởng nhóm Tuyển dụng (Senior Talent Acquisition)",
+      "status": "active",
+      "avatar": "NTH"
+    },
+    {
+      "id": "usr_head_it",
+      "username": "head_it",
+      "password": "123456",
+      "fullName": "Lê Văn Hùng",
+      "email": "hung.le@smartats.vn",
+      "phone": "0987654321",
+      "role": "department_head",
+      "department": "Công nghệ thông tin",
+      "title": "Giám đốc Công nghệ (CTO)",
+      "status": "active",
+      "avatar": "LVH"
+    },
+    {
+      "id": "usr_head_sales",
+      "username": "head_sales",
+      "password": "123456",
+      "fullName": "Phạm Thị Mai",
+      "email": "mai.pham@smartats.vn",
+      "phone": "0934567890",
+      "role": "department_head",
+      "department": "Kinh doanh & Phát triển",
+      "title": "Trưởng phòng Kinh doanh Toàn quốc",
+      "status": "active",
+      "avatar": "PTM"
+    }
+  ],
+  "departments": [
+    {
+      "id": "dept_1",
+      "name": "Công nghệ thông tin"
+    },
+    {
+      "id": "dept_2",
+      "name": "Kinh doanh & Phát triển"
+    },
+    {
+      "id": "dept_3",
+      "name": "Marketing & Truyền thông"
+    },
+    {
+      "id": "dept_4",
+      "name": "Tài chính - Kế toán"
+    },
+    {
+      "id": "dept_5",
+      "name": "Phòng Nhân sự"
+    },
+    {
+      "id": "dept_6",
+      "name": "Vận hành & Dịch vụ Khách hàng"
+    }
+  ],
+  "requisitions": [
+    {
+      "id": "req_1",
+      "code": "YCTD-2026-001",
+      "title": "Senior Frontend Developer (React / TypeScript)",
+      "department": "Công nghệ thông tin",
+      "quantity": 2,
+      "reason": "Mở rộng dự án phát triển hệ thống ERP thế hệ mới cho doanh nghiệp",
+      "description": "Chịu trách nhiệm thiết kế kiến trúc UI/UX phía client, xây dựng các module phức tạp sử dụng React 18, Next.js và TypeScript. Phối hợp chặt chẽ với đội Backend và UI Designer.",
+      "requirements": "- Tối thiểu 3 năm kinh nghiệm lập trình React.js, TypeScript.\n- Thành thạo Redux Toolkit / Zustand, Tailwind CSS.\n- Có hiểu biết về CI/CD, hiệu năng web và responsive design.\n- Tốt nghiệp Đại học chuyên ngành CNTT hoặc liên quan.",
+      "skills": [
+        "React",
+        "TypeScript",
+        "JavaScript",
+        "Tailwind CSS",
+        "Redux",
+        "Next.js"
+      ],
+      "education": "Đại học",
+      "minExperience": 3,
+      "salary": "28.000.000 - 40.000.000 VNĐ",
+      "workType": "Toàn thời gian",
+      "location": "Hà Nội (Hybrid)",
+      "startDate": "2026-10-01",
+      "deadline": "2026-11-20",
+      "creatorId": "usr_head_it",
+      "creatorName": "Lê Văn Hùng",
+      "status": "recruiting",
+      "createdAt": "2026-10-02T08:30:00Z",
+      "approvalHistory": [
+        {
+          "status": "pending",
+          "by": "Lê Văn Hùng",
+          "date": "2026-10-02T08:30:00Z",
+          "note": "Gửi yêu cầu tuyển dụng mới"
+        },
+        {
+          "status": "approved",
+          "by": "Trần Đình Long",
+          "date": "2026-10-03T10:15:00Z",
+          "note": "Phê duyệt ngân sách tuyển dụng"
+        },
+        {
+          "status": "recruiting",
+          "by": "Nguyễn Thu Hà",
+          "date": "2026-10-04T09:00:00Z",
+          "note": "Đã xuất bản tin tuyển dụng"
+        }
+      ]
+    },
+    {
+      "id": "req_2",
+      "code": "YCTD-2026-002",
+      "title": "Chuyên viên Phát triển Khách hàng Doanh nghiệp (B2B Sales Executive)",
+      "department": "Kinh doanh & Phát triển",
+      "quantity": 3,
+      "reason": "Đẩy mạnh doanh số quý 4 và khai thác thị trường khách hàng khối sản xuất",
+      "description": "Tìm kiếm, tiếp cận và đàm phán hợp đồng cung cấp giải pháp chuyển đổi số cho các doanh nghiệp vừa và lớn. Tham gia hội thảo, triển lãm ngành.",
+      "requirements": "- Tối thiểu 2 năm kinh nghiệm kinh doanh B2B ngành phần mềm, dịch vụ CNTT.\n- Kỹ năng đàm phán, thuyết trình tốt.\n- Tốt nghiệp Đại học khối Kinh tế, QTKD hoặc Ngoại thương.\n- Tiếng Anh giao tiếp tốt là lợi thế.",
+      "skills": [
+        "B2B Sales",
+        "Đàm phán",
+        "Kỹ năng thuyết trình",
+        "CRM",
+        "Quản lý khách hàng"
+      ],
+      "education": "Đại học",
+      "minExperience": 2,
+      "salary": "15.000.000 - 25.000.000 VNĐ + Hoa hồng",
+      "workType": "Toàn thời gian",
+      "location": "TP. Hồ Chí Minh",
+      "startDate": "2026-10-05",
+      "deadline": "2026-11-30",
+      "creatorId": "usr_head_sales",
+      "creatorName": "Phạm Thị Mai",
+      "status": "recruiting",
+      "createdAt": "2026-10-05T09:00:00Z",
+      "approvalHistory": [
+        {
+          "status": "pending",
+          "by": "Phạm Thị Mai",
+          "date": "2026-10-05T09:00:00Z",
+          "note": "Nhu cầu mở rộng kênh bán hàng"
+        },
+        {
+          "status": "approved",
+          "by": "Trần Đình Long",
+          "date": "2026-10-06T14:20:00Z",
+          "note": "Đồng ý duyệt số lượng 3 chỉ tiêu"
+        },
+        {
+          "status": "recruiting",
+          "by": "Nguyễn Thu Hà",
+          "date": "2026-10-07T08:30:00Z",
+          "note": "Đang triển khai đăng tuyển"
+        }
+      ]
+    },
+    {
+      "id": "req_3",
+      "code": "YCTD-2026-003",
+      "title": "DevOps / Cloud Engineer (AWS / Kubernetes)",
+      "department": "Công nghệ thông tin",
+      "quantity": 1,
+      "reason": "Tối ưu hoá hạ tầng đám mây và chuẩn hóa hệ thống CI/CD tự động",
+      "description": "Quản trị hạ tầng AWS, quản lý cụm Kubernetes (EKS), xây dựng các đường ống triển khai tự động (GitLab CI/CD, Terraform). Giám sát độ sẵn sàng 99.99%.",
+      "requirements": "- Tối thiểu 3 năm kinh nghiệm vận hành DevOps trên AWS.\n- Thành thạo Docker, Kubernetes, Terraform, Prometheus/Grafana.\n- Có chứng chỉ AWS Solutions Architect hoặc CKA là ưu thế lớn.",
+      "skills": [
+        "AWS",
+        "Kubernetes",
+        "Docker",
+        "CI/CD",
+        "Terraform",
+        "Linux"
+      ],
+      "education": "Đại học",
+      "minExperience": 3,
+      "salary": "35.000.000 - 50.000.000 VNĐ",
+      "workType": "Toàn thời gian",
+      "location": "Hà Nội",
+      "startDate": "2026-10-10",
+      "deadline": "2026-11-25",
+      "creatorId": "usr_head_it",
+      "creatorName": "Lê Văn Hùng",
+      "status": "recruiting",
+      "createdAt": "2026-10-10T10:00:00Z",
+      "approvalHistory": [
+        {
+          "status": "pending",
+          "by": "Lê Văn Hùng",
+          "date": "2026-10-10T10:00:00Z",
+          "note": "Cần bổ sung chuyên gia hạ tầng cloud"
+        },
+        {
+          "status": "approved",
+          "by": "Trần Đình Long",
+          "date": "2026-10-11T11:00:00Z",
+          "note": "Duyệt tuyển dụng"
+        },
+        {
+          "status": "recruiting",
+          "by": "Nguyễn Thu Hà",
+          "date": "2026-10-12T09:30:00Z",
+          "note": "Đã đăng tin tuyển dụng"
+        }
+      ]
+    },
+    {
+      "id": "req_4",
+      "code": "YCTD-2026-004",
+      "title": "Chuyên viên Tuyển dụng & Đào tạo (HR Recruitment Specialist)",
+      "department": "Phòng Nhân sự",
+      "quantity": 1,
+      "reason": "Bổ sung nhân sự quản lý nguồn ứng viên và điều phối đào tạo hội nhập",
+      "description": "Lên kế hoạch tìm kiếm ứng viên qua các kênh, quản trị hệ thống ATS, lọc hồ sơ, phỏng vấn sơ bộ và tổ chức chương trình đào tạo định hướng nhân viên mới.",
+      "requirements": "- Tối thiểu 2 năm kinh nghiệm tuyển dụng trong doanh nghiệp quy mô 100+ nhân sự.\n- Kỹ năng giao tiếp xuất sắc, am hiểu luật lao động.\n- Tốt nghiệp Đại học khối Quản trị Nhân lực, Luật, Kinh tế.",
+      "skills": [
+        "Tuyển dụng",
+        "Sàng lọc CV",
+        "Phỏng vấn",
+        "Đào tạo nội bộ",
+        "Luật lao động"
+      ],
+      "education": "Đại học",
+      "minExperience": 2,
+      "salary": "14.000.000 - 20.000.000 VNĐ",
+      "workType": "Toàn thời gian",
+      "location": "Hà Nội",
+      "startDate": "2026-10-12",
+      "deadline": "2026-11-15",
+      "creatorId": "usr_hr1",
+      "creatorName": "Nguyễn Thu Hà",
+      "status": "approved",
+      "createdAt": "2026-10-12T14:00:00Z",
+      "approvalHistory": [
+        {
+          "status": "pending",
+          "by": "Nguyễn Thu Hà",
+          "date": "2026-10-12T14:00:00Z",
+          "note": "Tạo yêu cầu nhân sự phòng HR"
+        },
+        {
+          "status": "approved",
+          "by": "Trần Đình Long",
+          "date": "2026-10-13T16:00:00Z",
+          "note": "Đã duyệt yêu cầu"
+        }
+      ]
+    },
+    {
+      "id": "req_5",
+      "code": "YCTD-2026-005",
+      "title": "Kế toán Tổng hợp kiêm Thuế (General Accountant)",
+      "department": "Tài chính - Kế toán",
+      "quantity": 1,
+      "reason": "Thay thế nhân sự nghỉ thai sản và hỗ trợ lập báo cáo kiểm toán năm 2026",
+      "description": "Lập báo cáo tài chính định kỳ, kê khai thuế GTGT, TNCN, TNDN, quyết toán với cơ quan thuế. Kiểm tra chứng từ kế toán và đối chiếu công nợ.",
+      "requirements": "- Tối thiểu 3 năm kinh nghiệm kế toán tổng hợp.\n- Thành thạo phần mềm MISA / Bravo, Excel nâng cao.\n- Tốt nghiệp Đại học chuyên ngành Tài chính Kế toán, Kiểm toán.",
+      "skills": [
+        "Kế toán tổng hợp",
+        "Kê khai thuế",
+        "MISA",
+        "Báo cáo tài chính",
+        "Excel"
+      ],
+      "education": "Đại học",
+      "minExperience": 3,
+      "salary": "16.000.000 - 22.000.000 VNĐ",
+      "workType": "Toàn thời gian",
+      "location": "Hà Nội",
+      "startDate": "2026-10-15",
+      "deadline": "2026-11-28",
+      "creatorId": "usr_director",
+      "creatorName": "Trần Đình Long",
+      "status": "pending",
+      "createdAt": "2026-10-15T09:00:00Z",
+      "approvalHistory": [
+        {
+          "status": "pending",
+          "by": "Trần Đình Long",
+          "date": "2026-10-15T09:00:00Z",
+          "note": "Đang chờ rà soát định biên"
+        }
+      ]
+    },
+    {
+      "id": "req_6",
+      "code": "YCTD-2026-006",
+      "title": "UI/UX Product Designer",
+      "department": "Công nghệ thông tin",
+      "quantity": 1,
+      "reason": "Thiết kế giao diện sản phẩm SaaS mới",
+      "description": "Xây dựng Design System, Wireframes, High-fidelity prototype trên Figma, thực hiện Usability Testing và bàn giao thiết kế cho đội Front-end.",
+      "requirements": "- Tối thiểu 2 năm kinh nghiệm UI/UX trên Figma.\n- Có portfolio sản phẩm webapp SaaS thực tế.\n- Tư duy kiến trúc thông tin tốt.",
+      "skills": [
+        "Figma",
+        "UI/UX",
+        "Design System",
+        "Prototyping",
+        "User Research"
+      ],
+      "education": "Đại học / Cao đẳng",
+      "minExperience": 2,
+      "salary": "20.000.000 - 30.000.000 VNĐ",
+      "workType": "Toàn thời gian",
+      "location": "Hà Nội",
+      "startDate": "2026-09-01",
+      "deadline": "2026-10-20",
+      "creatorId": "usr_head_it",
+      "creatorName": "Lê Văn Hùng",
+      "status": "closed",
+      "createdAt": "2026-09-01T10:00:00Z",
+      "approvalHistory": [
+        {
+          "status": "approved",
+          "by": "Trần Đình Long",
+          "date": "2026-09-02T10:00:00Z",
+          "note": "Đã duyệt"
+        },
+        {
+          "status": "closed",
+          "by": "Nguyễn Thu Hà",
+          "date": "2026-10-20T17:00:00Z",
+          "note": "Đã tuyển đủ nhân sự"
+        }
+      ]
+    }
+  ],
+  "postings": [
+    {
+      "id": "post_1",
+      "requisitionId": "req_1",
+      "code": "TND-2026-001",
+      "title": "Tuyển dụng Senior Frontend Developer (React / TypeScript) - Lương lên tới 40M",
+      "department": "Công nghệ thông tin",
+      "salary": "28 - 40 triệu VNĐ",
+      "location": "Hà Nội (Hybrid: 2 ngày WFH)",
+      "workType": "Toàn thời gian",
+      "deadline": "2026-11-20",
+      "status": "published",
+      "publishedAt": "2026-10-04T09:00:00Z",
+      "views": 524,
+      "applicantsCount": 6,
+      "channels": {
+        "website": {
+          "active": true,
+          "url": "#/portal/job/post_1",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 3
+        },
+        "topcv": {
+          "active": true,
+          "url": "https://topcv.vn/demo-job-1",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 2
+        },
+        "linkedin": {
+          "active": true,
+          "url": "https://linkedin.com/jobs/demo-1",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 1
+        },
+        "vietnamworks": {
+          "active": false,
+          "url": "",
+          "syncStatus": "Chưa cấu hình",
+          "applicants": 0
+        }
+      },
+      "description": "Tham gia xây dựng nền tảng cốt lõi với hàng trăm nghìn người dùng doanh nghiệp. Môi trường công nghệ hiện đại, trang thiết bị Macbook Pro M-series, review lương 2 lần/năm.",
+      "requirements": "- Tối thiểu 3 năm kinh nghiệm thực chiến với React.js & TypeScript\n- Làm chủ State Management (Redux Toolkit, Zustand)\n- Hiểu sâu về tối ưu hoá hiệu năng Web Vitals\n- Kỹ năng làm việc nhóm, viết code sạch (Clean Code), Unit Test",
+      "benefits": "- Thưởng tháng 13 + thưởng hiệu quả kinh doanh dự án (2-4 tháng lương)\n- Bảo hiểm sức khỏe PVI cao cấp dành riêng cho CBNV\n- Nghỉ phép 14 ngày/năm, du lịch nghỉ dưỡng chuẩn 5 sao hàng năm\n- Được tài trợ 100% chi phí thi các chứng chỉ công nghệ"
+    },
+    {
+      "id": "post_2",
+      "requisitionId": "req_2",
+      "code": "TND-2026-002",
+      "title": "Chuyên viên Kinh doanh B2B Giải pháp Doanh nghiệp (Thu nhập 25M - 50M+)",
+      "department": "Kinh doanh & Phát triển",
+      "salary": "15 - 25 triệu VNĐ + Hoa hồng",
+      "location": "TP. Hồ Chí Minh",
+      "workType": "Toàn thời gian",
+      "deadline": "2026-11-30",
+      "status": "published",
+      "publishedAt": "2026-10-07T08:30:00Z",
+      "views": 412,
+      "applicantsCount": 5,
+      "channels": {
+        "website": {
+          "active": true,
+          "url": "#/portal/job/post_2",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 2
+        },
+        "topcv": {
+          "active": true,
+          "url": "https://topcv.vn/demo-job-2",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 2
+        },
+        "linkedin": {
+          "active": true,
+          "url": "https://linkedin.com/jobs/demo-2",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 1
+        },
+        "vietnamworks": {
+          "active": true,
+          "url": "https://vietnamworks.com/demo-2",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 0
+        }
+      },
+      "description": "Chủ động phát triển danh mục khách hàng doanh nghiệp thuộc nhóm tài chính, bán lẻ và sản xuất. Tư vấn các gói giải pháp phần mềm quản trị và chuyển đổi số.",
+      "requirements": "- Tối thiểu 2 năm kinh nghiệm bán hàng B2B giải pháp / dịch vụ\n- Khả năng giao tiếp thuyết phục, xử lý tình huống linh hoạt\n- Tinh thần chủ động, chịu được áp lực doanh số cao",
+      "benefits": "- Lương cứng cạnh tranh + % hoa hồng theo doanh số hợp đồng không giới hạn\n- Phụ cấp điện thoại, xăng xe, tiếp khách\n- Cơ hội thăng tiến lên Trưởng nhóm kinh doanh sau 6 tháng"
+    },
+    {
+      "id": "post_3",
+      "requisitionId": "req_3",
+      "code": "TND-2026-003",
+      "title": "DevOps / Cloud Engineer (AWS, K8s, CI/CD) - Lương up to 50M",
+      "department": "Công nghệ thông tin",
+      "salary": "35 - 50 triệu VNĐ",
+      "location": "Hà Nội",
+      "workType": "Toàn thời gian",
+      "deadline": "2026-11-25",
+      "status": "published",
+      "publishedAt": "2026-10-12T09:30:00Z",
+      "views": 310,
+      "applicantsCount": 4,
+      "channels": {
+        "website": {
+          "active": true,
+          "url": "#/portal/job/post_3",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 2
+        },
+        "topcv": {
+          "active": false,
+          "url": "",
+          "syncStatus": "Chưa kết nối",
+          "applicants": 0
+        },
+        "linkedin": {
+          "active": true,
+          "url": "https://linkedin.com/jobs/demo-3",
+          "syncStatus": "Đã đồng bộ",
+          "applicants": 2
+        },
+        "vietnamworks": {
+          "active": false,
+          "url": "",
+          "syncStatus": "Chưa cấu hình",
+          "applicants": 0
+        }
+      },
+      "description": "Phụ trách thiết kế và vận hành hệ thống đám mây AWS với độ tin cậy cao, tự động hóa toàn bộ quy trình build/deploy hệ thống qua CI/CD pipeline.",
+      "requirements": "- Từ 3 năm kinh nghiệm quản trị AWS & Kubernetes thực tế\n- Thành thạo IaC với Terraform, quản lý cấu hình Ansible\n- Kinh nghiệm thiết lập Monitoring/Logging với ELK / Prometheus Grafana",
+      "benefits": "- Môi trường làm việc quốc tế, công nghệ tiên tiến\n- Cơ hội làm việc trực tiếp với các chuyên gia Cloud hàng đầu\n- Được cấp Macbook Pro M3 và màn hình 4K"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "cand_1",
+      "fullName": "Vũ Hoàng Nam",
+      "email": "nam.vu@gmail.com",
+      "phone": "0978123456",
+      "gender": "Nam",
+      "dob": "1996-05-14",
+      "address": "Cầu Giấy, Hà Nội",
+      "education": "Đại học Bách Khoa Hà Nội - Kỹ thuật Phần mềm (Khá)",
+      "experienceYears": 4.5,
+      "skills": [
+        "React",
+        "TypeScript",
+        "JavaScript",
+        "Tailwind CSS",
+        "Redux",
+        "Next.js",
+        "Node.js",
+        "Git",
+        "HTML/CSS"
+      ],
+      "certifications": [
+        "AWS Certified Cloud Practitioner",
+        "IELTS 6.5"
+      ],
+      "currentCompany": "FPT Software",
+      "currentTitle": "Senior Frontend Developer",
+      "rawResumeText": "HỌ VÀ TÊN: VŨ HOÀNG NAM\nEmail: nam.vu@gmail.com - SĐT: 0978123456 - Địa chỉ: Cầu Giấy, Hà Nội\nHỌC VẤN:\n- Cử nhân Kỹ sư Kỹ thuật Phần mềm - Đại học Bách Khoa Hà Nội (2014 - 2019)\nKINH NGHIỆM LÀM VIỆC:\n- 2021 - Nay: Senior Frontend Developer tại FPT Software (3.5 năm)\n  + Phát triển kiến trúc webapp SaaS trên nền tảng React 18, TypeScript, Tailwind CSS.\n  + Tối ưu Core Web Vitals, giảm bundle size 35%, cải thiện LCP từ 3.2s xuống 1.4s.\n  + Áp dụng Zustand và React Query để đồng bộ cache dữ liệu phía client.\n- 2019 - 2021: Frontend Developer tại VNG Corporation (2 năm)\n  + Xây dựng giao diện tính năng thanh toán với JavaScript, ReactJS, Redux.\nKỸ NĂNG CHUYÊN MÔN:\n- React, TypeScript, Next.js, JavaScript (ES6+), HTML5, CSS3, Tailwind CSS, Redux Toolkit, RESTful API, Git, CI/CD cơ bản.\nCHỨNG CHỈ:\n- AWS Certified Cloud Practitioner (2023)\n- IELTS 6.5"
+    },
+    {
+      "id": "cand_2",
+      "fullName": "Trần Minh Anh",
+      "email": "minhanh.tran@outlook.com",
+      "phone": "0912456789",
+      "gender": "Nữ",
+      "dob": "1998-08-22",
+      "address": "Đống Đa, Hà Nội",
+      "education": "Đại học Công nghệ - ĐHQGHN - Công nghệ thông tin (Giỏi)",
+      "experienceYears": 3,
+      "skills": [
+        "React",
+        "JavaScript",
+        "HTML/CSS",
+        "Vue.js",
+        "Git",
+        "Bootstrap"
+      ],
+      "certifications": [
+        "TOEIC 780"
+      ],
+      "currentCompany": "VCCorp",
+      "currentTitle": "Frontend Developer",
+      "rawResumeText": "TRẦN MINH ANH\nEmail: minhanh.tran@outlook.com | SĐT: 0912456789 | Đống Đa, Hà Nội\nHỌC VẤN:\n- Đại học Công nghệ - ĐHQGHN (2016 - 2020) - Tốt nghiệp loại Giỏi\nKINH NGHIỆM:\n- 2021 - Hiện tại: Frontend Developer tại VCCorp (3 năm kinh nghiệm)\n  + Phát triển các portal nội bộ với ReactJS, Vue.js, JavaScript, HTML5/CSS3.\n  + Làm việc với RESTful API, Git version control.\nKỸ NĂNG:\n- React, JavaScript, Vue.js, HTML/CSS, Git, Responsive Web Design."
+    },
+    {
+      "id": "cand_3",
+      "fullName": "Nguyễn Đăng Khôi",
+      "email": "khoi.nguyen99@gmail.com",
+      "phone": "0983112233",
+      "gender": "Nam",
+      "dob": "1999-11-03",
+      "address": "Nam Từ Liêm, Hà Nội",
+      "education": "Cao đẳng FPT Polytechnic - Lập trình Web",
+      "experienceYears": 1.5,
+      "skills": [
+        "React",
+        "JavaScript",
+        "HTML/CSS",
+        "Node.js"
+      ],
+      "certifications": [],
+      "currentCompany": "Startup Tech",
+      "currentTitle": "Junior Web Developer",
+      "rawResumeText": "NGUYỄN ĐĂNG KHÔI\nEmail: khoi.nguyen99@gmail.com - 0983112233\nHọc vấn: Cao đẳng FPT Polytechnic\nKinh nghiệm: 1.5 năm làm Junior Web Developer (React, JavaScript, Node.js)\nKỹ năng: React cơ bản, JavaScript, HTML, CSS."
+    },
+    {
+      "id": "cand_4",
+      "fullName": "Đoàn Quang Huy",
+      "email": "huy.dq@gmail.com",
+      "phone": "0909678123",
+      "gender": "Nam",
+      "dob": "1993-02-18",
+      "address": "Quận 1, TP. Hồ Chí Minh",
+      "education": "Đại học Ngoại Thương TP.HCM - Quản trị Kinh doanh Quốc tế",
+      "experienceYears": 5,
+      "skills": [
+        "B2B Sales",
+        "Đàm phán",
+        "Kỹ năng thuyết trình",
+        "CRM",
+        "Quản lý khách hàng",
+        "Tiếng Anh"
+      ],
+      "certifications": [
+        "HubSpot Inbound Sales Certified",
+        "IELTS 7.5"
+      ],
+      "currentCompany": "MISA Corporation",
+      "currentTitle": "Senior B2B Account Executive",
+      "rawResumeText": "ĐOÀN QUANG HUY\nEmail: huy.dq@gmail.com | Điện thoại: 0909678123 | Quận 1, TP. HCM\nHỌC VẤN:\n- Cử nhân Quản trị Kinh doanh Quốc tế - Đại học Ngoại Thương CS2 (2011 - 2015)\nKINH NGHIỆM:\n- 2021 - Nay: Senior B2B Account Executive tại MISA Corp (3.5 năm)\n  + Đạt 140% KPI doanh số năm 2024 và 2025 với dòng sản phẩm ERP & Kế toán doanh nghiệp.\n  + Đàm phán và chốt hợp đồng với hơn 45 khách hàng doanh nghiệp sản xuất và thương mại.\n  + Sử dụng thành thạo Salesforce, HubSpot CRM.\n- 2018 - 2021: B2B Sales Specialist tại CMC Telecom (3 năm)\n  + Bán các giải pháp kênh truyền Internet cáp quang và trung tâm dữ liệu.\nKỸ NĂNG:\n- B2B Sales, Đàm phán, Kỹ năng thuyết trình, Quản lý tài khoản khách hàng (KAM), CRM, Tiếng Anh thương mại lưu loát."
+    },
+    {
+      "id": "cand_5",
+      "fullName": "Hoàng Bích Thủy",
+      "email": "thuy.hoangbich@yahoo.com",
+      "phone": "0938889911",
+      "gender": "Nữ",
+      "dob": "1997-09-12",
+      "address": "Quận 3, TP. Hồ Chí Minh",
+      "education": "Đại học Kinh Tế TP.HCM - Marketing & Bán hàng",
+      "experienceYears": 2.5,
+      "skills": [
+        "B2B Sales",
+        "Kỹ năng thuyết trình",
+        "CRM",
+        "Chăm sóc khách hàng"
+      ],
+      "certifications": [
+        "TOEIC 700"
+      ],
+      "currentCompany": "Haravan",
+      "currentTitle": "B2B Sales Consultant",
+      "rawResumeText": "HOÀNG BÍCH THỦY\nEmail: thuy.hoangbich@yahoo.com - 0938889911 - TP. Hồ Chí Minh\nHọc vấn: Đại học Kinh Tế TP.HCM (UEH) - Marketing\nKinh nghiệm: 2.5 năm tư vấn giải pháp Omni-channel B2B tại Haravan.\nKỹ năng: B2B Sales, CRM, thuyết trình sản phẩm, đàm phán hợp đồng."
+    },
+    {
+      "id": "cand_6",
+      "fullName": "Phạm Đức Trung",
+      "email": "trung.ducpham@gmail.com",
+      "phone": "0989334455",
+      "gender": "Nam",
+      "dob": "1994-07-30",
+      "address": "Cầu Giấy, Hà Nội",
+      "education": "Học viện Bưu chính Viễn thông (PTIT) - An toàn thông tin",
+      "experienceYears": 4,
+      "skills": [
+        "AWS",
+        "Kubernetes",
+        "Docker",
+        "CI/CD",
+        "Terraform",
+        "Linux",
+        "Ansible",
+        "Python"
+      ],
+      "certifications": [
+        "AWS Certified Solutions Architect Associate",
+        "Certified Kubernetes Administrator (CKA)"
+      ],
+      "currentCompany": "Viettel Telecom",
+      "currentTitle": "DevOps Specialist",
+      "rawResumeText": "PHẠM ĐỨC TRUNG\nEmail: trung.ducpham@gmail.com | Phone: 0989334455 | Hà Nội\nHỌC VẤN:\n- Cử nhân An toàn Thông tin - Học viện Công nghệ Bưu chính Viễn thông (2012 - 2017)\nKINH NGHIỆM:\n- 2022 - Nay: DevOps Engineer tại Viettel Telecom (2.5 năm)\n  + Quản trị hơn 20 cụm Kubernetes (EKS & on-premise) phục vụ microservices.\n  + Xây dựng hạ tầng tự động hóa hoàn toàn với Terraform và Ansible trên AWS.\n  + Thiết lập đường ống CI/CD tự động bằng GitLab CI và ArgoCD.\n- 2020 - 2022: Cloud System Administrator tại Viettel IDC (2 năm)\n  + Quản trị hạ tầng máy chủ Linux CentOS/Ubuntu, Docker containers.\nKỸ NĂNG:\n- AWS, Kubernetes (K8s), Docker, Terraform, CI/CD (GitLab, Jenkins), Linux, Shell Scripting, Python, Prometheus/Grafana.\nCHỨNG CHỈ:\n- CKA (Certified Kubernetes Administrator) - 2023\n- AWS Solutions Architect Associate - 2024"
+    },
+    {
+      "id": "cand_7",
+      "fullName": "Lê Thanh Vân",
+      "email": "van.lethanh@gmail.com",
+      "phone": "0977221100",
+      "gender": "Nữ",
+      "dob": "1995-12-05",
+      "address": "Thanh Xuân, Hà Nội",
+      "education": "Đại học Kinh Tế Quốc Dân - Quản trị Nhân lực (Xuất sắc)",
+      "experienceYears": 3.5,
+      "skills": [
+        "Tuyển dụng",
+        "Sàng lọc CV",
+        "Phỏng vấn",
+        "Đào tạo nội bộ",
+        "Luật lao động",
+        "Onboarding"
+      ],
+      "certifications": [
+        "SHRM-CP Candidate"
+      ],
+      "currentCompany": "Sun Asterisk",
+      "currentTitle": "Senior Talent Acquisition Specialist",
+      "rawResumeText": "LÊ THANH VÂN\nEmail: van.lethanh@gmail.com | SĐT: 0977221100 | Hà Nội\nHỌC VẤN:\n- Đại học Kinh Tế Quốc Dân (NEU) - Chuyên ngành Quản trị Nhân lực - Tốt nghiệp Xuất sắc (2013 - 2017)\nKINH NGHIỆM:\n- 2022 - Nay: Talent Acquisition Executive tại Sun Asterisk (2.5 năm)\n  + Tuyển dụng hơn 80 kỹ sư phần mềm chất lượng cao mỗi năm cho các dự án Offshore.\n  + Xây dựng bộ tiêu chuẩn đánh giá năng lực và quy trình phỏng vấn theo phương pháp STAR.\n  + Am hiểu sâu sắc Luật Lao động Việt Nam và chính sách đãi ngộ nhân tài.\n- 2020 - 2022: HR Specialist tại Tập đoàn Kangaroo (2 năm)\nKỸ NĂNG:\n- Tuyển dụng nhân sự, Sàng lọc hồ sơ, Phỏng vấn hành vi, Đào tạo nội bộ, Luật lao động."
+    },
+    {
+      "id": "cand_8",
+      "fullName": "Bùi Gia Huy",
+      "email": "huy.bg@hotmail.com",
+      "phone": "0944556677",
+      "gender": "Nam",
+      "dob": "1997-04-10",
+      "address": "Hai Bà Trưng, Hà Nội",
+      "education": "Đại học Bách Khoa Hà Nội - Hệ thống Thông tin",
+      "experienceYears": 2,
+      "skills": [
+        "Docker",
+        "Linux",
+        "Git",
+        "CI/CD",
+        "Bash"
+      ],
+      "certifications": [],
+      "currentCompany": "Công ty Cổ phần Giải pháp Số",
+      "currentTitle": "Junior System Admin",
+      "rawResumeText": "BÙI GIA HUY\nEmail: huy.bg@hotmail.com | SĐT: 0944556677 | Hà Nội\nHọc vấn: Đại học Bách Khoa Hà Nội (2015 - 2020)\nKinh nghiệm: 2 năm làm Junior System Admin (Linux, Docker, quản trị máy chủ, Git).\nKỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS."
+    }
+  ],
+  "applications": [
+    {
+      "id": "app_8",
+      "candidateId": "cand_8",
+      "candidateName": "Bùi Gia Huy",
+      "requisitionId": "req_3",
+      "postingId": "post_3",
+      "positionTitle": "DevOps / Cloud Engineer (AWS / Kubernetes)",
+      "source": "website",
+      "appliedDate": "2026-10-15T11:00:00Z",
+      "status": "need_info",
+      "assignedTo": "usr_hr1",
+      "assigneeName": "Nguyễn Thu Hà",
+      "screeningScore": 65,
+      "screeningResult": "manual_check",
+      "screeningDetails": {
+        "score": 65,
+        "classification": "manual_check",
+        "summary": "Có nền tảng Linux và Docker nhưng chưa có kinh nghiệm AWS và Kubernetes thực tế, thiếu chứng chỉ.",
+        "metCriteria": [
+          "Học vấn: Đại học Bách Khoa Hà Nội (Đạt)",
+          "Kỹ năng: Docker, Linux, Git (Đạt)"
+        ],
+        "unmetCriteria": [
+          "Kinh nghiệm 2 năm (Yêu cầu tối thiểu 3 năm)",
+          "Chưa có kinh nghiệm AWS Cloud và Kubernetes production"
+        ],
+        "missingInfo": [
+          "Kinh nghiệm thực tế với hạ tầng đám mây công cộng (AWS/GCP/Azure)"
+        ],
+        "extractedData": {
+          "name": "Bùi Gia Huy",
+          "email": "huy.bg@hotmail.com",
+          "phone": "0944556677",
+          "experienceYears": 2,
+          "education": "Đại học Bách Khoa Hà Nội",
+          "skillsCount": 5
+        },
+        "processedAt": "2026-10-15T11:05:00Z"
+      },
+      "statusHistory": [
+        {
+          "status": "pending_review",
+          "changedBy": "Website Form",
+          "timestamp": "2026-10-15T11:00:00Z",
+          "note": "Ứng tuyển"
+        },
+        {
+          "status": "need_info",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-16T10:00:00Z",
+          "note": "Yêu cầu ứng viên bổ sung thông tin các dự án Cloud đã tham gia"
+        }
+      ],
+      "internalNotes": []
+    },
+    {
+      "id": "app_7",
+      "candidateId": "cand_7",
+      "candidateName": "Lê Thanh Vân",
+      "requisitionId": "req_4",
+      "postingId": null,
+      "positionTitle": "Chuyên viên Tuyển dụng & Đào tạo (HR Recruitment Specialist)",
+      "source": "referral",
+      "appliedDate": "2026-10-14T15:20:00Z",
+      "status": "passed_screening",
+      "assignedTo": "usr_hr1",
+      "assigneeName": "Nguyễn Thu Hà",
+      "screeningScore": 90,
+      "screeningResult": "pass",
+      "screeningDetails": {
+        "score": 90,
+        "classification": "pass",
+        "summary": "Tốt nghiệp xuất sắc NEU chuyên ngành Nhân sự, 3.5 năm kinh nghiệm Headhunt và IT Recruitment.",
+        "metCriteria": [
+          "Kinh nghiệm: 3.5 năm (Yêu cầu 2 năm)",
+          "Học vấn: Đại học Kinh Tế Quốc Dân (Đạt)",
+          "Kỹ năng: Tuyển dụng, Sàng lọc, Phỏng vấn, Luật lao động (Đạt 100%)"
+        ],
+        "unmetCriteria": [],
+        "missingInfo": [],
+        "extractedData": {
+          "name": "Lê Thanh Vân",
+          "email": "van.lethanh@gmail.com",
+          "phone": "0977221100",
+          "experienceYears": 3.5,
+          "education": "Đại học Kinh Tế Quốc Dân",
+          "skillsCount": 6
+        },
+        "processedAt": "2026-10-14T15:25:00Z"
+      },
+      "statusHistory": [
+        {
+          "status": "pending_review",
+          "changedBy": "Nội bộ giới thiệu",
+          "timestamp": "2026-10-14T15:20:00Z",
+          "note": "Được nhân sự nội bộ giới thiệu"
+        },
+        {
+          "status": "passed_screening",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-15T08:30:00Z",
+          "note": "Duyệt hồ sơ"
+        }
+      ],
+      "internalNotes": []
+    },
+    {
+      "id": "app_6",
+      "candidateId": "cand_6",
+      "candidateName": "Phạm Đức Trung",
+      "requisitionId": "req_3",
+      "postingId": "post_3",
+      "positionTitle": "DevOps / Cloud Engineer (AWS / Kubernetes)",
+      "source": "linkedin",
+      "appliedDate": "2026-10-13T10:30:00Z",
+      "status": "interview_scheduled",
+      "assignedTo": "usr_hr1",
+      "assigneeName": "Nguyễn Thu Hà",
+      "screeningScore": 96,
+      "screeningResult": "pass",
+      "screeningDetails": {
+        "score": 96,
+        "classification": "pass",
+        "summary": "Có đầy đủ 2 chứng chỉ uy tín (CKA & AWS Solutions Architect) cùng 4 năm kinh nghiệm thực chiến.",
+        "metCriteria": [
+          "Kỹ năng bắt buộc: AWS, Kubernetes, Docker, Terraform, CI/CD (Đạt 100%)",
+          "Kinh nghiệm: 4 năm (Yêu cầu 3 năm - Đạt)",
+          "Chứng chỉ chuyên nghiệp: CKA, AWS SAA (Vượt yêu cầu)",
+          "Học vấn: PTIT chuyên ngành An toàn thông tin (Đạt)"
+        ],
+        "unmetCriteria": [],
+        "missingInfo": [],
+        "extractedData": {
+          "name": "Phạm Đức Trung",
+          "email": "trung.ducpham@gmail.com",
+          "phone": "0989334455",
+          "experienceYears": 4,
+          "education": "Học viện PTIT",
+          "skillsCount": 8
+        },
+        "processedAt": "2026-10-13T10:32:00Z"
+      },
+      "statusHistory": [
+        {
+          "status": "pending_review",
+          "changedBy": "LinkedIn Sync",
+          "timestamp": "2026-10-13T10:30:00Z",
+          "note": "Ứng tuyển qua LinkedIn"
+        },
+        {
+          "status": "passed_screening",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-14T09:00:00Z",
+          "note": "Hồ sơ chuyên môn DevOps xuất sắc"
+        },
+        {
+          "status": "interview_scheduled",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-15T11:00:00Z",
+          "note": "Đã xếp lịch phỏng vấn kỹ thuật cùng CTO"
+        }
+      ],
+      "internalNotes": [
+        {
+          "author": "Lê Văn Hùng",
+          "timestamp": "2026-10-14T11:20:00Z",
+          "content": "Đã xem CV của Trung, chứng chỉ CKA thật sự rất có giá trị cho đợt migrate cụm K8s tới đây. Cần ưu tiên phỏng vấn sớm."
+        }
+      ]
+    },
+    {
+      "id": "app_5",
+      "candidateId": "cand_5",
+      "candidateName": "Hoàng Bích Thủy",
+      "requisitionId": "req_2",
+      "postingId": "post_2",
+      "positionTitle": "Chuyên viên Phát triển Khách hàng Doanh nghiệp (B2B Sales Executive)",
+      "source": "website",
+      "appliedDate": "2026-10-11T09:15:00Z",
+      "status": "passed_screening",
+      "assignedTo": "usr_hr1",
+      "assigneeName": "Nguyễn Thu Hà",
+      "screeningScore": 84,
+      "screeningResult": "pass",
+      "screeningDetails": {
+        "score": 84,
+        "classification": "pass",
+        "summary": "Đáp ứng tốt các tiêu chí kinh nghiệm và kỹ năng bán hàng SaaS B2B.",
+        "metCriteria": [
+          "Kinh nghiệm 2.5 năm B2B (Đạt)",
+          "Học vấn Đại học Kinh Tế TP.HCM (Đạt)",
+          "Kỹ năng CRM, thuyết trình sản phẩm (Đạt)"
+        ],
+        "unmetCriteria": [],
+        "missingInfo": [],
+        "extractedData": {
+          "name": "Hoàng Bích Thủy",
+          "email": "thuy.hoangbich@yahoo.com",
+          "phone": "0938889911",
+          "experienceYears": 2.5,
+          "education": "Đại học Kinh Tế TP.HCM",
+          "skillsCount": 4
+        },
+        "processedAt": "2026-10-11T09:20:00Z"
+      },
+      "statusHistory": [
+        {
+          "status": "pending_review",
+          "changedBy": "Website Form",
+          "timestamp": "2026-10-11T09:15:00Z",
+          "note": "Nộp đơn trực tuyến"
+        },
+        {
+          "status": "passed_screening",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-12T14:00:00Z",
+          "note": "Duyệt hồ sơ đạt"
+        }
+      ],
+      "internalNotes": []
+    },
+    {
+      "id": "app_4",
+      "candidateId": "cand_4",
+      "candidateName": "Đoàn Quang Huy",
+      "requisitionId": "req_2",
+      "postingId": "post_2",
+      "positionTitle": "Chuyên viên Phát triển Khách hàng Doanh nghiệp (B2B Sales Executive)",
+      "source": "linkedin",
+      "appliedDate": "2026-10-10T16:00:00Z",
+      "status": "proposed",
+      "assignedTo": "usr_hr1",
+      "assigneeName": "Nguyễn Thu Hà",
+      "screeningScore": 95,
+      "screeningResult": "pass",
+      "screeningDetails": {
+        "score": 95,
+        "classification": "pass",
+        "summary": "Ứng viên cực kỳ nổi bật, 5 năm kinh nghiệm B2B phần mềm ERP, doanh số vượt trội và tiếng Anh lưu loát.",
+        "metCriteria": [
+          "Kinh nghiệm: 5 năm kinh nghiệm B2B Sales (Yêu cầu 2 năm)",
+          "Học vấn: Cử nhân Đại học Ngoại Thương (Đạt)",
+          "Kỹ năng: B2B Sales, Đàm phán, Kỹ năng thuyết trình, CRM (Đạt 100%)",
+          "Chứng chỉ: IELTS 7.5, HubSpot Sales (Đạt)"
+        ],
+        "unmetCriteria": [],
+        "missingInfo": [],
+        "extractedData": {
+          "name": "Đoàn Quang Huy",
+          "email": "huy.dq@gmail.com",
+          "phone": "0909678123",
+          "experienceYears": 5,
+          "education": "Đại học Ngoại Thương",
+          "skillsCount": 6
+        },
+        "processedAt": "2026-10-10T16:05:00Z"
+      },
+      "statusHistory": [
+        {
+          "status": "pending_review",
+          "changedBy": "LinkedIn Sync",
+          "timestamp": "2026-10-10T16:00:00Z",
+          "note": "Tiếp nhận qua LinkedIn Easy Apply"
+        },
+        {
+          "status": "passed_screening",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-11T08:30:00Z",
+          "note": "Hồ sơ rất phù hợp, điểm sàng lọc 95"
+        },
+        {
+          "status": "interview_scheduled",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-12T10:00:00Z",
+          "note": "Phỏng vấn Trưởng phòng KD"
+        },
+        {
+          "status": "proposed",
+          "changedBy": "Phạm Thị Mai",
+          "timestamp": "2026-10-16T15:30:00Z",
+          "note": "Đánh giá vòng phỏng vấn xuất sắc - Đề xuất tuyển dụng mức lương 25M"
+        }
+      ],
+      "internalNotes": [
+        {
+          "author": "Phạm Thị Mai",
+          "timestamp": "2026-10-16T15:35:00Z",
+          "content": "Ứng viên nắm rất chắc kỹ năng bán giải pháp phần mềm, mạng lưới khách hàng doanh nghiệp sẵn có. Rất cần tuyển dụng ngay!"
+        }
+      ]
+    },
+    {
+      "id": "app_3",
+      "candidateId": "cand_3",
+      "candidateName": "Nguyễn Đăng Khôi",
+      "requisitionId": "req_1",
+      "postingId": "post_1",
+      "positionTitle": "Senior Frontend Developer (React / TypeScript)",
+      "source": "topcv",
+      "appliedDate": "2026-10-09T14:40:00Z",
+      "status": "rejected",
+      "assignedTo": "usr_hr1",
+      "assigneeName": "Nguyễn Thu Hà",
+      "screeningScore": 42,
+      "screeningResult": "fail",
+      "screeningDetails": {
+        "score": 42,
+        "classification": "fail",
+        "summary": "Không đáp ứng số năm kinh nghiệm tối thiểu cho vị trí Senior (chỉ có 1.5 năm / yêu cầu 3 năm) và thiếu TypeScript.",
+        "metCriteria": [
+          "Kỹ năng: React cơ bản, JavaScript (Đạt 1 phần)"
+        ],
+        "unmetCriteria": [
+          "Kinh nghiệm thực tế: 1.5 năm (Thiếu so với yêu cầu Senior 3 năm)",
+          "Không có kinh nghiệm TypeScript",
+          "Bằng cấp: Cao đẳng (Yêu cầu vị trí: Đại học)"
+        ],
+        "missingInfo": [],
+        "extractedData": {
+          "name": "Nguyễn Đăng Khôi",
+          "email": "khoi.nguyen99@gmail.com",
+          "phone": "0983112233",
+          "experienceYears": 1.5,
+          "education": "Cao đẳng FPT Polytechnic",
+          "skillsCount": 4
+        },
+        "processedAt": "2026-10-09T14:42:00Z"
+      },
+      "statusHistory": [
+        {
+          "status": "pending_review",
+          "changedBy": "TopCV Sync",
+          "timestamp": "2026-10-09T14:40:00Z",
+          "note": "Hồ sơ tiếp nhận"
+        },
+        {
+          "status": "rejected",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-10T09:00:00Z",
+          "note": "Không đạt điều kiện thâm niên vị trí Senior"
+        }
+      ],
+      "internalNotes": [
+        {
+          "author": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-10T09:02:00Z",
+          "content": "Lưu CV vào talent pool cho các đợt tuyển dụng Junior trong tương lai."
+        }
+      ]
+    },
+    {
+      "id": "app_2",
+      "candidateId": "cand_2",
+      "candidateName": "Trần Minh Anh",
+      "requisitionId": "req_1",
+      "postingId": "post_1",
+      "positionTitle": "Senior Frontend Developer (React / TypeScript)",
+      "source": "topcv",
+      "appliedDate": "2026-10-08T11:20:00Z",
+      "status": "pending_review",
+      "assignedTo": "usr_hr1",
+      "assigneeName": "Nguyễn Thu Hà",
+      "screeningScore": 78,
+      "screeningResult": "manual_check",
+      "screeningDetails": {
+        "score": 78,
+        "classification": "manual_check",
+        "summary": "Đạt yêu cầu học vấn và React, nhưng trong CV chưa đề cập rõ kinh nghiệm với TypeScript.",
+        "metCriteria": [
+          "Kỹ năng: React, JavaScript, HTML/CSS (Đạt)",
+          "Kinh nghiệm: 3 năm (Đạt tối thiểu)",
+          "Học vấn: Đại học Công nghệ - ĐHQGHN loại Giỏi (Đạt)"
+        ],
+        "unmetCriteria": [
+          "Chưa xác nhận kinh nghiệm thực tế với TypeScript"
+        ],
+        "missingInfo": [
+          "Mức độ thành thạo TypeScript và các thư viện quản lý State nâng cao"
+        ],
+        "extractedData": {
+          "name": "Trần Minh Anh",
+          "email": "minhanh.tran@outlook.com",
+          "phone": "0912456789",
+          "experienceYears": 3,
+          "education": "Đại học Công nghệ - ĐHQGHN",
+          "skillsCount": 6
+        },
+        "processedAt": "2026-10-08T11:22:00Z"
+      },
+      "statusHistory": [
+        {
+          "status": "pending_review",
+          "changedBy": "TopCV Sync",
+          "timestamp": "2026-10-08T11:20:00Z",
+          "note": "Nhận hồ sơ đồng bộ từ nguồn TopCV"
+        }
+      ],
+      "internalNotes": []
+    },
+    {
+      "id": "app_1",
+      "candidateId": "cand_1",
+      "candidateName": "Vũ Hoàng Nam",
+      "requisitionId": "req_1",
+      "postingId": "post_1",
+      "positionTitle": "Senior Frontend Developer (React / TypeScript)",
+      "source": "website",
+      "appliedDate": "2026-10-06T10:15:00Z",
+      "status": "interview_scheduled",
+      "assignedTo": "usr_hr1",
+      "assigneeName": "Nguyễn Thu Hà",
+      "screeningScore": 92,
+      "screeningResult": "pass",
+      "screeningDetails": {
+        "score": 92,
+        "classification": "pass",
+        "summary": "Hồ sơ xuất sắc, đáp ứng toàn diện cả kỹ năng bắt buộc và số năm kinh nghiệm.",
+        "metCriteria": [
+          "Kỹ năng bắt buộc: React, TypeScript, JavaScript, Tailwind CSS (Đạt 100%)",
+          "Kinh nghiệm: 4.5 năm (Yêu cầu tối thiểu 3 năm - Vượt yêu cầu)",
+          "Học vấn: Đại học Bách Khoa Hà Nội (Đạt yêu cầu bằng cấp)",
+          "Kỹ năng ưu tiên: Redux Toolkit, Next.js, Git (Đạt)"
+        ],
+        "unmetCriteria": [],
+        "missingInfo": [],
+        "extractedData": {
+          "name": "Vũ Hoàng Nam",
+          "email": "nam.vu@gmail.com",
+          "phone": "0978123456",
+          "experienceYears": 4.5,
+          "education": "Đại học Bách Khoa Hà Nội",
+          "skillsCount": 9
+        },
+        "processedAt": "2026-10-06T10:16:00Z"
+      },
+      "statusHistory": [
+        {
+          "status": "pending_review",
+          "changedBy": "Hệ thống ATS",
+          "timestamp": "2026-10-06T10:15:00Z",
+          "note": "Ứng viên nộp hồ sơ từ Cổng tuyển dụng website"
+        },
+        {
+          "status": "passed_screening",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-07T09:30:00Z",
+          "note": "AI sàng lọc 92đ - Duyệt hồ sơ vào vòng phỏng vấn"
+        },
+        {
+          "status": "interview_scheduled",
+          "changedBy": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-08T14:00:00Z",
+          "note": "Đã lên lịch phỏng vấn Vòng 2 chuyên môn"
+        }
+      ],
+      "internalNotes": [
+        {
+          "author": "Nguyễn Thu Hà",
+          "timestamp": "2026-10-07T09:35:00Z",
+          "content": "Ứng viên có profile rất tốt, đã phỏng vấn sơ loại qua điện thoại: thái độ cầu tiến, tiếng Anh khá."
+        }
+      ]
+    }
+  ],
+  "interviews": [
+    {
+      "id": "iv_1",
+      "code": "LPV-2026-001",
+      "candidateId": "cand_1",
+      "candidateName": "Vũ Hoàng Nam",
+      "requisitionId": "req_1",
+      "positionTitle": "Senior Frontend Developer (React / TypeScript)",
+      "round": "Vòng 2 - Đánh giá Chuyên môn",
+      "date": "2026-11-03",
+      "startTime": "09:30",
+      "endTime": "11:00",
+      "type": "online",
+      "location": "https://meet.google.com/ats-react-tech",
+      "interviewers": [
+        "Lê Văn Hùng",
+        "Nguyễn Thu Hà"
+      ],
+      "status": "confirmed",
+      "notes": "Trọng tâm phỏng vấn: Kiến trúc state management, performance profiling và live-coding React hook tùy chỉnh.",
+      "createdAt": "2026-10-08T14:00:00Z"
+    },
+    {
+      "id": "iv_2",
+      "code": "LPV-2026-002",
+      "candidateId": "cand_6",
+      "candidateName": "Phạm Đức Trung",
+      "requisitionId": "req_3",
+      "positionTitle": "DevOps / Cloud Engineer (AWS / Kubernetes)",
+      "round": "Vòng 2 - Đánh giá Chuyên môn",
+      "date": "2026-11-04",
+      "startTime": "14:00",
+      "endTime": "15:30",
+      "type": "onsite",
+      "location": "Phòng họp Tầng 8 - Trụ sở chính SmartATS, Tòa nhà Landmark, Hà Nội",
+      "interviewers": [
+        "Lê Văn Hùng"
+      ],
+      "status": "confirmed",
+      "notes": "Thảo luận về kinh nghiệm xử lý sự cố cụm K8s và kiến trúc Terraform đa môi trường.",
+      "createdAt": "2026-10-15T11:00:00Z"
+    },
+    {
+      "id": "iv_3",
+      "code": "LPV-2026-003",
+      "candidateId": "cand_4",
+      "candidateName": "Đoàn Quang Huy",
+      "requisitionId": "req_2",
+      "positionTitle": "Chuyên viên Phát triển Khách hàng Doanh nghiệp (B2B Sales Executive)",
+      "round": "Vòng 2 - Đánh giá Chuyên môn",
+      "date": "2026-10-16",
+      "startTime": "10:00",
+      "endTime": "11:30",
+      "type": "online",
+      "location": "https://meet.google.com/ats-sales-interview",
+      "interviewers": [
+        "Phạm Thị Mai",
+        "Nguyễn Thu Hà"
+      ],
+      "status": "completed",
+      "notes": "Mô phỏng tình huống tiếp cận khách hàng CEO khó tính, ứng viên xử lý rất bản lĩnh và thuyết phục.",
+      "createdAt": "2026-10-12T10:00:00Z"
+    },
+    {
+      "id": "iv_4",
+      "code": "LPV-2026-004",
+      "candidateId": "cand_4",
+      "candidateName": "Đoàn Quang Huy",
+      "requisitionId": "req_2",
+      "positionTitle": "Chuyên viên Phát triển Khách hàng Doanh nghiệp (B2B Sales Executive)",
+      "round": "Vòng 3 - Phỏng vấn Giám đốc",
+      "date": "2026-11-05",
+      "startTime": "15:00",
+      "endTime": "16:00",
+      "type": "online",
+      "location": "https://meet.google.com/ats-director-final",
+      "interviewers": [
+        "Trần Đình Long",
+        "Phạm Thị Mai"
+      ],
+      "status": "confirmed",
+      "notes": "Thống nhất định hướng phát triển thị trường phía Nam và mức thu nhập đề xuất.",
+      "createdAt": "2026-10-18T16:00:00Z"
+    }
+  ],
+  "evaluations": [
+    {
+      "id": "eval_1",
+      "interviewId": "iv_3",
+      "candidateId": "cand_4",
+      "candidateName": "Đoàn Quang Huy",
+      "requisitionId": "req_2",
+      "round": "Vòng 2 - Đánh giá Chuyên môn",
+      "evaluatorName": "Phạm Thị Mai",
+      "evaluatorRole": "Trưởng phòng Kinh doanh",
+      "scores": {
+        "professionalKnowledge": 5,
+        "workSkills": 5,
+        "experience": 5,
+        "teamworkCommunication": 4.5
+      },
+      "criteriaComments": {
+        "professionalKnowledge": "Nắm rất rõ chu kỳ bán hàng B2B, hiểu cách tính ROI giải pháp cho khách hàng.",
+        "workSkills": "Kỹ năng thuyết trình trực quan, xử lý từ chối chuyên nghiệp.",
+        "experience": "Đã có 5 năm làm việc thực tế và thành tích doanh số xuất sắc tại MISA.",
+        "teamworkCommunication": "Giao tiếp lịch thiệp, giọng nói truyền cảm hứng."
+      },
+      "overallScore": 96,
+      "recommendation": "continue",
+      "finalDecision": "Đề xuất tuyển dụng",
+      "comment": "Ứng viên sáng giá nhất từ đầu năm đến nay cho vị trí B2B Sales. Đề xuất Giám đốc duyệt tuyển dụng và ký hợp đồng ngay.",
+      "createdAt": "2026-10-16T15:00:00Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif_1",
+      "title": "Hồ sơ mới cần xử lý",
+      "message": "Ứng viên Phạm Đức Trung vừa ứng tuyển vị trí DevOps / Cloud Engineer qua LinkedIn.",
+      "date": "2026-10-13T10:30:00Z",
+      "read": false,
+      "icon": "user-plus",
+      "link": "#/candidates/cand_6"
+    },
+    {
+      "id": "notif_2",
+      "title": "Đề xuất tuyển dụng mới",
+      "message": "Trưởng phòng Phạm Thị Mai vừa gửi đề xuất tuyển dụng cho ứng viên Đoàn Quang Huy.",
+      "date": "2026-10-16T15:30:00Z",
+      "read": false,
+      "icon": "check-square",
+      "link": "#/evaluations"
+    },
+    {
+      "id": "notif_3",
+      "title": "Lịch phỏng vấn sắp diễn ra",
+      "message": "Lịch phỏng vấn Vũ Hoàng Nam (Senior Frontend) sẽ diễn ra ngày 03/11/2026 lúc 09:30.",
+      "date": "2026-10-27T08:00:00Z",
+      "read": true,
+      "icon": "calendar",
+      "link": "#/interviews"
+    }
+  ],
+  "emailLog": [],
+  "settings": {
+    "screeningWeights": {
+      "skills": 40,
+      "experience": 30,
+      "education": 15,
+      "certifications": 15
+    },
+    "scoreThresholds": {
+      "pass": 80,
+      "manual_check": 60
+    },
+    "autoApproveEnabled": true,
+    "companyName": "SmartATS Solutions Việt Nam",
+    "companyEmail": "hr@smartats.vn",
+    "companyAddress": "Tòa nhà Landmark, Cầu Giấy, Hà Nội",
+    "hotline": "1900 xxxx",
+    "integrations": {
+      "websitePortal": {
+        "active": true,
+        "name": "Cổng tuyển dụng Doanh nghiệp"
+      },
+      "topcv": {
+        "active": true,
+        "name": "TopCV Open API (Mô phỏng)"
+      },
+      "linkedin": {
+        "active": true,
+        "name": "LinkedIn Jobs Integration (Mô phỏng)"
+      },
+      "vietnamworks": {
+        "active": false,
+        "name": "VietnamWorks API"
+      },
+      "googleMeet": {
+        "active": true,
+        "name": "Google Meet Auto Link"
+      },
+      "smtpEmail": {
+        "active": true,
+        "name": "Hệ thống gửi Email tự động"
+      }
+    }
+  }
+}

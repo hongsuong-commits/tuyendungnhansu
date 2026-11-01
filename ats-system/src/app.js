@@ -129,8 +129,32 @@
   // ─────────────────────────────────────────────────────────────
   // Application Bootstrap
   // ─────────────────────────────────────────────────────────────
-  function initApp() {
+  function renderBootScreen() {
+    const appEl = document.getElementById('app');
+    if (!appEl) return;
+    appEl.innerHTML = `
+      <div class="boot-screen">
+        <div class="boot-mark">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="4.2" cy="10" r="1.5" /><circle cx="10" cy="10" r="1.5" /><circle cx="15.8" cy="10" r="1.5" /><path d="M5.9 10h2.6M11.7 10h2.6" /></svg>
+        </div>
+        <p class="boot-title">SmartATS</p>
+        <p class="boot-text">Đang kết nối cơ sở dữ liệu…</p>
+      </div>
+    `;
+  }
+
+  async function initApp() {
     setupRoutes();
+    renderBootScreen();
+
+    if (typeof ATSStore.init === 'function') {
+      try {
+        await ATSStore.init();
+      } catch (err) {
+        console.warn('[SmartATS] Không tải được dữ liệu máy chủ:', err);
+      }
+    }
+
     Router.init();
   }
 

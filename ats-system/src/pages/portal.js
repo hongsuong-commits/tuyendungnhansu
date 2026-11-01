@@ -469,7 +469,7 @@ const PortalPage = (() => {
                     </div>
 
                     <input type="hidden" id="portal-raw-cv" name="rawResumeText" value="">
-                    <p class="portal-cv-note" id="portal-cv-status">Hệ thống sẽ đọc tệp và điền sẵn thông tin cá nhân, học vấn, kinh nghiệm.</p>
+                    <p class="portal-cv-note" id="portal-cv-status">Tệp CV được lưu kèm hồ sơ để bộ phận tuyển dụng đọc và sàng lọc.</p>
                   </div>
                 </div>
 
@@ -491,7 +491,8 @@ const PortalPage = (() => {
         UI.openModal('modal-portal-apply');
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        // File drop/change — extract real text from .txt, .pdf and .docx before parsing
+        // File drop/change — chỉ đọc nội dung tệp để lưu kèm hồ sơ.
+        // Ứng viên tự nhập thông tin cá nhân, không tự động điền từ CV.
         const fileInput = document.getElementById('portal-file-input');
         if (fileInput) {
           fileInput.addEventListener('change', async (e) => {
@@ -506,12 +507,7 @@ const PortalPage = (() => {
               }
               const hidden = document.getElementById('portal-raw-cv');
               if (hidden) hidden.value = text;
-              const filled = this.autofillPortalForm(text);
-              if (status) {
-                status.textContent = filled
-                  ? `Đã đọc ${file.name} và điền thông tin tìm thấy. Vui lòng kiểm tra lại trước khi gửi.`
-                  : `Đã đọc ${file.name} nhưng chưa nhận diện được thông tin. Vui lòng nhập tay.`;
-              }
+              if (status) status.textContent = `Đã nhận ${file.name}. Vui lòng kiểm tra lại thông tin đã nhập trước khi gửi.`;
             } catch (err) {
               if (status) status.textContent = `Không đọc được ${file.name}. Vui lòng dùng tệp .pdf, .docx hoặc .txt rõ ràng.`;
               UI.toast({ message: err && err.message ? err.message : 'Không đọc được tệp CV.', type: 'warning' });
@@ -562,23 +558,6 @@ const PortalPage = (() => {
           this.refresh();
         });
       }
-    },
-
-    autofillPortalForm(sourceText) {
-      const text = sourceText || document.getElementById('portal-raw-cv')?.value || '';
-      if (!text.trim()) return false;
-      const parsed = ATSStore.parseCVText(text);
-      let filled = false;
-      const setValue = (id, value) => {
-        const el = document.getElementById(id);
-        if (el && value) { el.value = value; filled = true; }
-      };
-      setValue('portal-name', parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' ? parsed.name : '');
-      setValue('portal-email', parsed.email);
-      setValue('portal-phone', parsed.phone);
-      setValue('portal-edu', parsed.education && parsed.education !== 'Đang cập nhật' ? parsed.education : '');
-      setValue('portal-exp', parsed.experienceYears > 0 ? parsed.experienceYears : '');
-      return filled;
     }
   };
 })();

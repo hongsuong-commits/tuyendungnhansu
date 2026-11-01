@@ -219,12 +219,17 @@ const ScreeningPage = (() => {
         const unmetCount = (scr.unmetCriteria || []).length;
 
         return `
-          <tr>
+          <tr class="${app.manualReview ? 'is-manual' : ''}">
             <td>
               <a href="javascript:void(0)" class="table-name btn-view-scr-detail" data-id="${app.id}">
                 ${app.candidateName || cand.fullName}
               </a>
               <span class="table-sub">${cand.email || '—'}</span>
+              ${app.manualReview ? `
+                <span class="manual-flag">
+                  <i data-lucide="alert-triangle" class="icon-2xs"></i>
+                  Cần kiểm tra thủ công${app.manualReviewBy ? ` · ${app.manualReviewBy}` : ''}
+                </span>` : ''}
             </td>
             <td class="col-optional"><span class="badge badge-secondary text-2xs">${app.source || 'Website'}</span></td>
             <td>
@@ -241,7 +246,7 @@ const ScreeningPage = (() => {
                 <button class="btn btn-xs btn-icon btn-outline btn-view-scr-detail" data-id="${app.id}" title="Xem chi tiết phân tích" aria-label="Xem chi tiết phân tích">
                   <i data-lucide="file-search" class="icon-xs"></i>
                 </button>
-                <button class="btn btn-xs btn-icon btn-outline btn-mark-manual" data-id="${app.id}" title="Đánh dấu cần kiểm tra thủ công" aria-label="Đánh dấu cần kiểm tra">
+                <button class="btn btn-xs btn-icon btn-outline btn-mark-manual ${app.manualReview ? 'is-active' : ''}" data-id="${app.id}" title="${app.manualReview ? 'Đã đánh dấu cần kiểm tra thủ công' : 'Đánh dấu cần kiểm tra thủ công'}" aria-label="Đánh dấu cần kiểm tra">
                   <i data-lucide="flag" class="icon-xs"></i>
                 </button>
               </div>
@@ -370,7 +375,7 @@ const ScreeningPage = (() => {
       document.querySelectorAll('.btn-mark-manual').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const id = e.currentTarget.getAttribute('data-id');
-          ATSStore.updateApplicationStatus(id, 'reviewing', 'Đánh dấu cần kiểm tra thủ công lại các tiêu chí chưa rõ');
+          ATSStore.markForManualReview(id, 'Đánh dấu cần kiểm tra thủ công lại các tiêu chí chưa rõ');
           UI.toast({ message: 'Đã đánh dấu hồ sơ cần kiểm tra thủ công!', type: 'info' });
           this.refresh();
         });

@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "db:check": "node scripts/db-check.js",
+    "db:inspect": "node scripts/db-inspect.js",
+    "seed:export": "node scripts/export-seed.js",
+    "test": "node test-suite.js"
   },
   "keywords": [
     "ats",
@@ -15,5 +19,9 @@
     "cv-parsing"
   ],
   "author": "SmartATS Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "nodemailer": "^10.3.1",
+    "pg": "^8.23.1"
+  }
 }

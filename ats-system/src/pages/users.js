@@ -1,6 +1,6 @@
 /**
  * users.js - Module Quản lý người dùng & Ma trận phân quyền (RBAC)
- * Quản lý 4 vai trò: Giám đốc, Trưởng phòng, Nhân viên nhân sự, Ứng viên
+ * Quản lý 3 vai trò nội bộ: Giám đốc, Trưởng phòng, Nhân viên nhân sự
  */
 
 const UsersPage = (() => {
@@ -9,19 +9,20 @@ const UsersPage = (() => {
       const currentUser = ATSStore.getCurrentUser();
       if (!currentUser) return '<div class="page-container"><p>Vui lòng đăng nhập.</p></div>';
 
-      const users = ATSStore.getUsers();
+      // Ứng viên không có tài khoản nội bộ: họ chỉ dùng cổng tuyển dụng công khai.
+      const users = ATSStore.getUsers().filter(u => u.role !== 'candidate');
 
       /* Quyền đọc trong một dòng: full = toàn bộ, act = thao tác, read = chỉ xem, none = không có */
       const matrix = [
-        { feature: 'Tổng quan tuyển dụng', director: ['full', 'Toàn bộ'], hod: ['act', 'Phòng ban'], hr: ['full', 'Đầy đủ'], candidate: ['none', '—'] },
-        { feature: 'Yêu cầu tuyển dụng', director: ['act', 'Duyệt'], hod: ['act', 'Tạo · phòng ban'], hr: ['act', 'Toàn quyền'], candidate: ['none', '—'] },
-        { feature: 'Tin đăng & kênh tuyển', director: ['read', 'Xem'], hod: ['read', 'Xem phòng ban'], hr: ['act', 'Xuất bản'], candidate: ['none', '—'] },
-        { feature: 'Đọc CV & sàng lọc', director: ['read', 'Xem'], hod: ['read', 'Xem phòng ban'], hr: ['act', 'Thiết lập'], candidate: ['none', '—'] },
-        { feature: 'Phỏng vấn & đánh giá', director: ['act', 'Vòng 3'], hod: ['act', 'Vòng 2'], hr: ['act', 'Điều phối'], candidate: ['read', 'Nhận thư mời'] },
-        { feature: 'Quyết định tuyển', director: ['act', 'Phê duyệt'], hod: ['act', 'Đề xuất'], hr: ['act', 'Gửi offer'], candidate: ['read', 'Nhận kết quả'] },
-        { feature: 'Báo cáo & thống kê', director: ['full', 'Toàn bộ'], hod: ['none', '—'], hr: ['act', 'Nghiệp vụ'], candidate: ['none', '—'] }
+        { feature: 'Tổng quan tuyển dụng', director: ['full', 'Toàn bộ'], hod: ['act', 'Phòng ban'], hr: ['full', 'Đầy đủ'] },
+        { feature: 'Yêu cầu tuyển dụng', director: ['act', 'Duyệt'], hod: ['act', 'Tạo · phòng ban'], hr: ['act', 'Toàn quyền'] },
+        { feature: 'Tin đăng & kênh tuyển', director: ['read', 'Xem'], hod: ['read', 'Xem phòng ban'], hr: ['act', 'Xuất bản'] },
+        { feature: 'Đọc CV & sàng lọc', director: ['read', 'Xem'], hod: ['read', 'Xem phòng ban'], hr: ['act', 'Thiết lập'] },
+        { feature: 'Phỏng vấn & đánh giá', director: ['act', 'Vòng 3'], hod: ['act', 'Vòng 2'], hr: ['act', 'Điều phối'] },
+        { feature: 'Quyết định tuyển', director: ['act', 'Phê duyệt'], hod: ['act', 'Đề xuất'], hr: ['act', 'Gửi offer'] },
+        { feature: 'Báo cáo & thống kê', director: ['full', 'Toàn bộ'], hod: ['none', '—'], hr: ['act', 'Nghiệp vụ'] }
       ];
-      const roleKeys = ['director', 'hod', 'hr', 'candidate'];
+      const roleKeys = ['director', 'hod', 'hr'];
 
       return `
         <div class="page-container">
@@ -54,7 +55,6 @@ const UsersPage = (() => {
                       <th class="text-center">Giám đốc</th>
                       <th class="text-center">Trưởng phòng</th>
                       <th class="text-center">Nhân sự</th>
-                      <th class="text-center">Ứng viên</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -144,7 +144,6 @@ const UsersPage = (() => {
                         <option value="hr">Nhân viên nhân sự (HR)</option>
                         <option value="department_head">Trưởng phòng (HOD)</option>
                         <option value="director">Giám đốc (Director)</option>
-                        <option value="candidate">Ứng viên (Candidate)</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -161,7 +160,7 @@ const UsersPage = (() => {
 
                   <div class="alert alert-info mt-3 text-xs">
                     <i data-lucide="info" class="icon-xs"></i>
-                    <span>Tài khoản được tạo sẽ hoạt động ngay và có thể đăng nhập bằng tên đăng nhập/mật khẩu vừa nhập. Ứng viên sau khi đăng nhập sẽ được chuyển tới Cổng tuyển dụng.</span>
+                    <span>Tài khoản được tạo sẽ hoạt động ngay và có thể đăng nhập bằng tên đăng nhập/mật khẩu vừa nhập. Ứng viên không có tài khoản nội bộ — họ nộp và tra cứu hồ sơ tại cổng tuyển dụng công khai.</span>
                   </div>
                 </div>
                 <div class="modal-footer">

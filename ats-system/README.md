@@ -6,7 +6,7 @@ SmartATS là giải pháp phần mềm quản lý tuyển dụng toàn diện (S
 
 ## 1. DANH SÁCH TÀI KHOẢN TRẢI NGHIỆM DEMO
 
-Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
+Hệ thống đã chuẩn bị sẵn 4 vai trò nội bộ với dữ liệu thực tế:
 
 | Vai trò | Tên đăng nhập | Mật khẩu | Họ và tên | Chức danh / Phòng ban | Quyền hạn chính |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -14,7 +14,8 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
 | **Trưởng phòng** | `head_it` | `123456` | Lê Văn Hùng | Giám đốc Công nghệ (CTO) | Xem & tạo yêu cầu tuyển dụng phòng CNTT; Theo dõi & chấm điểm phỏng vấn ứng viên phòng mình |
 | **Trưởng phòng** | `head_sales` | `123456` | Phạm Thị Mai | Trưởng phòng Kinh doanh | Tạo yêu cầu vị trí B2B Sales; Phỏng vấn chuyên môn và đề xuất tuyển dụng |
 | **Nhân sự (HR)** | `hr1` | `123456` | Nguyễn Thu Hà | Senior Talent Acquisition | Toàn quyền nghiệp vụ tuyển dụng: Đăng tin, thiết lập tiêu chí, duyệt CV, xếp lịch phỏng vấn, cấu hình cài đặt |
-| **Ứng viên** | `candidate` | `123456` | Vũ Hoàng Nam | Ứng viên IT | Truy cập Cổng tuyển dụng công khai, nộp hồ sơ, tra cứu tiến độ ứng tuyển |
+
+> Ứng viên **không có tài khoản nội bộ**. Họ nộp hồ sơ và tra cứu tiến độ tại Cổng tuyển dụng công khai `#/portal` bằng email/số điện thoại đã dùng khi nộp CV.
 
 > *Gợi ý:* Tại màn hình Đăng nhập `#/login`, bạn có thể bấm vào mục **"Tài khoản demo"** để tự động điền nhanh tài khoản và mật khẩu chỉ bằng 1 cú nhấp chuột.
 
@@ -27,11 +28,11 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
 - Font chữ tiếng Việt hiện đại Inter, bố cục Sidebar có thể thu gọn, Header điều hướng thông minh với chuông thông báo và menu hồ sơ.
 - Đáp ứng tốt mọi kích thước màn hình: Desktop (1440px), Laptop/Tablet (1024px, 768px) và Mobile (640px, 375px) với Drawer menu và table cuộn mượt mà.
 
-### 2.2. Phân quyền Người dùng theo 4 Vai trò (RBAC)
+### 2.2. Phân quyền Người dùng theo 3 Vai trò Nội bộ (RBAC)
 - **Giám đốc:** Quyền giám sát chiến lược, chỉ xem số liệu tổng quan toàn công ty, phê duyệt yêu cầu và quyết định tuyển dụng; không can thiệp sửa đổi dữ liệu nghiệp vụ tác nghiệp.
 - **Trưởng phòng:** Quyền hạn giới hạn theo phạm vi phòng ban mình quản lý, tạo yêu cầu tuyển dụng, tham gia phỏng vấn chuyên môn và gửi đánh giá.
 - **Nhân viên Nhân sự (HR):** Đầy đủ quyền tác nghiệp tuyển dụng đa kênh, cấu hình trọng số, chạy bộ lọc, điều phối lịch phỏng vấn và xuất dữ liệu báo cáo.
-- **Ứng viên:** Không hiển thị thanh Sidebar nội bộ; sử dụng Cổng tuyển dụng trực tuyến riêng biệt để tìm việc, nộp hồ sơ và tra cứu tình trạng xử lý.
+- **Ứng viên:** Không có tài khoản đăng nhập nội bộ; sử dụng Cổng tuyển dụng công khai để tìm việc, nộp hồ sơ và tra cứu tình trạng xử lý bằng email/số điện thoại.
 
 ### 2.3. Dashboard Tổng quan Động
 - 6 thẻ chỉ số KPI tổng hợp: Vị trí đang tuyển, Tổng hồ sơ ứng viên, Chờ nhân sự duyệt, Đạt tiêu chí sàng lọc, Lịch phỏng vấn sắp tới, Đã tuyển.
@@ -120,19 +121,48 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
 - **Hash-based Client-side Router:** Hỗ trợ Dynamic Route Params (`/candidates/:id`, `/portal/job/:id`), Route Guards bảo vệ quyền truy cập.
 - **Chart.js 4.4:** Vẽ biểu đồ cột, biểu đồ tròn, biểu đồ phễu chuyển đổi dữ liệu động.
 - **Lucide Icons:** Hệ thống hơn 50 biểu tượng giao diện trực quan.
-- **Storage & State Management (`ATSStore`):** Lưu trữ Single Source of Truth trên `localStorage`, tự động seed dữ liệu mẫu ban đầu và hỗ trợ khôi phục cài đặt gốc.
+- **Node.js HTTP Server (`server.js`):** Phục vụ giao diện tĩnh và REST API `/api/*`.
+- **PostgreSQL 17 trên Supabase (`pg`):** Nơi lưu dữ liệu thật của toàn hệ thống; mỗi collection của `ATSStore` là một bảng có cột `id`, `doc jsonb`, `seq`, `updated_at`.
+- **Nodemailer 10:** Gửi thư điện tử tự động tới ứng viên (SMTP thật hoặc hộp thư thử nghiệm Ethereal).
+- **Storage & State Management (`ATSStore`):** Giữ một bản sao dữ liệu trong bộ nhớ để giao diện đọc đồng bộ, đồng thời đẩy mọi thay đổi lên PostgreSQL qua `/api/sync` (debounce 250 ms).
 
-### 3.2. Cấu trúc Thư mục
+### 3.2. Kiến trúc Full-stack
+
+```
+Trình duyệt (SPA Vanilla JS)
+  ATSStore (bộ nhớ)  ──saveState()──►  POST /api/sync  ──►  PostgreSQL (Supabase)
+        ▲                                                        │
+        └────────── GET /api/state (khi khởi động) ◄──────────────┘
+                                                                 │
+                     email_log (pending)  ──►  Nodemailer  ──►  Ứng viên
+```
+
+- Giao diện vẫn đọc dữ liệu đồng bộ như trước; việc ghi đi qua API nên không phải chờ mạng.
+- Khi HR xếp/ xác nhận lịch phỏng vấn, `ATSStore` tạo bản ghi trong `emailLog`; máy chủ nhận bản ghi qua `/api/sync` và gửi thư ngay, sau đó đánh dấu `sent` / `preview` / `failed` trong bảng `email_log`.
+
+### 3.3. Cấu trúc Thư mục
 
 ```
 ats-system/
 ├── index.html                   # File HTML chính khởi động ứng dụng
-├── server.js                    # Web server Node.js (thuần, zero-dependency)
+├── server.js                    # Máy chủ HTTP: giao diện tĩnh + REST API + vòng gửi thư
 ├── package.json                 # Thông tin cấu hình dự án
+├── .env / .env.example          # Chuỗi kết nối PostgreSQL và cấu hình SMTP
 ├── test-suite.js                # Bộ kịch bản kiểm thử tự động 13 luồng nghiệp vụ
 ├── README.md                    # Tài liệu hướng dẫn sử dụng tiếng Việt
+├── scripts/
+│   ├── db-check.js              # Kiểm tra kết nối PostgreSQL và liệt kê bảng
+│   └── export-seed.js           # Kết xuất dữ liệu mẫu ra src/server/seed.json
+├── mail-outbox/                 # Thư .eml khi chạy ở chế độ file (không commit)
 └── src/
     ├── app.js                   # Điểm khởi tạo ứng dụng, đăng ký Routes & Auth Guard
+    ├── server/
+    │   ├── env.js               # Đọc tệp .env không cần thư viện ngoài
+    │   ├── db.js                # Pool PostgreSQL, lược đồ, đọc/ghi trạng thái, đăng nhập
+    │   ├── schema.sql           # Lược đồ các bảng và chỉ mục
+    │   ├── seed.json            # Dữ liệu mẫu nạp lần đầu
+    │   ├── mailer.js            # Soạn HTML/thư văn bản và gửi thư cho ứng viên
+    │   └── api.js               # Các tuyến /api/health, /api/state, /api/sync, /api/login
     ├── components/
     │   ├── layout.js            # Sidebar điều hướng phân quyền, Header, Notifications
     │   └── ui.js                # Thư viện UI Components (Modal, Toast, Badges, Table)
@@ -166,23 +196,52 @@ ats-system/
 
 ## 4. HƯỚNG DẪN CÀI ĐẶT & CHẠY ỨNG DỤNG
 
-### Cách 1: Chạy bằng máy chủ Node.js (Khuyên dùng)
-Yêu cầu: Máy tính đã cài đặt [Node.js](https://nodejs.org/) (phiên bản 16 trở lên).
-1. Mở terminal tại thư mục dự án `ats-system`:
+### Cách 1: Chạy bản full-stack (PostgreSQL + gửi thư tự động) — khuyên dùng
+Yêu cầu: [Node.js](https://nodejs.org/) 16 trở lên và một cơ sở dữ liệu PostgreSQL (dự án dùng Supabase).
+
+1. Cài thư viện:
    ```bash
    cd "d:\Quản lý quy trình\Tuyển dụng nhân sự\ats-system"
+   npm install
    ```
-2. Khởi động máy chủ:
+2. Tạo tệp `.env` từ `.env.example` và điền chuỗi kết nối:
+   ```
+   DATABASE_URL=postgresql://<user>:<password>@<host>:6543/<database>
+   DB_SSL=true
+   EMAIL_TRANSPORT=ethereal   # auto | smtp | ethereal | file
+   SMTP_HOST=                 # để trống nếu dùng ethereal/file
+   SMTP_PORT=587
+   SMTP_USER=
+   SMTP_PASS=
+   MAIL_FROM=hr@smartats.vn
+   ```
+   > Với Supabase, dùng chuỗi **Session pooler** (cổng `6543`) và `DB_SSL=true`; cổng trực tiếp `5432` thường không truy cập được từ mạng IPv4.
+3. Kiểm tra kết nối cơ sở dữ liệu:
+   ```bash
+   npm run db:check
+   ```
+4. Khởi động máy chủ:
    ```bash
    npm start
-   # Hoặc: node server.js
    ```
-3. Mở trình duyệt web và truy cập địa chỉ:
+   Lần chạy đầu, máy chủ tự tạo bảng (`src/server/schema.sql`) và nạp dữ liệu mẫu từ `src/server/seed.json`.
+5. Mở trình duyệt:
    - **Hệ thống Quản trị ATS:** `http://localhost:3000`
    - **Cổng Tuyển dụng Ứng viên:** `http://localhost:3000/#/portal`
+   - **Kiểm tra API:** `http://localhost:3000/api/health`
 
-### Cách 2: Mở trực tiếp bằng trình duyệt (Không cần cài đặt)
-Do hệ thống được phát triển theo kiến trúc Client-side độc lập hoàn chỉnh, bạn có thể nhấp đúp trực tiếp vào tệp `index.html` trong thư mục `ats-system` bằng bất kỳ trình duyệt nào (Chrome, Edge, Firefox, Safari) để trải nghiệm toàn bộ tính năng.
+#### Các chế độ gửi thư
+| Chế độ | Hành vi |
+| :--- | :--- |
+| `smtp` | Gửi thật qua máy chủ SMTP của doanh nghiệp (Gmail App Password, Brevo, Resend...). Dùng khi triển khai thật. |
+| `ethereal` | Gửi thật tới hộp thư thử nghiệm của Nodemailer; mỗi thư có `preview_url` để mở lại đúng nội dung ứng viên sẽ nhận. |
+| `auto` | Dùng SMTP nếu có `SMTP_HOST`, ngược lại ghi tệp. |
+| `file` | Chỉ ghi tệp `.eml` vào `mail-outbox/` để kiểm tra nội dung. |
+
+Kiểm tra thư đã gửi: `GET http://localhost:3000/api/health` → trường `mail.recent[].previewUrl`.
+
+### Cách 2: Chạy riêng giao diện (không cần cơ sở dữ liệu)
+Mở `index.html` trực tiếp bằng trình duyệt hoặc chạy `node server.js` khi chưa có `.env`. Khi API không phản hồi, ứng dụng tự dùng dữ liệu mẫu trong bộ nhớ và vẫn thao tác được (chỉ mất tính bền vững và tính năng gửi thư).
 
 ---
 

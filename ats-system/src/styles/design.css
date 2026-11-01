@@ -1819,10 +1819,10 @@ body.modal-open { overflow: hidden !important; }
   box-shadow: none;
   padding: 0;
 }
-.login-header { margin-bottom: 24px; text-align: left; }
+.login-header { margin-bottom: 24px; text-align: center; }
 .login-logo { display: none; }
-.login-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--title); margin: 0 0 4px; text-align: left; }
-.login-subtitle { font-size: 13px; color: var(--muted); margin: 0; text-align: left; }
+.login-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--title); margin: 0 0 6px; text-align: center; }
+.login-subtitle { font-size: 13px; color: var(--muted); margin: 0 auto; text-align: center; max-width: 34ch; }
 
 .login-form { display: flex; flex-direction: column; gap: 0; }
 .login-form .form-group { margin-bottom: 14px; }
@@ -2636,4 +2636,72 @@ body.modal-open { overflow: hidden !important; }
   .portal-job-search-row { flex-direction: column; }
   .portal-job-search-select { min-width: auto; width: 100%; }
   .portal-job-search-btn { width: 100%; }
+}
+
+/* ── Khởi động: chờ nạp dữ liệu từ PostgreSQL ─────────────── */
+.boot-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--ground);
+}
+.boot-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--navy);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.boot-mark svg { width: 22px; height: 22px; }
+.boot-title {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--title);
+}
+.boot-text {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ── Sàng lọc CV: dấu hiệu "Cần kiểm tra thủ công" ─────────── */
+.data-table tbody tr.is-manual { background: #fdf4e1; }
+.data-table tbody tr.is-manual:hover { background: #faedd2; }
+.table-sticky-actions tbody tr.is-manual td:last-child { background: #fdf4e1; }
+.manual-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 2px 7px;
+  border: 1px solid #e3bd7a;
+  border-radius: var(--radius-chip);
+  background: #fbeccd;
+  color: #7d5109;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.manual-flag svg { width: 12px; height: 12px; }
+.btn-mark-manual.is-active {
+  border-color: #e3bd7a;
+  background: #fbeccd;
+  color: #7d5109;
+}
+
+/* ── Đánh giá: hai nút thao tác cạnh nhau trong danh sách ──── */
+.eval-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
 }
