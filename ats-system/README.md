@@ -139,6 +139,27 @@ Trình duyệt (SPA Vanilla JS)
 - Giao diện vẫn đọc dữ liệu đồng bộ như trước; việc ghi đi qua API nên không phải chờ mạng.
 - Khi HR xếp/ xác nhận lịch phỏng vấn, `ATSStore` tạo bản ghi trong `emailLog`; máy chủ nhận bản ghi qua `/api/sync` và gửi thư ngay, sau đó đánh dấu `sent` / `preview` / `failed` trong bảng `email_log`.
 
+### 3.2.1. Lưu trữ: PostgreSQL là nguồn chính, localStorage chỉ là bản đệm
+
+| Thành phần | Vai trò |
+| :--- | :--- |
+| **PostgreSQL / Supabase** | Nguồn dữ liệu chính thức, bền vững. Đọc bằng `GET /api/state`, ghi bằng `POST /api/sync`. |
+| **localStorage** | Bản đệm để giao diện đọc/ghi tức thì (không chờ mạng) và giữ thay đổi chưa gửi được. |
+| **`getSyncStatus()`** | Trả về `{ mode: 'server' \| 'local', pending, lastError }` — hiển thị trên thanh tiêu đề. |
+
+Cơ chế chắc chắn:
+
+- Khi tải trang: `GET /api/state` lấy toàn bộ dữ liệu từ database, ghi đè bản đệm.
+- Mỗi thao tác ghi: chỉ phần thay đổi được gửi đi (`/api/sync`, debounce 250ms).
+- Nếu database/mạng lỗi: thay đổi được lưu vào `smart_ats_sync_pending_v1` (không mất dữ liệu) và **tự thử lại** (mỗi 3 giây cho lần gửi, mỗi 5 giây cho kết nối — tối đa 12 lần).
+- Thanh tiêu đề hiển thị **“CSDL đã lưu”** (xanh) khi đã ghi vào PostgreSQL, **“Chưa kết nối CSDL”** (đỏ) khi đang dùng bản đệm; bấm vào để kiểm tra/đồng bộ lại ngay.
+
+Kiểm chứng bằng lệnh:
+
+```bash
+npm run test:db    # ghi dữ liệu qua API rồi truy vấn TRỰC TIẾP PostgreSQL
+```
+
 ### 3.3. Cấu trúc Thư mục
 
 ```

@@ -870,7 +870,7 @@ const CandidatesPage = (() => {
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-3 gap-4 mb-3">
+                  <div class="grid grid-cols-4 gap-4 mb-3">
                     <div class="form-group">
                       <label class="form-label required">Số điện thoại</label>
                       <input type="text" name="phone" id="upload-phone" class="form-input" required placeholder="098xxxxxxx">
@@ -878,6 +878,14 @@ const CandidatesPage = (() => {
                     <div class="form-group">
                       <label class="form-label">Trình độ học vấn</label>
                       <input type="text" name="education" id="upload-edu" class="form-input" value="Đại học">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Giới tính</label>
+                      <select name="gender" id="upload-gender" class="form-select">
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác" selected>Khác</option>
+                      </select>
                     </div>
                     <div class="form-group">
                       <label class="form-label required">Số năm kinh nghiệm</label>
@@ -893,7 +901,7 @@ const CandidatesPage = (() => {
                     <div class="border-2 border-dashed border-gray-300 p-3.5 rounded text-center mb-2 hover:bg-gray-50 transition cursor-pointer" id="drop-cv-zone">
                       <i data-lucide="file-up" class="w-7 h-7 text-primary mx-auto mb-1"></i>
                       <div class="text-xs text-muted">Kéo thả tệp CV vào đây hoặc <label for="file-cv-input" class="text-primary font-bold cursor-pointer">chọn tệp từ máy</label></div>
-                      <input type="file" id="file-cv-input" class="hidden" accept=".txt,.pdf,.doc,.docx">
+                      <input type="file" id="file-cv-input" class="hidden" accept=".txt,.pdf,.docx">
                     </div>
                     <textarea name="rawResumeText" id="textarea-raw-cv" class="form-textarea font-mono text-xs" rows="5" placeholder="Dán nội dung CV văn bản tại đây để hệ thống tự động trích xuất thông tin, phân tích từ khóa NLP và đối chiếu tiêu chí..."></textarea>
                     <button type="button" class="btn btn-xs btn-outline mt-1.5" id="btn-parse-cv-text">
@@ -977,9 +985,11 @@ const CandidatesPage = (() => {
             fullName: fd.get('fullName'),
             email: fd.get('email'),
             phone: fd.get('phone'),
+            gender: fd.get('gender') || 'Khác',
             experienceYears,
             education: fd.get('education') || 'Đại học',
             skills: parsedFromCV.skills || [],
+            certifications: parsedFromCV.certifications || [],
             rawResumeText: rawCV
           };
 
@@ -1001,10 +1011,11 @@ const CandidatesPage = (() => {
 
     parseAndFillCV(text) {
       const parsed = ATSStore.parseCVText(text);
-      if (parsed.name && document.getElementById('upload-name')) document.getElementById('upload-name').value = parsed.name;
+      if (parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' && document.getElementById('upload-name')) document.getElementById('upload-name').value = parsed.name;
       if (parsed.email && document.getElementById('upload-email')) document.getElementById('upload-email').value = parsed.email;
       if (parsed.phone && document.getElementById('upload-phone')) document.getElementById('upload-phone').value = parsed.phone;
-      if (parsed.education && document.getElementById('upload-edu')) document.getElementById('upload-edu').value = parsed.education;
+      if (parsed.gender && parsed.gender !== 'Khác' && document.getElementById('upload-gender')) document.getElementById('upload-gender').value = parsed.gender;
+      if (parsed.education && parsed.education !== 'Đang cập nhật' && document.getElementById('upload-edu')) document.getElementById('upload-edu').value = parsed.education;
       if (parsed.experienceYears && document.getElementById('upload-exp')) document.getElementById('upload-exp').value = parsed.experienceYears;
       if (parsed.skills && document.getElementById('upload-skills')) document.getElementById('upload-skills').value = parsed.skills.join(', ');
 

@@ -446,10 +446,18 @@ const PortalPage = (() => {
                   <h4 class="form-section-title">
                     Học vấn & kinh nghiệm làm việc
                   </h4>
-                  <div class="grid grid-cols-2 gap-4 mb-3">
+                  <div class="grid grid-cols-3 gap-4 mb-3">
                     <div class="form-group">
                       <label class="form-label">Trình độ học vấn</label>
                       <input type="text" name="education" id="portal-edu" class="form-input" value="Đại học" placeholder="Đại học / Cao đẳng...">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Giới tính</label>
+                      <select name="gender" id="portal-gender" class="form-select">
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác" selected>Khác</option>
+                      </select>
                     </div>
                     <div class="form-group">
                       <label class="form-label required">Số năm kinh nghiệm (Năm)</label>
@@ -465,7 +473,7 @@ const PortalPage = (() => {
                     <div class="cv-dropzone" id="portal-cv-dropzone">
                       <i data-lucide="upload" class="icon-md"></i>
                       <div class="text-xs text-gray-700">Kéo thả tệp CV (.txt, .pdf, .docx) vào đây hoặc <label for="portal-file-input" class="text-primary font-bold cursor-pointer underline">chọn tệp từ thiết bị</label></div>
-                      <input type="file" id="portal-file-input" class="hidden" accept=".txt,.pdf,.doc,.docx">
+                      <input type="file" id="portal-file-input" class="hidden" accept=".txt,.pdf,.docx">
                     </div>
 
                     <input type="hidden" id="portal-raw-cv" name="rawResumeText" value="">
@@ -491,8 +499,7 @@ const PortalPage = (() => {
         UI.openModal('modal-portal-apply');
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        // File drop/change — chỉ đọc nội dung tệp để lưu kèm hồ sơ.
-        // Ứng viên tự nhập thông tin cá nhân, không tự động điền từ CV.
+        // File drop/change — đọc nội dung tệp và TỰ ĐỘNG ĐIỀN các trường.
         const fileInput = document.getElementById('portal-file-input');
         if (fileInput) {
           fileInput.addEventListener('change', async (e) => {
@@ -507,10 +514,16 @@ const PortalPage = (() => {
               }
               const hidden = document.getElementById('portal-raw-cv');
               if (hidden) hidden.value = text;
-              if (status) status.textContent = `Đã nhận ${file.name}. Vui lòng kiểm tra lại thông tin đã nhập trước khi gửi.`;
+
+              const filled = this.autofillPortalForm(text);
+              if (status) {
+                status.textContent = filled
+                  ? `Đã đọc ${file.name} và điền thông tin tìm thấy. Vui lòng kiểm tra lại trước khi gửi.`
+                  : `Đã đọc ${file.name} nhưng chưa nhận diện được thông tin. Vui lòng nhập tay.`;
+              }
             } catch (err) {
-              if (status) status.textContent = `Không đọc được ${file.name}. Vui lòng dùng tệp .pdf, .docx hoặc .txt rõ ràng.`;
-              UI.toast({ message: err && err.message ? err.message : 'Không đọc được tệp CV.', type: 'warning' });
+              if (status) status.textContent = `Không đọc được ${file.name}. ${(err && err.message) || ''}`;
+              UI.toast({ message: err && err.message ? err.message : 'Không đọc được tệp CV.', type: 'warning', duration: 7000 });
             }
           });
         }
@@ -537,9 +550,11 @@ const PortalPage = (() => {
             fullName: fd.get('fullName'),
             email: fd.get('email'),
             phone: fd.get('phone'),
+            gender: fd.get('gender') || 'Khác',
             experienceYears,
             education: fd.get('education') || 'Đại học',
             skills: parsedFromCV.skills || [],
+            certifications: parsedFromCV.certifications || [],
             rawResumeText: rawCV
           };
 
@@ -567,6 +582,35 @@ const PortalPage = (() => {
           this.refresh();
         });
       }
+    },
+
+    /**
+     * Tự động điền thông tin từ văn bản CV vào form ứng tuyển.
+     * Trả về true nếu điền được ít nhất một trường.
+     */
+    autofillPortalForm(sourceText) {
+      const text = sourceText || document.getElementById('portal-raw-cv')?.value || '';
+      if (!text.trim()) return false;
+
+      const parsed = ATSStore.parseCVText(text);
+      let filled = false;
+
+      const setValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && value !== undefined && value !== null && String(value).trim() !== '') {
+          el.value = value;
+          filled = true;
+        }
+      };
+
+      setValue('portal-name', parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' ? parsed.name : '');
+      setValue('portal-email', parsed.email);
+      setValue('portal-phone', parsed.phone);
+      setValue('portal-gender', parsed.gender && parsed.gender !== 'Khác' ? parsed.gender : '');
+      setValue('portal-edu', parsed.education && parsed.education !== 'Đang cập nhật' ? parsed.education : '');
+      if (parsed.experienceYears > 0) setValue('portal-exp', parsed.experienceYears);
+
+      return filled;
     }
   };
 })();

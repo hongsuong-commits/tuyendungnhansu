@@ -11,8 +11,11 @@
     "seed:export": "node scripts/export-seed.js",
     "test": "node test-suite.js",
     "test:cv": "node scripts/test-cv-parse.js",
+    "test:pdf": "node scripts/test-pdf-extract.js",
+    "test:db": "node scripts/test-db-sync.js",
     "test:email": "node scripts/test-email-flow.js",
-    "test:email:candidate": "node scripts/test-candidate-email.js"
+    "test:email:candidate": "node scripts/test-candidate-email.js",
+    "sample:pdf": "python scripts/make-sample-cv-pdf.py"
   },
   "keywords": [
     "ats",
@@ -24,7 +27,9 @@
   "author": "SmartATS Team",
   "license": "MIT",
   "dependencies": {
+    "mammoth": "^1.6.0",
     "nodemailer": "^10.3.1",
+    "pdfjs-dist": "^3.11.174",
     "pg": "^8.23.1"
   }
 }

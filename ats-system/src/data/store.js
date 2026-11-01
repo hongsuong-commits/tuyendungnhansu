@@ -1040,17 +1040,29 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
   let _currentUser = null;
 
   // ── Đồng bộ máy chủ (PostgreSQL) ─────────────────────────────
-  // Giao diện đọc dữ liệu đồng bộ từ bộ nhớ; mọi thay đổi được đẩy lên
-  // API /api/sync ngay sau khi ghi, theo cơ chế so sánh khác biệt.
+  // PostgreSQL là NGUỒN DỮ LIỆU CHÍNH:
+  //   • Khi tải trang: GET /api/state lấy toàn bộ dữ liệu từ database.
+  //   • Mỗi lần ghi: POST /api/sync đẩy phần thay đổi lên database (debounce 250ms).
+  //   • localStorage chỉ là bản đệm để giao diện đọc đồng bộ + giữ thay đổi
+  //     chưa gửi được khi mạng/DB tạm lỗi. Thay đổi đó được lưu lại và tự đẩy
+  //     lên ngay khi kết nối lại (không mất dữ liệu).
   const SYNC_COLLECTIONS = [
     'users', 'departments', 'requisitions', 'postings', 'candidates',
     'applications', 'interviews', 'evaluations', 'notifications', 'emailLog'
   ];
-  let _syncEnabled = false;
-  let _syncedSnapshot = null;
+  const SYNC_SNAPSHOT_KEY = 'smart_ats_sync_snapshot_v1';
+  const SYNC_PENDING_KEY = 'smart_ats_sync_pending_v1';
+  const SYNC_RETRY_DELAY_MS = 5000;
+  const SYNC_MAX_RETRIES = 12;
+
+  let _syncEnabled = false;      // true khi đã kết nối được database
+  let _syncedSnapshot = null;    // dạng hash của dữ liệu đang có trên server
   let _syncTimer = null;
   let _syncing = false;
   let _syncPending = false;
+  let _lastSyncError = '';
+  let _retryTimer = null;
+  let _retryCount = 0;
 
   function cloneData(value) {
     return value == null ? value : JSON.parse(JSON.stringify(value));
@@ -1074,32 +1086,84 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     return snapshot;
   }
 
-  function diffAgainstSynced(snapshot) {
-    if (!_syncedSnapshot) return null;
+  /** Hash ngắn (djb2) để lưu "dấu vết" dữ liệu server mà không tốn dung lượng. */
+  function hashString(text) {
+    let hash = 5381;
+    const str = String(text || '');
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  function snapshotHashes(snapshot) {
+    const hashes = { settings: hashString(JSON.stringify(snapshot.settings || null)), collections: {} };
+    SYNC_COLLECTIONS.forEach((collection) => {
+      const map = {};
+      (snapshot[collection] || []).forEach((record) => {
+        if (record && record.id) map[record.id] = hashString(JSON.stringify(record));
+      });
+      hashes.collections[collection] = map;
+    });
+    return hashes;
+  }
+
+  function loadStoredHashes() {
+    try {
+      const raw = localStorage.getItem(SYNC_SNAPSHOT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function storeHashes(hashes) {
+    try {
+      localStorage.setItem(SYNC_SNAPSHOT_KEY, JSON.stringify(hashes));
+    } catch (_) { /* bộ nhớ đầy */ }
+  }
+
+  function readPending() {
+    try {
+      const raw = localStorage.getItem(SYNC_PENDING_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function persistPending(payload) {
+    try {
+      if (!payload) localStorage.removeItem(SYNC_PENDING_KEY);
+      else localStorage.setItem(SYNC_PENDING_KEY, JSON.stringify(payload));
+    } catch (_) { /* bộ nhớ đầy */ }
+  }
+
+  /** So sánh dữ liệu hiện tại với hash dữ liệu server → payload cần gửi. */
+  function diffAgainstSnapshot(snapshot, hashes) {
+    if (!hashes) return null;
 
     const upserts = {};
     const deletes = {};
 
     SYNC_COLLECTIONS.forEach((collection) => {
-      const previous = _syncedSnapshot[collection] || [];
+      const known = (hashes.collections && hashes.collections[collection]) || {};
       const next = snapshot[collection] || [];
-      const previousMap = new Map(previous.filter(r => r && r.id).map(r => [r.id, JSON.stringify(r)]));
-      const nextIds = new Set();
+      const seen = new Set();
       const changed = [];
 
       next.forEach((record) => {
         if (!record || !record.id) return;
-        nextIds.add(record.id);
-        if (previousMap.get(record.id) !== JSON.stringify(record)) changed.push(record);
+        seen.add(record.id);
+        if (known[record.id] !== hashString(JSON.stringify(record))) changed.push(record);
       });
 
-      const removed = previous.filter(r => r && r.id && !nextIds.has(r.id)).map(r => r.id);
-
+      const removed = Object.keys(known).filter((id) => !seen.has(id));
       if (changed.length) upserts[collection] = changed;
       if (removed.length) deletes[collection] = removed;
     });
 
-    const settingsChanged = JSON.stringify(snapshot.settings) !== JSON.stringify(_syncedSnapshot.settings);
+    const settingsChanged = hashString(JSON.stringify(snapshot.settings || null)) !== (hashes.settings || '');
     if (!Object.keys(upserts).length && !Object.keys(deletes).length && !settingsChanged) return null;
 
     const payload = { upserts, deletes };
@@ -1107,8 +1171,64 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     return payload;
   }
 
+  /** Gộp hai payload (bản cũ chưa gửi được + thay đổi mới). */
+  function mergePayloads(first, second) {
+    if (!first) return second || null;
+    if (!second) return first || null;
+
+    const upserts = {};
+    [first.upserts || {}, second.upserts || {}].forEach((source) => {
+      Object.keys(source).forEach((collection) => {
+        upserts[collection] = upserts[collection] || {};
+        (source[collection] || []).forEach((record) => {
+          if (record && record.id) upserts[collection][record.id] = record;
+        });
+      });
+    });
+    Object.keys(upserts).forEach((collection) => {
+      upserts[collection] = Object.values(upserts[collection]);
+    });
+
+    const deletes = {};
+    [first.deletes || {}, second.deletes || {}].forEach((source) => {
+      Object.keys(source).forEach((collection) => {
+        deletes[collection] = Array.from(new Set([...(deletes[collection] || []), ...(source[collection] || [])]));
+      });
+    });
+
+    const merged = { upserts, deletes };
+    if (second.settings !== undefined) merged.settings = second.settings;
+    else if (first.settings !== undefined) merged.settings = first.settings;
+
+    const empty = !Object.keys(merged.upserts).length
+      && !Object.keys(merged.deletes).length
+      && merged.settings === undefined;
+    return empty ? null : merged;
+  }
+
+  /** Áp thay đổi còn tồn đọng lên dữ liệu vừa tải từ server. */
+  function applyPending(payload) {
+    if (!payload) return;
+    Object.keys(payload.upserts || {}).forEach((collection) => {
+      if (!SYNC_COLLECTIONS.includes(collection)) return;
+      const list = Array.isArray(_data[collection]) ? _data[collection] : (_data[collection] = []);
+      (payload.upserts[collection] || []).forEach((record) => {
+        if (!record || !record.id) return;
+        const index = list.findIndex((item) => item && item.id === record.id);
+        if (index === -1) list.unshift(cloneData(record));
+        else list[index] = cloneData(record);
+      });
+    });
+    Object.keys(payload.deletes || {}).forEach((collection) => {
+      if (!SYNC_COLLECTIONS.includes(collection)) return;
+      const ids = payload.deletes[collection] || [];
+      _data[collection] = (_data[collection] || []).filter((item) => !ids.includes(item && item.id));
+    });
+    if (payload.settings) _data.settings = cloneData(payload.settings);
+  }
+
   function scheduleSync() {
-    if (!_syncEnabled || typeof fetch !== 'function') return;
+    if (typeof fetch !== 'function') return;
     if (_syncTimer) clearTimeout(_syncTimer);
     _syncTimer = setTimeout(() => {
       _syncTimer = null;
@@ -1116,16 +1236,30 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     }, 250);
   }
 
+  function scheduleInitRetry() {
+    if (typeof fetch !== 'function') return;
+    if (_retryTimer || _retryCount >= SYNC_MAX_RETRIES) return;
+    _retryTimer = setTimeout(async () => {
+      _retryTimer = null;
+      _retryCount += 1;
+      const ok = await init({ quiet: true });
+      if (!ok) scheduleInitRetry();
+    }, SYNC_RETRY_DELAY_MS);
+  }
+
+  /** Đẩy thay đổi lên PostgreSQL. Không mất dữ liệu: lỗi thì lưu lại và thử tiếp. */
   async function flushSync() {
-    if (!_syncEnabled || typeof fetch !== 'function') return;
+    if (typeof fetch !== 'function') return;
+
+    const snapshot = serverSnapshot();
+    const hashes = _syncedSnapshot || loadStoredHashes();
+    const payload = mergePayloads(readPending(), diffAgainstSnapshot(snapshot, hashes));
+    if (!payload) return;
+
     if (_syncing) {
       _syncPending = true;
       return;
     }
-
-    const snapshot = serverSnapshot();
-    const payload = diffAgainstSynced(snapshot);
-    if (!payload) return;
 
     _syncing = true;
     try {
@@ -1135,9 +1269,18 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      _syncedSnapshot = snapshot;
+
+      _syncedSnapshot = snapshotHashes(snapshot);
+      storeHashes(_syncedSnapshot);
+      persistPending(null);
+      _lastSyncError = '';
+      _syncEnabled = true;
+      _retryCount = 0;
     } catch (err) {
-      console.warn('[ATSStore] Không đồng bộ được lên máy chủ:', err.message);
+      _lastSyncError = err.message;
+      console.warn('[ATSStore] Chưa gửi được thay đổi lên database, sẽ thử lại:', err.message);
+      // Lưu lại để lần sau gửi tiếp — không mất dữ liệu người dùng vừa nhập.
+      persistPending(payload);
       if (_syncTimer) clearTimeout(_syncTimer);
       _syncTimer = setTimeout(() => {
         _syncTimer = null;
@@ -1150,39 +1293,55 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     if (_syncPending) {
       _syncPending = false;
       scheduleSync();
-    } else if (diffAgainstSynced(serverSnapshot())) {
-      scheduleSync();
     }
   }
 
-  /** Nạp toàn bộ dữ liệu từ PostgreSQL khi ứng dụng khởi động. */
-  async function init() {
+  /**
+   * Nạp toàn bộ dữ liệu từ PostgreSQL khi ứng dụng khởi động.
+   * Nếu database tạm không truy cập được: vẫn chạy bằng bản đệm cục bộ và
+   * tự thử kết nối lại (tối đa 12 lần, mỗi 5 giây).
+   */
+  async function init(options = {}) {
     if (typeof fetch !== 'function') return false;
+    const quiet = options.quiet === true;
+
     try {
-      const res = await fetch('/api/state', { headers: { Accept: 'application/json' } });
+      const res = await fetch('/api/state', { headers: { Accept: 'application/json' }, cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const payload = await res.json();
       const incoming = payload && payload.data;
       if (!incoming) throw new Error('Phản hồi API không hợp lệ');
 
-      // Máy chủ chưa có người dùng nghĩa là chưa nạp được dữ liệu mẫu:
-      // giữ dữ liệu cục bộ để hệ thống vẫn dùng được.
+      // Database chưa có dữ liệu mẫu → giữ bản đệm cục bộ để hệ thống vẫn chạy.
       if (!Array.isArray(incoming.users) || incoming.users.length === 0) {
         throw new Error('Cơ sở dữ liệu chưa có dữ liệu người dùng');
       }
 
+      // 1) Ghi đè bằng dữ liệu CHÍNH THỨC từ database.
       SYNC_COLLECTIONS.forEach((collection) => {
         if (collection === 'departments') {
           _data.departments = (incoming.departments || [])
-            .map(d => (typeof d === 'string' ? d : (d && d.name) || ''))
+            .map((d) => (typeof d === 'string' ? d : (d && d.name) || ''))
             .filter(Boolean);
           return;
         }
         _data[collection] = Array.isArray(incoming[collection]) ? incoming[collection] : [];
       });
-
       if (incoming.settings) _data.settings = incoming.settings;
       if (_data.settings && !_data.settings.hotline) _data.settings.hotline = '1900 xxxx';
+
+      // 2) Ghi nhớ "dấu vết" dữ liệu server để tính phần thay đổi cần gửi.
+      _syncedSnapshot = snapshotHashes(serverSnapshot());
+      storeHashes(_syncedSnapshot);
+
+      // 3) Khôi phục thay đổi cục bộ chưa gửi được (nếu có) rồi đẩy lên ngay.
+      const pending = readPending();
+      if (pending) {
+        applyPending(pending);
+        if (!quiet) {
+          console.info('[ATSStore] Đang gửi lại thay đổi chưa đồng bộ trước đó.');
+        }
+      }
 
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(_data));
@@ -1190,7 +1349,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
       // Tài khoản đang đăng nhập phải tồn tại trong dữ liệu máy chủ.
       if (_currentUser) {
-        const fresh = (_data.users || []).find(u => u.id === _currentUser.id);
+        const fresh = (_data.users || []).find((u) => u.id === _currentUser.id);
         if (fresh) {
           _currentUser = fresh;
           localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(fresh));
@@ -1200,13 +1359,35 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         }
       }
 
-      _syncedSnapshot = serverSnapshot();
       _syncEnabled = true;
+      _lastSyncError = '';
+      _retryCount = 0;
+      if (pending) flushSync();
       return true;
     } catch (err) {
-      console.warn('[ATSStore] Dùng dữ liệu cục bộ:', err.message);
+      _lastSyncError = err.message;
+      if (!quiet) console.warn('[ATSStore] Chưa kết nối được database, dùng bản đệm cục bộ:', err.message);
+      scheduleInitRetry();
       return false;
     }
+  }
+
+  /** Trạng thái lưu trữ để hiển thị trên giao diện. */
+  function getSyncStatus() {
+    return {
+      mode: _syncEnabled ? 'server' : 'local',
+      pending: readPending() ? true : false,
+      lastError: _lastSyncError,
+      retrying: !!_retryTimer
+    };
+  }
+
+  /** Cho phép người dùng/bấm nút thử đồng bộ lại ngay. */
+  async function syncNow() {
+    _retryCount = 0;
+    const ok = await init({ quiet: true });
+    if (ok) await flushSync();
+    return getSyncStatus();
   }
 
   function loadState() {
@@ -1254,7 +1435,18 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     } catch (e) {
       console.error('[ATSStore] Error saving storage:', e);
     }
-    scheduleSync();
+
+    if (typeof fetch !== 'function') return;
+
+    // Lưu ngay phần thay đổi chưa gửi (phòng khi đóng trang trước debounce).
+    const hashes = _syncedSnapshot || loadStoredHashes();
+    if (hashes) {
+      const payload = diffAgainstSnapshot(serverSnapshot(), hashes);
+      if (payload) persistPending(mergePayloads(readPending(), payload));
+    }
+
+    // Đẩy lên database khi đã kết nối; nếu chưa thì bản trên sẽ được gửi sau.
+    if (_syncEnabled) scheduleSync();
   }
 
   function resetToDefault() {
@@ -1292,6 +1484,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           phone: '',
           education: '',
           experienceYears: 0,
+          gender: 'Khác',
           skills: [],
           certifications: []
         };
@@ -1347,6 +1540,19 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           const candidate = cleanupValue(line);
           if (isLikelyName(candidate)) { name = candidate; break; }
         }
+      }
+
+      // Extract Gender — chỉ lấy khi CV ghi rõ, không tự suy đoán từ tên.
+      // Lưu ý: không dùng \b vì ký tự tiếng Việt có dấu không phải "word char".
+      let gender = 'Khác';
+      const genderMatch = cleanText.match(
+        /(?:GIỚI\s*TÍNH|GENDER|SEX)\s*[:：\-]?\s*(NAM|NỮ|NU|MALE|FEMALE|KHÁC|OTHER)(?=\s|$|[-–—,;/.)])/iu
+      );
+      if (genderMatch) {
+        const value = genderMatch[1].toLowerCase();
+        if (value === 'nam' || value === 'male') gender = 'Nam';
+        else if (value === 'nữ' || value === 'nu' || value === 'female') gender = 'Nữ';
+        else gender = 'Khác';
       }
 
       // Extract Experience Years
@@ -1434,6 +1640,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         name: name || 'Ứng viên chưa rõ họ tên',
         email: email || '',
         phone: phone || '',
+        gender,
         education: education || 'Đang cập nhật',
         experienceYears: Math.round(experienceYears * 10) / 10,
         skills: detectedSkills,
@@ -2902,7 +3109,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
     // ── Đồng bộ máy chủ (PostgreSQL) ───────────────────────────
     init,
-    syncNow() { return flushSync(); },
+    syncNow,
+    getSyncStatus,
     isServerBacked() { return _syncEnabled; },
 
     resetAllData() {

@@ -219,6 +219,13 @@ const Layout = (() => {
         </div>
 
         <div class="header-right">
+          <button id="dbSyncStatus" type="button"
+                  title="Trạng thái lưu trữ dữ liệu"
+                  style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #d7e4f1;border-radius:999px;background:#fff;cursor:pointer;font-size:11px;font-weight:600;color:#163a5f;white-space:nowrap;">
+            <span id="dbSyncDot" style="width:8px;height:8px;border-radius:50%;background:#d97706;display:inline-block;"></span>
+            <span id="dbSyncText">Đang kết nối…</span>
+          </button>
+
           <div class="header-notification" id="headerNotification">
             <button class="header-icon-btn notification-btn" id="notificationToggle" title="Thông báo">
               <i data-lucide="bell"></i>
@@ -363,6 +370,56 @@ const Layout = (() => {
     initEventListeners() {
       // Ensure all dropdowns start closed
       this.closeAllDropdowns();
+
+      // ── Chỉ báo trạng thái lưu trữ (PostgreSQL / bản đệm cục bộ) ──
+      const syncBadge = document.getElementById('dbSyncStatus');
+      const syncDot = document.getElementById('dbSyncDot');
+      const syncText = document.getElementById('dbSyncText');
+
+      const paintSyncStatus = () => {
+        if (!syncBadge || !syncDot || !syncText) return;
+        if (typeof ATSStore === 'undefined' || !ATSStore.getSyncStatus) return;
+        const status = ATSStore.getSyncStatus();
+        if (status.mode === 'server') {
+          const sending = status.pending;
+          syncText.textContent = sending ? 'CSDL · đang gửi' : 'CSDL đã lưu';
+          syncDot.style.background = sending ? '#d97706' : '#16a34a';
+          syncBadge.title = 'Dữ liệu đang lưu trên PostgreSQL (Supabase). Nhấn để đồng bộ lại.';
+        } else {
+          syncText.textContent = 'Chưa kết nối CSDL';
+          syncDot.style.background = '#dc2626';
+          syncBadge.title = 'Chưa kết nối được database — đang dùng bản đệm cục bộ. Nhấn để thử lại.';
+        }
+      };
+
+      paintSyncStatus();
+      if (window._dbSyncStatusTimer) clearInterval(window._dbSyncStatusTimer);
+      window._dbSyncStatusTimer = setInterval(paintSyncStatus, 3000);
+
+      if (syncBadge) {
+        syncBadge.addEventListener('click', async () => {
+          if (syncText) syncText.textContent = 'Đang kiểm tra…';
+          try {
+            const status = typeof ATSStore.syncNow === 'function'
+              ? await ATSStore.syncNow()
+              : ATSStore.getSyncStatus();
+            paintSyncStatus();
+            if (typeof UI !== 'undefined' && UI.toast) {
+              UI.toast({
+                message: status.mode === 'server'
+                  ? 'Đã kết nối database và đồng bộ dữ liệu.'
+                  : ('Chưa kết nối được database: ' + (status.lastError || 'lỗi mạng')),
+                type: status.mode === 'server' ? 'success' : 'warning'
+              });
+            }
+          } catch (err) {
+            paintSyncStatus();
+            if (typeof UI !== 'undefined' && UI.toast) {
+              UI.toast({ message: 'Kiểm tra kết nối thất bại: ' + err.message, type: 'error' });
+            }
+          }
+        });
+      }
 
       // Restore sidebar state from localStorage
       const savedState = localStorage.getItem('ats_sidebar_collapsed');
