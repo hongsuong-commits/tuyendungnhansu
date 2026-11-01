@@ -22,4 +22,4 @@ Toàn bộ mã nguồn và hướng dẫn chi tiết nằm tại thư mục [ats
 - **Nhân sự (HR):** `hr1` / mật khẩu `123456`
 - **Trưởng phòng CNTT:** `head_it` / mật khẩu `123456`
 - **Trưởng phòng Kinh doanh:** `head_sales` / mật khẩu `123456`
-- **Ứng viên:** `candidate` / mật khẩu `123456` (Cổng ứng viên: `http://localhost:3000/#/portal`)
+- Cổng ứng viên: `http://localhost:3000/#/portal`

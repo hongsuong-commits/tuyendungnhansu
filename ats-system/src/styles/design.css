@@ -488,7 +488,7 @@ svg.lucide, .lucide { width: 16px; height: 16px; stroke-width: 1.6; flex: none; 
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   box-shadow: none;
-  padding: 0;
+  padding: 20px;
   overflow: hidden;
 }
 
@@ -2017,7 +2017,7 @@ body.modal-open { overflow: hidden !important; }
   line-height: 1.65;
   color: var(--muted);
   margin: 0 auto;
-  max-width: 58ch;
+  max-width: 60ch;
   opacity: 1;
 }
 

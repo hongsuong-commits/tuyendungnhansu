@@ -36,7 +36,7 @@
 .text-gray-100 { color: #f1f2f4; }
 .p-3\.5 { padding: 14px; }
 .leading-relaxed { line-height: 1.6; }
-.p-4 { padding: 16px; }
+.p-4 { padding: 25px; }
 .text-3xl { font-size: 28px; }
 .font-extrabold { font-weight: 700; }
 .mt-1 { margin-top: 4px; }
@@ -60,7 +60,8 @@
 .space-y-3 > * + * { margin-top: 12px; }
 .ml-2 { margin-left: 8px; }
 .italic { font-style: italic; }
-.mb-3 { margin-bottom: 12px; }
+.mb-3 { margin-bottom: 12px; 
+padding-bottom: 10px;}
 .max-h-48 { max-height: 192px; }
 .mt-1\.5 { margin-top: 6px; }
 .border-gray-300 { border-color: #d3d7dd; }
