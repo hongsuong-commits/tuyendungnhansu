@@ -417,6 +417,27 @@ const Layout = (() => {
         });
       }
 
+      // ── Ngoại lệ 1: bộ quét nhắc nhở phê duyệt JD (chạy nền toàn ứng dụng) ──
+      if (!window._approvalReminderTimer) {
+        const scanApprovalReminders = () => {
+          if (typeof ATSStore === 'undefined' || !ATSStore.checkApprovalReminders) return;
+          try {
+            const reminded = ATSStore.checkApprovalReminders();
+            if (reminded.length && typeof UI !== 'undefined' && UI.toast) {
+              UI.toast({
+                message: `Đã gửi nhắc nhở phê duyệt JD cho ${reminded.length} yêu cầu quá hạn. Hoạt động phê duyệt không bị gián đoạn.`,
+                type: 'warning',
+                duration: 6000
+              });
+            }
+          } catch (err) {
+            console.warn('[ATS] Không quét được nhắc nhở phê duyệt:', err.message);
+          }
+        };
+        scanApprovalReminders();
+        window._approvalReminderTimer = setInterval(scanApprovalReminders, 60 * 1000);
+      }
+
       // Restore sidebar state from localStorage
       const savedState = localStorage.getItem('ats_sidebar_collapsed');
       if (savedState === '1') {

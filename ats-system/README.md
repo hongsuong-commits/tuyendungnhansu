@@ -360,3 +360,46 @@ MAIL_FROM           = <gmail-của-bạn>@gmail.com
 - Dùng **Session Pooler** của Supabase; giới hạn pool được hạ xuống 3 kết nối/instance để tránh vượt hạn mức.
 - Thư viện đọc PDF/DOCX (`pdfjs-dist`, `mammoth`) được nạp từ `node_modules` khi chạy local và **tự chuyển sang CDN** khi deploy (Vercel không phục vụ `node_modules` tĩnh).
 - Kiểm thử nhanh các function ngay trên máy: `npm run test:vercel`
+
+---
+
+## 8. XỬ LÝ NGOẠI LỆ TRONG QUY TRÌNH (BPMN)
+
+Ba cơ chế ngoại lệ đã được cài đặt ở tầng nghiệp vụ (`ATSStore`) và hiển thị trên giao diện.
+
+### 8.1. Ngoại lệ 1 — Nhắc nhở khi quá hạn phê duyệt JD
+**Mô hình:** *Non-interrupting Boundary Timer Event* gắn vào hoạt động “Xem xét và phê duyệt JD”.
+
+- Ngưỡng mặc định **480 phút** (8 giờ), cấu hình tại **Cài đặt → Ngưỡng nhắc nhở (phút)**.
+- Khi yêu cầu ở trạng thái `pending` quá ngưỡng, hệ thống:
+  - gửi **thông báo nhắc nhở cho giám đốc** (Trung tâm thông báo),
+  - ghi lịch sử `reminder` kèm số lần nhắc,
+  - **không thay đổi trạng thái** yêu cầu → hoạt động phê duyệt không bị gián đoạn.
+- Mỗi chu kỳ ngưỡng chỉ nhắc một lần (tránh spam). Bộ quét chạy nền mỗi 60 giây và ngay khi mở trang Yêu cầu tuyển dụng.
+- Trên danh sách hiển thị huy hiệu **“Quá hạn duyệt N phút”** + số lần đã nhắc.
+
+### 8.2. Ngoại lệ 2 — Xử lý lỗi đăng tin tuyển dụng
+**Mô hình:** *Boundary Error Event* gắn vào Sub-Process “Đăng tin tuyển dụng”.
+
+- Đăng tin đi qua `ATSStore.publishPosting()`; mọi lỗi kỹ thuật/validate được bắt:
+  - ghi `publishStatus = 'error'` + `publishError {message, at, by}` trên yêu cầu,
+  - thêm lịch sử `publish_error`,
+  - **thông báo cho phòng nhân sự** kèm nguyên nhân.
+- Yêu cầu vẫn ở trạng thái `approved` → sau khi khắc phục, HR bấm **“Đăng lại”** (`retryPublish`) để chạy lại sub-process; thành công thì xóa lỗi và chuyển `recruiting`.
+- Giao diện: huy hiệu **“Lỗi đăng tin”** ở danh sách yêu cầu, banner cảnh báo + nút Đăng lại ở trang **Vị trí & Tin tuyển dụng**.
+
+### 8.3. Ngoại lệ 3 — Hủy yêu cầu tuyển dụng
+**Mô hình:** *Event Sub-Process* ngắt quy trình (interrupting), không cần giám đốc phê duyệt.
+
+- Quyền: trưởng phòng **đúng phòng ban** của yêu cầu, hoặc HR/Giám đốc.
+- Bắt buộc nhập lý do (≥ 5 ký tự). Khi hủy:
+  - trạng thái → **`cancelled` (Đã hủy)**, lưu `cancelledBy`, `cancelledAt`, `cancelReason`,
+  - **ngắt ngay** các bước đang chạy: đóng tin tuyển dụng đang mở, hủy lịch phỏng vấn đang chờ,
+  - ghi lịch sử `cancelled` và **thông báo cho HR + giám đốc**.
+- Các hành động sau đó bị chặn: không thể phê duyệt/từ chối/hủy lại yêu cầu đã hủy.
+- Giao diện: nút **Hủy yêu cầu** (biểu tượng cấm) ở danh sách và trong chi tiết; bộ lọc trạng thái có **“Đã hủy”**.
+
+### 8.4. Kiểm thử
+```bash
+npm run test:exceptions
+```

@@ -48,6 +48,29 @@ const PostingsPage = (() => {
             </div>
           </div>
 
+          ${(() => {
+            const failed = ATSStore.getRequisitions().filter(r => r.publishStatus === 'error' && r.publishError);
+            if (!failed.length) return '';
+            return `
+              <div class="alert alert-danger mb-4">
+                <i data-lucide="alert-triangle" class="icon-sm"></i>
+                <div class="text-xs leading-relaxed">
+                  <strong>Ngoại lệ 2 — Lỗi đăng tin tuyển dụng:</strong> ${failed.length} yêu cầu bị lỗi kỹ thuật khi đăng.
+                  Hệ thống đã ghi nhận lỗi và thông báo phòng nhân sự; sau khi khắc phục có thể đăng lại.
+                  <ul class="mt-2" style="list-style:disc;padding-left:18px;">
+                    ${failed.map(r => `
+                      <li class="mb-1">
+                        <strong>${r.code}</strong> – ${Helpers.truncate(r.title, 40)}:
+                        <span class="text-danger">${r.publishError.message}</span>
+                        <button class="btn btn-xs btn-warning btn-retry-publish-post" data-id="${r.id}">
+                          <i data-lucide="refresh-cw" class="icon-2xs"></i> Đăng lại
+                        </button>
+                      </li>`).join('')}
+                  </ul>
+                </div>
+              </div>`;
+          })()}
+
           <!-- Filter Bar -->
           <div class="card mb-4">
             <div class="card-body py-3">
@@ -173,6 +196,21 @@ const PostingsPage = (() => {
     },
 
     init() {
+      // Ngoại lệ 2: nút "Đăng lại" cho tin bị lỗi kỹ thuật
+      document.querySelectorAll('.btn-retry-publish-post').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const id = e.currentTarget.getAttribute('data-id');
+          const result = ATSStore.retryPublish(id, {});
+          if (result.success) {
+            UI.toast({ message: `Đăng tin lại thành công! Mã tin: ${result.posting.code}.`, type: 'success' });
+          } else {
+            UI.toast({ message: `Vẫn còn lỗi khi đăng tin: ${result.error}`, type: 'error', duration: 8000 });
+          }
+          this.refresh();
+        });
+      });
+
       // Search with debounce
       const searchInput = document.getElementById('post-search-input');
       if (searchInput) {

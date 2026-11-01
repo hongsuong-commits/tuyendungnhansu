@@ -246,7 +246,7 @@ const ScreeningPage = (() => {
                 <button class="btn btn-xs btn-icon btn-outline btn-view-scr-detail" data-id="${app.id}" title="Xem chi tiết phân tích" aria-label="Xem chi tiết phân tích">
                   <i data-lucide="file-search" class="icon-xs"></i>
                 </button>
-                <button class="btn btn-xs btn-icon btn-outline btn-mark-manual ${app.manualReview ? 'is-active' : ''}" data-id="${app.id}" title="${app.manualReview ? 'Đã đánh dấu cần kiểm tra thủ công' : 'Đánh dấu cần kiểm tra thủ công'}" aria-label="Đánh dấu cần kiểm tra">
+                <button class="btn btn-xs btn-icon btn-outline btn-mark-manual ${app.manualReview ? 'is-active' : ''}" data-id="${app.id}" title="${app.manualReview ? 'Bấm để BỎ đánh dấu cần kiểm tra thủ công' : 'Đánh dấu cần kiểm tra thủ công'}" aria-pressed="${app.manualReview ? 'true' : 'false'}" aria-label="Đánh dấu cần kiểm tra">
                   <i data-lucide="flag" class="icon-xs"></i>
                 </button>
               </div>
@@ -371,12 +371,31 @@ const ScreeningPage = (() => {
         });
       });
 
-      // Mark Manual check buttons
+      // Nút cờ "cần kiểm tra thủ công" — bật/tắt 2 chiều (trước đây chỉ bật được)
       document.querySelectorAll('.btn-mark-manual').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const id = e.currentTarget.getAttribute('data-id');
-          ATSStore.markForManualReview(id, 'Đánh dấu cần kiểm tra thủ công lại các tiêu chí chưa rõ');
-          UI.toast({ message: 'Đã đánh dấu hồ sơ cần kiểm tra thủ công!', type: 'info' });
+          const before = ATSStore.getApplicationById(id);
+          const wasMarked = !!(before && before.manualReview);
+
+          const updated = ATSStore.toggleManualReview(
+            id,
+            wasMarked
+              ? 'Bỏ đánh dấu cần kiểm tra thủ công'
+              : 'Đánh dấu cần kiểm tra thủ công lại các tiêu chí chưa rõ'
+          );
+
+          if (!updated) {
+            UI.toast({ message: 'Không tìm thấy hồ sơ ứng viên.', type: 'warning' });
+            return;
+          }
+
+          UI.toast({
+            message: wasMarked
+              ? 'Đã bỏ đánh dấu cần kiểm tra thủ công.'
+              : 'Đã đánh dấu hồ sơ cần kiểm tra thủ công.',
+            type: wasMarked ? 'success' : 'info'
+          });
           this.refresh();
         });
       });

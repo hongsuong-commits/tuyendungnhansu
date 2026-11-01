@@ -23,6 +23,10 @@ const Helpers = (() => {
     published: 'Đã đăng',
     draft: 'Bản nháp',
     expired: 'Hết hạn',
+    // Trạng thái phát sinh từ xử lý ngoại lệ (BPMN)
+    reminder: 'Nhắc nhở quá hạn',
+    publish_error: 'Lỗi đăng tin',
+    publish_retry: 'Đăng lại tin',
   };
 
   // ─── Status Colors ───────────────────────────────────────────────────
@@ -45,6 +49,9 @@ const Helpers = (() => {
     published: 'status-primary',
     draft: 'status-secondary',
     expired: 'status-danger',
+    reminder: 'status-warning',
+    publish_error: 'status-danger',
+    publish_retry: 'status-info',
   };
 
   // ─── Role Labels ─────────────────────────────────────────────────────

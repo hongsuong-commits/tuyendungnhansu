@@ -54,6 +54,21 @@ const SettingsPage = (() => {
 
                     <div class="section-divider mb-4"></div>
 
+                    <h4 class="font-bold text-xs text-gray-800 mb-3">Ngoại lệ 1 — Nhắc nhở phê duyệt JD quá hạn</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                      <div class="form-group">
+                        <label class="form-label required">Ngưỡng nhắc nhở (phút)</label>
+                        <input type="number" name="approval_reminder_minutes" min="1" max="10080" class="form-input"
+                               value="${settings.approvalReminderMinutes || 480}">
+                        <small class="text-xs text-muted">
+                          Quá ngưỡng này mà JD vẫn "Chờ phê duyệt", hệ thống gửi nhắc nhở cho giám đốc
+                          (mặc định 480 phút = 8 giờ). Nhắc nhở không làm gián đoạn hoạt động phê duyệt.
+                        </small>
+                      </div>
+                    </div>
+
+                    <div class="section-divider mb-4"></div>
+
                     <h4 class="font-bold text-xs text-gray-800 mb-3">Ngưỡng phân loại kết quả (Score Thresholds)</h4>
                     <div class="grid grid-cols-2 gap-4 mb-4">
                       <div class="form-group">
@@ -207,6 +222,7 @@ const SettingsPage = (() => {
         const weightTotal = weights.skills + weights.experience + weights.education + weights.certifications;
         const passThreshold = parseInt(fd.get('threshold_pass'), 10) || 80;
         const manualThreshold = parseInt(fd.get('threshold_manual'), 10) || 60;
+        const reminderMinutes = parseInt(fd.get('approval_reminder_minutes'), 10);
 
         if (weightTotal !== 100) {
           UI.toast({ message: `Tổng trọng số phải bằng 100% (hiện tại ${weightTotal}%).`, type: 'warning' });
@@ -216,6 +232,10 @@ const SettingsPage = (() => {
           UI.toast({ message: 'Ngưỡng Đạt phải lớn hơn ngưỡng Cần kiểm tra thủ công.', type: 'warning' });
           return;
         }
+        if (!Number.isFinite(reminderMinutes) || reminderMinutes < 1) {
+          UI.toast({ message: 'Ngưỡng nhắc nhở phê duyệt phải là số phút lớn hơn 0.', type: 'warning' });
+          return;
+        }
 
         const newSettings = {
           screeningWeights: weights,
@@ -223,11 +243,12 @@ const SettingsPage = (() => {
             pass: passThreshold,
             manual_check: manualThreshold
           },
+          approvalReminderMinutes: reminderMinutes,
           autoApproveEnabled: fd.get('auto_approve') === 'on'
         };
 
         ATSStore.updateSettings(newSettings);
-        UI.toast({ message: 'Đã lưu cấu hình sàng lọc thành công!', type: 'success' });
+        UI.toast({ message: 'Đã lưu cấu hình sàng lọc và ngưỡng nhắc nhở phê duyệt!', type: 'success' });
       });
 
       // Company info persistence

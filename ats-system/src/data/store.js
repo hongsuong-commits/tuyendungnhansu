@@ -1023,6 +1023,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     companyEmail: 'hr@smartats.vn',
     companyAddress: 'Tòa nhà Landmark, Cầu Giấy, Hà Nội',
     hotline: '1900 xxxx',
+    // Ngoại lệ 1: ngưỡng (phút) để nhắc giám đốc khi JD chờ duyệt quá lâu.
+    approvalReminderMinutes: 480,
     integrations: {
       websitePortal: { active: true, name: 'Cổng tuyển dụng Doanh nghiệp' },
       topcv: { active: true, name: 'TopCV Open API (Mô phỏng)' },
@@ -2366,8 +2368,14 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     approveRequisition(id, approved = true, note = '') {
       const req = this.getRequisitionById(id);
       if (!req) return null;
+      // Không cho phê duyệt yêu cầu đã bị hủy/đóng (ngoại lệ 3 ngắt quy trình).
+      if (req.status === 'cancelled' || req.status === 'closed') {
+        return { success: false, message: 'Yêu cầu tuyển dụng đã kết thúc, không thể phê duyệt.' };
+      }
       const newStatus = approved ? 'approved' : 'rejected';
       req.status = newStatus;
+      req.overdue = false;
+      req.lastReminderAt = null;
       req.approvalHistory = req.approvalHistory || [];
       req.approvalHistory.push({
         status: newStatus,
@@ -2377,6 +2385,203 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       });
       saveState();
       return req;
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // XỬ LÝ NGOẠI LỆ (BPMN) — 3 tình huống
+    // ═══════════════════════════════════════════════════════════════
+
+    /** Ghi một thông báo (dùng chung cho cả 3 ngoại lệ). */
+    addNotificationRecord({ title, message, icon = 'bell', link = '', role = null, level = 'info' }) {
+      _data.notifications = _data.notifications || [];
+      const record = {
+        id: 'notif_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        title,
+        message,
+        date: new Date().toISOString(),
+        read: false,
+        icon,
+        link,
+        role,
+        level
+      };
+      _data.notifications.unshift(record);
+      return record;
+    },
+
+    // ── NGOẠI LỆ 1: Nhắc nhở khi quá hạn phê duyệt JD ────────────
+    // Non-interrupting Boundary Timer Event gắn vào "Xem xét và phê duyệt JD":
+    // gửi nhắc nhở cho giám đốc nhưng KHÔNG làm gián đoạn hoạt động phê duyệt.
+    getApprovalReminderMinutes() {
+      const value = Number(_data.settings && _data.settings.approvalReminderMinutes);
+      return Number.isFinite(value) && value > 0 ? Math.round(value) : 480;
+    },
+
+    getApprovalWaitingSince(req) {
+      if (!req) return null;
+      const history = req.approvalHistory || [];
+      const pendingEntry = [...history].reverse().find(h => h && h.status === 'pending');
+      const raw = req.submittedAt || (pendingEntry && pendingEntry.date) || req.createdAt;
+      const date = raw ? new Date(raw) : null;
+      return date && !Number.isNaN(date.getTime()) ? date : null;
+    },
+
+    getApprovalWaitingMinutes(req, now = new Date()) {
+      const since = this.getApprovalWaitingSince(req);
+      if (!since) return 0;
+      return Math.max(0, Math.floor((now.getTime() - since.getTime()) / 60000));
+    },
+
+    isApprovalOverdue(req, now = new Date()) {
+      return !!req
+        && req.status === 'pending'
+        && this.getApprovalWaitingMinutes(req, now) >= this.getApprovalReminderMinutes();
+    },
+
+    /** Danh sách yêu cầu đang chờ duyệt quá hạn (để hiển thị cảnh báo). */
+    listOverdueRequisitions(now = new Date()) {
+      return (_data.requisitions || []).filter(req => this.isApprovalOverdue(req, now));
+    },
+
+    /**
+     * Quét và gửi nhắc nhở. Mỗi chu kỳ ngưỡng (mặc định 480 phút) chỉ nhắc 1 lần
+     * cho mỗi yêu cầu. Trả về danh sách yêu cầu vừa được nhắc.
+     */
+    checkApprovalReminders(now = new Date()) {
+      const threshold = this.getApprovalReminderMinutes();
+      const reminded = [];
+
+      (_data.requisitions || []).forEach((req) => {
+        if (!req || req.status !== 'pending') return;
+
+        const waited = this.getApprovalWaitingMinutes(req, now);
+        if (waited < threshold) return;
+
+        const last = req.lastReminderAt ? new Date(req.lastReminderAt) : null;
+        const sinceLast = last && !Number.isNaN(last.getTime())
+          ? (now.getTime() - last.getTime()) / 60000
+          : Infinity;
+        if (sinceLast < threshold) return;
+
+        req.reminderCount = (req.reminderCount || 0) + 1;
+        req.lastReminderAt = now.toISOString();
+        req.overdue = true;
+        req.approvalHistory = req.approvalHistory || [];
+        req.approvalHistory.push({
+          status: 'reminder',
+          by: 'Hệ thống (Boundary Timer)',
+          date: now.toISOString(),
+          note: `Nhắc nhở lần ${req.reminderCount}: yêu cầu đã chờ phê duyệt ${waited} phút `
+            + `(ngưỡng ${threshold} phút). Hoạt động phê duyệt vẫn tiếp tục, không bị gián đoạn.`
+        });
+
+        this.addNotificationRecord({
+          title: 'Nhắc nhở: yêu cầu tuyển dụng chờ phê duyệt quá hạn',
+          message: `${req.code} – ${req.title} đã chờ ${waited} phút (ngưỡng ${threshold} phút). `
+            + 'Vui lòng phê duyệt hoặc từ chối để quy trình tiếp tục.',
+          icon: 'alarm-clock',
+          link: '#/requisitions',
+          role: 'director',
+          level: 'warning'
+        });
+
+        reminded.push(req);
+      });
+
+      if (reminded.length) saveState();
+      return reminded;
+    },
+
+    // ── NGOẠI LỆ 3: Hủy yêu cầu tuyển dụng ───────────────────────
+    // Event Sub-Process: khi phòng ban yêu cầu hủy hợp lệ, quy trình đang chạy
+    // bị ngắt NGAY, không cần giám đốc phê duyệt.
+    canCancelRequisition(req, user = _currentUser) {
+      if (!req || !user) return false;
+      if (['cancelled', 'closed', 'rejected'].includes(req.status)) return false;
+      if (user.role === 'hr' || user.role === 'director') return true;
+      if (user.role === 'department_head') return req.department === user.department;
+      return false;
+    },
+
+    cancelRequisition(requisitionId, { reason = '', requestedBy = null } = {}) {
+      const req = this.getRequisitionById(requisitionId);
+      if (!req) return { success: false, message: 'Không tìm thấy yêu cầu tuyển dụng.' };
+
+      const actor = requestedBy || _currentUser;
+      if (!this.canCancelRequisition(req, actor)) {
+        return { success: false, message: 'Bạn không có quyền hủy yêu cầu tuyển dụng này.' };
+      }
+
+      const cleanReason = String(reason || '').trim();
+      if (cleanReason.length < 5) {
+        return { success: false, message: 'Vui lòng nhập lý do hủy (tối thiểu 5 ký tự).' };
+      }
+      if (['cancelled', 'closed'].includes(req.status)) {
+        return { success: false, message: 'Yêu cầu này đã kết thúc, không thể hủy.' };
+      }
+
+      const now = new Date().toISOString();
+      const previousStatus = req.status;
+      const actorName = actor ? (actor.fullName || actor.username) : 'Phòng ban';
+
+      req.status = 'cancelled';
+      req.cancelledAt = now;
+      req.cancelledBy = actorName;
+      req.cancelRequestedByRole = actor ? actor.role : null;
+      req.cancelReason = cleanReason;
+      req.overdue = false;
+      req.approvalHistory = req.approvalHistory || [];
+      req.approvalHistory.push({
+        status: 'cancelled',
+        by: actorName,
+        date: now,
+        note: `Hủy yêu cầu, ngắt quy trình ngay (không cần giám đốc phê duyệt). Lý do: ${cleanReason}`
+      });
+
+      // Ngắt các bước đang chạy: đóng tin tuyển dụng, hủy lịch phỏng vấn còn mở.
+      let closedPostings = 0;
+      (_data.postings || []).forEach((post) => {
+        if (post.requisitionId !== requisitionId) return;
+        if (post.status === 'published' || post.status === 'draft') {
+          post.status = 'closed';
+          post.closedAt = now;
+          post.closedReason = 'Yêu cầu tuyển dụng đã bị hủy';
+          closedPostings += 1;
+        }
+      });
+
+      let cancelledInterviews = 0;
+      (_data.interviews || []).forEach((iv) => {
+        if (iv.requisitionId !== requisitionId) return;
+        if (iv.status === 'confirmed' || iv.status === 'pending') {
+          iv.status = 'cancelled';
+          iv.cancelReason = 'Yêu cầu tuyển dụng đã bị hủy';
+          iv.cancelledAt = now;
+          cancelledInterviews += 1;
+        }
+      });
+
+      // Thông báo cho các bên liên quan.
+      const summary = `Đã đóng ${closedPostings} tin đăng, hủy ${cancelledInterviews} lịch phỏng vấn.`;
+      this.addNotificationRecord({
+        title: 'Yêu cầu tuyển dụng đã bị hủy',
+        message: `${req.code} – ${req.title} do ${actorName} hủy. Lý do: ${cleanReason}. ${summary}`,
+        icon: 'ban',
+        link: '#/requisitions',
+        role: 'hr',
+        level: 'danger'
+      });
+      this.addNotificationRecord({
+        title: 'Yêu cầu tuyển dụng đã bị hủy (không cần phê duyệt)',
+        message: `${req.code} – ${req.title} đã bị ${actorName} hủy theo yêu cầu phòng ban. ${summary}`,
+        icon: 'ban',
+        link: '#/requisitions',
+        role: 'director',
+        level: 'warning'
+      });
+
+      saveState();
+      return { success: true, requisition: req, previousStatus, closedPostings, cancelledInterviews };
     },
 
     // ── Postings ───────────────────────────────────────────────
@@ -2443,6 +2648,91 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       _data.postings.unshift(newPosting);
       saveState();
       return newPosting;
+    },
+
+    // ── NGOẠI LỆ 2: Xử lý lỗi đăng tin tuyển dụng ───────────────
+    // Boundary Error Event gắn vào Sub-Process "Đăng tin tuyển dụng":
+    // lỗi kỹ thuật → chuyển nhánh xử lý ngoại lệ, ghi nhận lỗi, thông báo HR;
+    // sau khi khắc phục HR có thể đăng lại (publishStatus = 'error' → 'published').
+    publishPosting(requisitionId, postingData = {}, options = {}) {
+      const req = this.getRequisitionById(requisitionId);
+
+      try {
+        if (!req) throw new Error('Không tìm thấy yêu cầu tuyển dụng.');
+        if (req.status === 'cancelled') throw new Error('Yêu cầu tuyển dụng đã bị hủy, không thể đăng tin.');
+        if (req.status !== 'approved' && req.status !== 'recruiting') {
+          throw new Error('Yêu cầu tuyển dụng chưa được phê duyệt.');
+        }
+        if (!String(postingData.title || req.title || '').trim()) {
+          throw new Error('Thiếu tiêu đề tin tuyển dụng.');
+        }
+        if (options.simulateError) {
+          throw new Error('Không kết nối được API sàn tuyển dụng (mô phỏng lỗi kỹ thuật).');
+        }
+
+        const posting = this.createPostingFromRequisition(requisitionId, postingData);
+        if (!posting) throw new Error('Không tạo được tin tuyển dụng.');
+
+        posting.publishStatus = 'published';
+        posting.publishError = null;
+        req.publishStatus = 'published';
+        req.publishError = null;
+        saveState();
+        return { success: true, posting, requisition: req };
+      } catch (err) {
+        const message = (err && err.message) ? err.message : 'Lỗi không xác định khi đăng tin.';
+        const failure = {
+          message,
+          at: new Date().toISOString(),
+          by: _currentUser ? (_currentUser.fullName || _currentUser.username) : 'Hệ thống'
+        };
+
+        if (req) {
+          req.publishStatus = 'error';
+          req.publishError = failure;
+          req.approvalHistory = req.approvalHistory || [];
+          req.approvalHistory.push({
+            status: 'publish_error',
+            by: failure.by,
+            date: failure.at,
+            note: `Đăng tin thất bại: ${message}. Đã chuyển sang nhánh xử lý ngoại lệ; `
+              + 'sau khi khắc phục, nhân sự có thể đăng lại.'
+          });
+        }
+
+        this.addNotificationRecord({
+          title: 'Đăng tin tuyển dụng thất bại',
+          message: `${req ? `${req.code} – ${req.title}` : requisitionId}: ${message}. `
+            + 'Phòng Nhân sự kiểm tra nguyên nhân và bấm "Đăng tin lại" sau khi khắc phục.',
+          icon: 'alert-triangle',
+          link: '#/requisitions',
+          role: 'hr',
+          level: 'danger'
+        });
+
+        saveState();
+        return { success: false, error: message, failure, requisition: req || null };
+      }
+    },
+
+    /** Đăng lại sau khi khắc phục lỗi (xóa nhánh lỗi cũ, chạy lại sub-process). */
+    retryPublish(requisitionId, postingData = {}, options = {}) {
+      const req = this.getRequisitionById(requisitionId);
+      if (req && req.publishError) {
+        req.lastPublishError = req.publishError;
+        req.publishError = null;
+        req.publishStatus = 'retrying';
+        if (req.approvalHistory) {
+          req.approvalHistory.push({
+            status: 'publish_retry',
+            by: _currentUser ? (_currentUser.fullName || _currentUser.username) : 'Nhân sự',
+            date: new Date().toISOString(),
+            note: 'Thử đăng lại tin tuyển dụng sau khi khắc phục lỗi.'
+          });
+        }
+        saveState();
+      }
+      return this.publishPosting(requisitionId, postingData, options);
     },
 
     updatePosting(id, updates) {
@@ -2532,16 +2822,67 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       return app;
     },
 
-    markForManualReview(applicationId, note = '') {
+    /**
+     * Bật/tắt cờ "cần kiểm tra thủ công".
+     * (Sửa lỗi: trước đây chỉ bật được một chiều, bấm lại không tắt.)
+     */
+    toggleManualReview(applicationId, note = '') {
       const app = this.getApplicationById(applicationId);
       if (!app) return null;
 
+      const actorName = _currentUser ? (_currentUser.fullName || _currentUser.username) : 'Nhân sự';
+
+      // Đang bật → tắt cờ và khôi phục trạng thái trước khi đánh dấu.
+      if (app.manualReview) {
+        app.manualReview = false;
+        app.manualReviewAt = null;
+        app.manualReviewBy = null;
+
+        const restoreStatus = app.manualReviewPrevStatus;
+        app.manualReviewPrevStatus = null;
+
+        if (restoreStatus && app.status === 'reviewing') {
+          app.status = restoreStatus;
+          app.statusHistory = app.statusHistory || [];
+          app.statusHistory.push({
+            status: restoreStatus,
+            changedBy: actorName,
+            timestamp: new Date().toISOString(),
+            note: note || 'Bỏ đánh dấu cần kiểm tra thủ công'
+          });
+        }
+
+        saveState();
+        return this.getApplicationById(applicationId);
+      }
+
+      // Đang tắt → bật cờ, ghi nhớ trạng thái cũ để có thể khôi phục khi tắt.
+      app.manualReviewPrevStatus = app.status;
       app.manualReview = true;
       app.manualReviewAt = new Date().toISOString();
-      app.manualReviewBy = _currentUser ? (_currentUser.fullName || _currentUser.username) : 'Nhân sự';
+      app.manualReviewBy = actorName;
 
-      this.updateApplicationStatus(applicationId, 'reviewing', note || 'Đánh dấu cần kiểm tra thủ công', { notify: false });
+      this.updateApplicationStatus(
+        applicationId,
+        'reviewing',
+        note || 'Đánh dấu cần kiểm tra thủ công',
+        { notify: false }
+      );
       return this.getApplicationById(applicationId);
+    },
+
+    /** Giữ tương thích: chỉ đánh dấu khi chưa được đánh dấu. */
+    markForManualReview(applicationId, note = '') {
+      const app = this.getApplicationById(applicationId);
+      if (!app) return null;
+      if (app.manualReview) return app;
+      return this.toggleManualReview(applicationId, note);
+    },
+
+    clearManualReview(applicationId, note = '') {
+      const app = this.getApplicationById(applicationId);
+      if (!app || !app.manualReview) return app;
+      return this.toggleManualReview(applicationId, note || 'Bỏ đánh dấu cần kiểm tra thủ công');
     },
 
     addApplicationNote(applicationId, content) {
