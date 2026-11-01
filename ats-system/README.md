@@ -14,7 +14,6 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò với dữ liệu thực tế:
 | **Trưởng phòng** | `head_it` | `123456` | Lê Văn Hùng | Giám đốc Công nghệ (CTO) | Xem & tạo yêu cầu tuyển dụng phòng CNTT; Theo dõi & chấm điểm phỏng vấn ứng viên phòng mình |
 | **Trưởng phòng** | `head_sales` | `123456` | Phạm Thị Mai | Trưởng phòng Kinh doanh | Tạo yêu cầu vị trí B2B Sales; Phỏng vấn chuyên môn và đề xuất tuyển dụng |
 | **Nhân sự (HR)** | `hr1` | `123456` | Nguyễn Thu Hà | Senior Talent Acquisition | Toàn quyền nghiệp vụ tuyển dụng: Đăng tin, thiết lập tiêu chí, duyệt CV, xếp lịch phỏng vấn, cấu hình cài đặt |
-| **Ứng viên** | `candidate` | `123456` | Vũ Hoàng Nam | Ứng viên IT | Truy cập Cổng tuyển dụng công khai, nộp hồ sơ, tra cứu tiến độ ứng tuyển |
 
 > *Gợi ý:* Tại màn hình Đăng nhập `#/login`, bạn có thể bấm vào mục **"Tài khoản demo"** để tự động điền nhanh tài khoản và mật khẩu chỉ bằng 1 cú nhấp chuột.
 
