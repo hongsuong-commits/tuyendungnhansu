@@ -1,5 +1,5 @@
-/** POST /api/login — đăng nhập nhân sự (kiểm tra trong PostgreSQL). */
-const { db, ensureBoot, sendJson, readBody, fail } = require('./_lib');
+/** POST /api/login — đăng nhập nhân sự, trả về token phiên cho các API bảo vệ. */
+const { db, ensureBoot, sendJson, readBody, fail, signToken } = require('./_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -13,7 +13,12 @@ module.exports = async (req, res) => {
       return sendJson(res, 401, { ok: false, message: 'Tên đăng nhập hoặc mật khẩu không chính xác.' });
     }
     const { password, ...safeUser } = user;
-    return sendJson(res, 200, { ok: true, user: safeUser });
+    return sendJson(res, 200, {
+      ok: true,
+      user: safeUser,
+      token: signToken(safeUser),
+      expiresIn: 12 * 60 * 60
+    });
   } catch (err) {
     return fail(res, err);
   }

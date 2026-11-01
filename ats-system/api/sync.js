@@ -2,11 +2,15 @@
  * POST /api/sync — nhận phần thay đổi từ trình duyệt, ghi vào PostgreSQL,
  * sau đó gửi các thư còn trong hàng đợi (thư mời phỏng vấn).
  */
-const { db, mailer, ensureBoot, sendJson, readBody, fail } = require('./_lib');
+const { db, mailer, ensureBoot, sendJson, readBody, fail, requireAuth } = require('./_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return sendJson(res, 405, { ok: false, message: 'Chỉ hỗ trợ POST.' });
+  }
+  const auth = requireAuth(req);
+  if (!auth.ok) {
+    return sendJson(res, 401, { ok: false, message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.' });
   }
   try {
     const payload = await readBody(req);

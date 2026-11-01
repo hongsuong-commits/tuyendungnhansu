@@ -270,11 +270,17 @@ const LoginPage = (() => {
       this.setLoading(true);
 
       // ── Simulate network delay for realistic feel ──────────────────
-      setTimeout(() => {
+      setTimeout(async () => {
+        // Ưu tiên xác thực qua API máy chủ (nhận token phiên), dự phòng cục bộ.
         let loginResult = false;
-
-        if (typeof ATSStore !== 'undefined' && ATSStore.login) {
-          loginResult = ATSStore.login(username, password);
+        try {
+          if (typeof ATSStore !== 'undefined' && ATSStore.loginWithServer) {
+            loginResult = await ATSStore.loginWithServer(username, password);
+          } else if (typeof ATSStore !== 'undefined' && ATSStore.login) {
+            loginResult = ATSStore.login(username, password);
+          }
+        } catch (err) {
+          loginResult = { success: false, message: err.message };
         }
 
         const isSuccess = loginResult && (loginResult === true || loginResult.success === true);
@@ -288,6 +294,13 @@ const LoginPage = (() => {
             localStorage.removeItem('ats_remembered_user');
           }
 
+          // Nạp dữ liệu nghiệp vụ từ database SAU khi đã xác thực.
+          try {
+            if (typeof ATSStore.init === 'function') await ATSStore.init();
+          } catch (err) {
+            console.warn('[SmartATS] Không nạp được dữ liệu sau đăng nhập:', err);
+          }
+
           // Show success toast
           if (typeof UI !== 'undefined') {
             if (UI.toast) UI.toast({ message: 'Đăng nhập thành công!', type: 'success' });
@@ -299,7 +312,7 @@ const LoginPage = (() => {
         } else {
           // ── Login failed ─────────────────────────────────────────
           this.setLoading(false);
-          this.showError('Tên đăng nhập hoặc mật khẩu không đúng');
+          this.showError((loginResult && loginResult.message) || 'Tên đăng nhập hoặc mật khẩu không đúng');
           this.shakeCard();
           // Focus password field and select it
           if (passwordInput) {

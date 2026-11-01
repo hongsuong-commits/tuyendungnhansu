@@ -90,9 +90,10 @@ const Helpers = (() => {
 
   // ─── Permission Matrix ───────────────────────────────────────────────
   const PAGE_ACCESS = {
+    // Giám đốc: giám sát & phê duyệt — KHÔNG quản lý tài khoản/cấu hình hệ thống.
     director: [
       'dashboard', 'requisitions', 'candidates', 'interviews',
-      'reports', 'settings', 'postings', 'evaluations', 'screening', 'users',
+      'reports', 'postings', 'evaluations', 'screening',
       'profile', 'notifications'
     ],
     department_head: [
@@ -430,6 +431,53 @@ const Helpers = (() => {
       if (!role || !page) return false;
       const pages = PAGE_ACCESS[role];
       return pages ? pages.includes(page) : false;
+    },
+
+    /**
+     * Quyết định chuyển trang có hợp lệ không (dùng cho Auth Guard).
+     *
+     * Nguyên tắc:
+     *  - Chưa đăng nhập: chỉ được vào cổng công khai (portal) và trang đăng nhập;
+     *    mọi trang quản trị → chuyển về #/portal.
+     *  - Đã đăng nhập mà vào #/login → chuyển về #/dashboard (hoặc portal nếu là ứng viên).
+     *  - Ứng viên: chỉ portal/applications.
+     *  - Vai trò nội bộ: phải nằm trong ma trận PAGE_ACCESS, nếu không → #/dashboard.
+     *
+     * @returns {{allowed: boolean, redirect?: string, reason?: string}}
+     */
+    resolveRouteAccess(path, user) {
+      const root = String(path || '').replace(/^#/, '').replace(/^\/+/, '').split('/')[0] || 'dashboard';
+      const isPortal = root === 'portal' || root === 'applications';
+      const isLogin = root === 'login';
+
+      if (isLogin) {
+        if (!user) return { allowed: true };
+        return {
+          allowed: false,
+          redirect: user.role === 'candidate' ? '#/portal' : '#/dashboard',
+          reason: 'already-authenticated'
+        };
+      }
+
+      if (!user) {
+        if (isPortal) return { allowed: true };
+        return { allowed: false, redirect: '#/portal', reason: 'not-authenticated' };
+      }
+
+      if (user.role === 'candidate') {
+        return isPortal
+          ? { allowed: true }
+          : { allowed: false, redirect: '#/portal', reason: 'candidate-scope' };
+      }
+
+      // Người dùng nội bộ được xem cổng công khai.
+      if (isPortal) return { allowed: true };
+
+      if (!this.canAccess(root, user.role)) {
+        return { allowed: false, redirect: '#/dashboard', reason: 'forbidden-role' };
+      }
+
+      return { allowed: true };
     },
 
     /**

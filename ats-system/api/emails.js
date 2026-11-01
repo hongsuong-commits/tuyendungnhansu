@@ -1,9 +1,13 @@
 /** GET /api/emails — danh sách thư đã soạn/gửi cho ứng viên (dùng cho kiểm tra). */
-const { db, ensureBoot, sendJson, fail } = require('./_lib');
+const { db, ensureBoot, sendJson, fail, requireAuth } = require('./_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
     return sendJson(res, 405, { ok: false, message: 'Chỉ hỗ trợ GET.' });
+  }
+  const auth = requireAuth(req);
+  if (!auth.ok) {
+    return sendJson(res, 401, { ok: false, message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.' });
   }
   try {
     const url = new URL(req.url || '/api/emails', 'http://localhost');

@@ -403,3 +403,43 @@ Ba cơ chế ngoại lệ đã được cài đặt ở tầng nghiệp vụ (`A
 ```bash
 npm run test:exceptions
 ```
+
+---
+
+## 9. PHÂN QUYỀN & BẢO MẬT ĐIỀU HƯỚNG
+
+### 9.1. Auth Guard (bắt buộc đăng nhập)
+Mỗi lần chuyển trang, `Helpers.resolveRouteAccess(path, user)` quyết định trước khi render:
+
+| Tình huống | Hành vi |
+| :--- | :--- |
+| **Chưa đăng nhập** vào trang quản trị (kể cả dán link `#/interviews`) | Chặn, hiện thông báo, chuyển về **`#/portal`** |
+| Chưa đăng nhập vào `#/portal`, `#/login` | Cho phép |
+| **Đã đăng nhập** vào `#/login` | Chuyển về `#/dashboard` (ứng viên → `#/portal`) |
+| Vai trò **không có quyền** với trang | Chặn, chuyển `#/dashboard` |
+| **Ứng viên** | Chỉ `#/portal` |
+| **Đã đăng nhập** | Vào khu vực quản trị theo đúng ma trận quyền |
+
+Đăng xuất sẽ: xoá người dùng hiện tại, **token phiên**, mốc phiên và **bản đệm dữ liệu** trong localStorage, sau đó về `#/portal`.
+
+> Lỗi cũ đã sửa: khi không có phiên, `loadState()` tự gán tài khoản `hr1` khiến đăng xuất xong dán link vẫn vào được. Nay **không bao giờ tự đăng nhập**.
+
+### 9.2. Phiên đăng nhập
+- Thời hạn **12 giờ** (`SESSION_TTL_MS`); hết hạn coi như chưa đăng nhập.
+- Đăng nhập đi qua **`POST /api/login`** (kiểm tra trong PostgreSQL), trả **token HMAC-SHA256**; dự phòng kiểm tra cục bộ khi máy chủ không phản hồi.
+- Token được gửi kèm header `Authorization: Bearer …` cho `/api/state`, `/api/sync`, `/api/emails`, `/api/mail/process`.
+
+### 9.3. Bật cưỡng chế token ở máy chủ (khuyến nghị cho production)
+Mặc định API vẫn mở để tương thích. Khi triển khai thật, thêm biến môi trường:
+
+```
+AUTH_REQUIRED = true
+AUTH_SECRET   = <chuỗi bí mật dài, ngẫu nhiên>
+```
+
+Khi đó mọi request thiếu/sai/hết hạn token đều bị trả **401**, kể cả gọi trực tiếp bằng Postman/curl.
+
+### 9.4. Kiểm thử
+```bash
+npm run test:auth
+```

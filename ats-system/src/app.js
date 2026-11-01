@@ -12,30 +12,29 @@
 
     const user = ATSStore.getCurrentUser();
     const currentPath = Router.getCurrentPath();
-    const isLogin = currentPath.startsWith('login');
-    const isPortal = currentPath.startsWith('portal');
 
-    // ── 1. Auth Guard ──────────────────────────────────────────
-    if (!user && !isLogin && !isPortal) {
-      window.location.hash = '#/login';
-      return;
-    }
+    // ── 1. Auth Guard — kiểm tra TRƯỚC khi render bất kỳ trang nào ──
+    const access = Helpers.resolveRouteAccess(currentPath, user);
 
-    // If candidate logged in, keep them on portal
-    if (user && user.role === 'candidate' && !isPortal && !isLogin) {
-      window.location.hash = '#/portal';
-      return;
-    }
-
-    // Check Role Access permissions
-    const routeRoot = currentPath.split('/')[0] || 'dashboard';
-    if (user && !isLogin && !isPortal && !Helpers.canAccess(routeRoot, user.role)) {
-      UI.toast({ message: `Vai trò ${Helpers.getRoleLabel(user.role)} không có quyền truy cập trang này.`, type: 'warning' });
-      window.location.hash = '#/dashboard';
+    if (!access.allowed) {
+      if (access.reason === 'not-authenticated') {
+        UI.toast({
+          message: 'Vui lòng đăng nhập để vào khu vực quản trị.',
+          type: 'warning'
+        });
+      } else if (access.reason === 'forbidden-role') {
+        UI.toast({
+          message: `Vai trò ${Helpers.getRoleLabel(user.role)} không có quyền truy cập trang này.`,
+          type: 'warning'
+        });
+      }
+      window.location.hash = access.redirect || '#/portal';
       return;
     }
 
     // ── 2. Render Page HTML ────────────────────────────────────
+    const isLogin = currentPath.startsWith('login');
+    const isPortal = currentPath.startsWith('portal');
     const pageHtml = pageComponent.render(params);
 
     if (isLogin || isPortal) {
@@ -147,15 +146,34 @@
     setupRoutes();
     renderBootScreen();
 
-    if (typeof ATSStore.init === 'function') {
+    const currentUser = typeof ATSStore.getCurrentUser === 'function' ? ATSStore.getCurrentUser() : null;
+    const initialPath = Router.getCurrentPath();
+
+    // Chỉ nạp dữ liệu nghiệp vụ khi ĐÃ đăng nhập (hoặc đang xem cổng công khai).
+    // Người chưa đăng nhập dán link #/interviews sẽ bị guard đẩy về #/portal
+    // trước khi bất kỳ dữ liệu quản trị nào được tải vào bộ nhớ.
+    let dataLoaded = false;
+    const loadData = async () => {
+      if (dataLoaded) return;
+      dataLoaded = true;
       try {
         await ATSStore.init();
       } catch (err) {
         console.warn('[SmartATS] Không tải được dữ liệu máy chủ:', err);
       }
+    };
+
+    if (currentUser || initialPath.startsWith('portal')) {
+      await loadData();
     }
 
     Router.init();
+
+    // Nếu guard vừa đẩy về cổng công khai: nạp dữ liệu rồi vẽ lại trang.
+    if (!dataLoaded && Router.getCurrentPath().startsWith('portal')) {
+      await loadData();
+      window.dispatchEvent(new Event('hashchange'));
+    }
   }
 
   if (document.readyState === 'loading') {

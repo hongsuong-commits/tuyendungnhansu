@@ -12,6 +12,7 @@
  *   SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM
  */
 const path = require('path');
+const crypto = require('crypto');
 
 // Serverless: dùng pool nhỏ để không vượt giới hạn kết nối của Supabase,
 // ghi tệp tạm vào /tmp (ổ đĩa của function là chỉ-đọc) và luôn dùng PostgreSQL
@@ -99,4 +100,61 @@ function fail(res, err) {
   });
 }
 
-module.exports = { db, mailer, ensureBoot, sendJson, readBody, fail, path };
+module.exports = { db, mailer, ensureBoot, sendJson, readBody, fail, path, signToken, requireAuth, authEnabled };
+
+// ────────────────────────────────────────────────────────────────
+// Token phiên (HMAC-SHA256) — bảo vệ API khi bật AUTH_REQUIRED=true
+// ────────────────────────────────────────────────────────────────
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
+function authSecret() {
+  return process.env.AUTH_SECRET || process.env.DATABASE_URL || 'smartats-local-secret';
+}
+
+function authEnabled() {
+  return String(process.env.AUTH_REQUIRED || '').toLowerCase() === 'true';
+}
+
+function signToken(user) {
+  const payload = Buffer.from(JSON.stringify({
+    sub: user.id,
+    username: user.username,
+    role: user.role,
+    exp: Date.now() + SESSION_TTL_MS
+  })).toString('base64url');
+  const sig = crypto.createHmac('sha256', authSecret()).update(payload).digest('base64url');
+  return payload + '.' + sig;
+}
+
+function verifyToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [payload, sig] = parts;
+
+  const expected = crypto.createHmac('sha256', authSecret()).update(payload).digest('base64url');
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+
+  try {
+    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (!claims || !claims.exp || Date.now() > claims.exp) return null;
+    return claims;
+  } catch (_) {
+    return null;
+  }
+}
+
+/** Kiểm tra token trên request. Khi AUTH_REQUIRED != true thì cho qua (tương thích). */
+function requireAuth(req) {
+  if (!authEnabled()) return { ok: true, enforced: false };
+
+  const header = String(
+    (req.headers && (req.headers.authorization || req.headers.Authorization)) || ''
+  );
+  const token = header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : '';
+  const claims = verifyToken(token);
+
+  return claims ? { ok: true, enforced: true, claims } : { ok: false, enforced: true };
+}

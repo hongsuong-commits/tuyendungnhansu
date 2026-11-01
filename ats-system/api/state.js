@@ -1,9 +1,13 @@
-/** GET /api/state — trả toàn bộ dữ liệu hiện có trong PostgreSQL. */
-const { db, ensureBoot, sendJson, fail } = require('./_lib');
+/** GET /api/state — trả toàn bộ dữ liệu hiện có trong PostgreSQL (cần đăng nhập khi bật AUTH_REQUIRED). */
+const { db, ensureBoot, sendJson, fail, requireAuth } = require('./_lib');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     return sendJson(res, 405, { ok: false, message: 'Chỉ hỗ trợ GET.' });
+  }
+  const auth = requireAuth(req);
+  if (!auth.ok) {
+    return sendJson(res, 401, { ok: false, message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.' });
   }
   try {
     await ensureBoot();

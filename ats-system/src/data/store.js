@@ -6,6 +6,20 @@
 const ATSStore = (() => {
   const STORAGE_KEY = 'smart_ats_store_v1';
   const CURRENT_USER_KEY = 'smart_ats_current_user';
+  const SESSION_START_KEY = 'smart_ats_session_started_at';
+  const AUTH_TOKEN_KEY = 'smart_ats_auth_token';
+  // Phiên đăng nhập có hạn: quá 12 giờ phải đăng nhập lại.
+  const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
+  /** Header kèm token phiên (dùng khi máy chủ bật AUTH_REQUIRED). */
+  function authHeaders(extra = {}) {
+    const headers = { ...extra };
+    try {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (token) headers.Authorization = 'Bearer ' + token;
+    } catch (_) { /* localStorage bị chặn */ }
+    return headers;
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Initial Mock Data (Realistic Vietnamese Data)
@@ -1267,7 +1281,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     try {
       const res = await fetch('/api/sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1308,7 +1322,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     const quiet = options.quiet === true;
 
     try {
-      const res = await fetch('/api/state', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      const res = await fetch('/api/state', { headers: authHeaders({ Accept: 'application/json' }), cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const payload = await res.json();
       const incoming = payload && payload.data;
@@ -1416,18 +1430,26 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       }
     }
 
-    // Load active session user
+    // Khôi phục phiên đăng nhập — TUYỆT ĐỐI KHÔNG tự đăng nhập khi chưa có phiên.
+    // (Đây là lỗi cũ: không có phiên thì tự gán tài khoản hr1, khiến đăng xuất
+    //  xong dán link #/interviews vẫn vào được.)
     try {
       const savedUser = localStorage.getItem(CURRENT_USER_KEY);
-      if (savedUser) {
-        _currentUser = JSON.parse(savedUser);
+      const startedAt = Number(localStorage.getItem(SESSION_START_KEY) || 0);
+      const expired = startedAt > 0 && (Date.now() - startedAt > SESSION_TTL_MS);
+
+      if (savedUser && !expired) {
+        const parsed = JSON.parse(savedUser);
+        _currentUser = (parsed && parsed.role && parsed.role !== 'candidate') ? parsed : null;
+        if (!_currentUser) localStorage.removeItem(CURRENT_USER_KEY);
       } else {
-        // Default to HR recruiter if none
-        _currentUser = _data.users.find(u => u.username === 'hr1') || _data.users[0];
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(_currentUser));
+        _currentUser = null;
+        localStorage.removeItem(CURRENT_USER_KEY);
+        localStorage.removeItem(SESSION_START_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
       }
     } catch (e) {
-      _currentUser = _data.users[0];
+      _currentUser = null;
     }
   }
 
@@ -2141,8 +2163,89 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     },
 
     setCurrentUser(user) {
-      _currentUser = user;
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      _currentUser = user || null;
+
+      if (_currentUser) {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(_currentUser));
+        // Chỉ ghi mốc bắt đầu phiên khi chưa có (đăng nhập mới).
+        if (!localStorage.getItem(SESSION_START_KEY)) {
+          localStorage.setItem(SESSION_START_KEY, String(Date.now()));
+        }
+      } else {
+        localStorage.removeItem(CURRENT_USER_KEY);
+        localStorage.removeItem(SESSION_START_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+      }
+
+      return _currentUser;
+    },
+
+    /** Token phiên dùng cho các API được bảo vệ. */
+    getAuthToken() {
+      try {
+        return localStorage.getItem(AUTH_TOKEN_KEY) || '';
+      } catch (_) {
+        return '';
+      }
+    },
+
+    setAuthToken(token) {
+      try {
+        if (token) localStorage.setItem(AUTH_TOKEN_KEY, String(token));
+        else localStorage.removeItem(AUTH_TOKEN_KEY);
+      } catch (_) { /* localStorage bị chặn */ }
+    },
+
+    /** Phiên còn hiệu lực hay không (có người dùng và chưa quá 12 giờ). */
+    isSessionValid() {
+      if (!_currentUser) return false;
+      try {
+        const started = Number(localStorage.getItem(SESSION_START_KEY) || 0);
+        return !started || (Date.now() - started <= SESSION_TTL_MS);
+      } catch (_) {
+        return false;
+      }
+    },
+
+    /**
+     * Đăng nhập qua API máy chủ (lấy token phiên), dự phòng kiểm tra cục bộ
+     * khi máy chủ/mạng không phản hồi.
+     */
+    async loginWithServer(username, password) {
+      const name = String(username || '').trim();
+      const pass = String(password || '').trim();
+
+      if (typeof fetch === 'function') {
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: name, password: pass })
+          });
+
+          if (res.ok) {
+            const payload = await res.json();
+            if (payload && payload.ok && payload.user) {
+              this.setAuthToken(payload.token || '');
+              this.setCurrentUser(payload.user);
+              return { success: true, user: payload.user, via: 'server' };
+            }
+            return { success: false, message: (payload && payload.message) || 'Đăng nhập thất bại.' };
+          }
+
+          if (res.status === 401) {
+            const payload = await res.json().catch(() => ({}));
+            return {
+              success: false,
+              message: payload.message || 'Tên đăng nhập hoặc mật khẩu không chính xác.'
+            };
+          }
+        } catch (_) {
+          /* máy chủ không phản hồi → thử kiểm tra dữ liệu cục bộ */
+        }
+      }
+
+      return this.login(name, pass);
     },
 
     getUsers() {
@@ -2241,9 +2344,23 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     },
 
     logout() {
+      // Đẩy nốt thay đổi đang chờ trước khi xoá phiên (không chặn giao diện).
+      try { flushSync(); } catch (_) { /* bỏ qua */ }
+
       _currentUser = null;
-      localStorage.removeItem(CURRENT_USER_KEY);
-      window.location.hash = '#/login';
+      this.setAuthToken('');
+
+      try {
+        localStorage.removeItem(CURRENT_USER_KEY);
+        localStorage.removeItem(SESSION_START_KEY);
+        // Xoá bản đệm dữ liệu để người dùng sau trên cùng máy không đọc được.
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(SYNC_PENDING_KEY);
+        localStorage.removeItem(SYNC_SNAPSHOT_KEY);
+      } catch (_) { /* bỏ qua */ }
+
+      // Chưa đăng nhập → về cổng công khai.
+      window.location.hash = '#/portal';
     },
 
     // ── Departments ────────────────────────────────────────────
