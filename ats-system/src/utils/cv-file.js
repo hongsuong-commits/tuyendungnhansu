@@ -1,33 +1,67 @@
 /**
  * cv-file.js — Đọc nội dung văn bản thật của CV tải lên.
  *
- * Trình duyệt KHÔNG đọc được .pdf/.docx bằng FileReader.readAsText() (sẽ ra rác
+ * Trình duyệt KHÔNG đọc được .pdf/.docx bằng FileReader.readAsText() (ra rác
  * nhị phân). Helper này trích xuất văn bản trước rồi mới đưa cho bộ phân tích:
  *   - PDF  : pdf.js
  *   - DOCX : mammoth
  *   - TXT  : UTF-8, dự phòng windows-1258/1252
  *
- * Thư viện được nạp THEO THỨ TỰ: bản cục bộ trong node_modules trước, nếu lỗi
- * mới thử CDN. Nhờ vậy chức năng đọc PDF/DOCX vẫn chạy khi mạng bị chặn CDN
- * hoặc khi triển khai nội bộ.
+ * Nguồn thư viện được chọn theo môi trường:
+ *   • Chạy local (localhost/127.0.0.1): dùng node_modules trước (nhanh, không cần mạng).
+ *   • Chạy trên hosting (Vercel…): dùng CDN trước — vì hosting KHÔNG phục vụ
+ *     node_modules, tránh lỗi 404 thừa trong Console.
+ *   • Luôn có nguồn dự phòng; khai báo standardFontDataUrl để pdf.js không cảnh báo.
  */
 const CVFile = (() => {
-  // Bản cục bộ (server tĩnh phục vụ trực tiếp node_modules)
-  const LOCAL_PDF_JS = 'node_modules/pdfjs-dist/build/pdf.min.js';
-  const LOCAL_PDF_WORKER = 'node_modules/pdfjs-dist/build/pdf.worker.min.js';
-  const LOCAL_MAMMOTH = 'node_modules/mammoth/mammoth.browser.min.js';
+  const PDF_VERSION = '3.11.174';
+  const MAMMOTH_VERSION = '1.6.0';
 
-  // Bản dự phòng trên CDN
-  const CDN_PDF_JS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-  const CDN_PDF_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  const CDN_MAMMOTH = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+  const LOCAL = {
+    pdf: 'node_modules/pdfjs-dist/build/pdf.min.js',
+    worker: 'node_modules/pdfjs-dist/build/pdf.worker.min.js',
+    fonts: 'node_modules/pdfjs-dist/standard_fonts/',
+    mammoth: 'node_modules/mammoth/mammoth.browser.min.js',
+  };
+
+  const UNPKG = {
+    pdf: `https://unpkg.com/pdfjs-dist@${PDF_VERSION}/build/pdf.min.js`,
+    worker: `https://unpkg.com/pdfjs-dist@${PDF_VERSION}/build/pdf.worker.min.js`,
+    fonts: `https://unpkg.com/pdfjs-dist@${PDF_VERSION}/standard_fonts/`,
+    mammoth: `https://unpkg.com/mammoth@${MAMMOTH_VERSION}/mammoth.browser.min.js`,
+  };
+
+  // cdnjs dự phòng khi unpkg bị chặn (cdnjs không có thư mục standard_fonts).
+  const CDNJS = {
+    pdf: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDF_VERSION}/pdf.min.js`,
+    worker: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDF_VERSION}/pdf.worker.min.js`,
+    mammoth: `https://cdnjs.cloudflare.com/ajax/libs/mammoth/${MAMMOTH_VERSION}/mammoth.browser.min.js`,
+  };
 
   const scriptCache = {};
 
+  function isLocalHost() {
+    try {
+      const host = String(window.location.hostname || '');
+      return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]' || host.endsWith('.local');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function absoluteUrl(path) {
+    try {
+      return new URL(path, document.baseURI).href;
+    } catch (_) {
+      return path;
+    }
+  }
+
   function loadScript(src) {
     if (scriptCache[src]) return scriptCache[src];
+
     scriptCache[src] = new Promise((resolve, reject) => {
-      const absolute = new URL(src, document.baseURI).href;
+      const absolute = absoluteUrl(src);
       const existing = document.querySelector(`script[src="${absolute}"]`)
         || document.querySelector(`script[src="${src}"]`);
       if (existing) {
@@ -42,23 +76,51 @@ const CVFile = (() => {
       script.onerror = () => reject(new Error('load-error'));
       document.head.appendChild(script);
     });
+
     return scriptCache[src];
   }
 
-  /** Thử lần lượt từng nguồn, dùng nguồn đầu tiên nạp được. */
+  /** Thử lần lượt từng nguồn, trả về nguồn chạy được đầu tiên. */
   async function loadFirstAvailable(sources) {
     let lastError = null;
     for (const src of sources) {
       try {
         await loadScript(src);
         return src;
-      } catch (err) {
-        lastError = err;
-        // Lần sau thử nguồn khác, không cache lỗi.
+      } catch (_) {
+        lastError = lastError || new Error('load-error');
         delete scriptCache[src];
       }
     }
     throw lastError || new Error('Không tải được thư viện đọc tệp.');
+  }
+
+  /** Chọn bộ pdf.js + worker + bộ font chuẩn tương ứng. */
+  async function loadPdfEngine() {
+    const localFirst = isLocalHost();
+    const candidates = localFirst
+      ? [
+          { lib: LOCAL.pdf, worker: LOCAL.worker, fonts: LOCAL.fonts },
+          { lib: UNPKG.pdf, worker: UNPKG.worker, fonts: UNPKG.fonts },
+          { lib: CDNJS.pdf, worker: CDNJS.worker, fonts: UNPKG.fonts },
+        ]
+      : [
+          { lib: UNPKG.pdf, worker: UNPKG.worker, fonts: UNPKG.fonts },
+          { lib: CDNJS.pdf, worker: CDNJS.worker, fonts: UNPKG.fonts },
+          { lib: LOCAL.pdf, worker: LOCAL.worker, fonts: LOCAL.fonts },
+        ];
+
+    let lastError = null;
+    for (const candidate of candidates) {
+      try {
+        await loadScript(candidate.lib);
+        if (window.pdfjsLib) return candidate;
+      } catch (err) {
+        lastError = err;
+        delete scriptCache[candidate.lib];
+      }
+    }
+    throw lastError || new Error('Không tải được thư viện đọc PDF.');
   }
 
   function normalize(text) {
@@ -96,21 +158,25 @@ const CVFile = (() => {
   }
 
   async function readPdf(file) {
-    const usedSource = await loadFirstAvailable([LOCAL_PDF_JS, CDN_PDF_JS]);
+    const engine = await loadPdfEngine();
     const pdfjs = window.pdfjsLib;
     if (!pdfjs) throw new Error('Trình đọc PDF chưa sẵn sàng. Vui lòng tải lại trang và thử lại.');
 
     if (pdfjs.GlobalWorkerOptions) {
-      // Worker phải cùng phiên bản với thư viện chính.
-      pdfjs.GlobalWorkerOptions.workerSrc = usedSource === LOCAL_PDF_JS
-        ? LOCAL_PDF_WORKER
-        : CDN_PDF_WORKER;
+      // Worker phải cùng phiên bản với thư viện chính (pdf.js tự xử lý cross-origin).
+      pdfjs.GlobalWorkerOptions.workerSrc = absoluteUrl(engine.worker);
     }
 
     const data = new Uint8Array(await file.arrayBuffer());
     let doc;
     try {
-      doc = await pdfjs.getDocument({ data, disableFontFace: true, useSystemFonts: false }).promise;
+      doc = await pdfjs.getDocument({
+        data,
+        disableFontFace: true,
+        useSystemFonts: false,
+        // Cung cấp bộ font chuẩn để pdf.js không phải đoán/không cảnh báo.
+        standardFontDataUrl: absoluteUrl(engine.fonts),
+      }).promise;
     } catch (err) {
       const name = String((err && err.name) || '');
       if (name === 'PasswordException') {
@@ -158,7 +224,12 @@ const CVFile = (() => {
   }
 
   async function readDocx(file) {
-    await loadFirstAvailable([LOCAL_MAMMOTH, CDN_MAMMOTH]);
+    const localFirst = isLocalHost();
+    const sources = localFirst
+      ? [LOCAL.mammoth, UNPKG.mammoth, CDNJS.mammoth]
+      : [UNPKG.mammoth, CDNJS.mammoth, LOCAL.mammoth];
+
+    await loadFirstAvailable(sources);
     if (!window.mammoth || !window.mammoth.extractRawText) {
       throw new Error('Trình đọc DOCX chưa sẵn sàng. Vui lòng tải lại trang và thử lại.');
     }
