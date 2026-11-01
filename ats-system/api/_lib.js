@@ -14,10 +14,12 @@
 const path = require('path');
 
 // Serverless: dùng pool nhỏ để không vượt giới hạn kết nối của Supabase,
-// và ghi tệp tạm vào /tmp (ổ đĩa của function là chỉ-đọc).
+// ghi tệp tạm vào /tmp (ổ đĩa của function là chỉ-đọc) và luôn dùng PostgreSQL
+// (backend tệp không hoạt động được trên Vercel).
 if (process.env.VERCEL) {
   process.env.DB_POOL_MAX = process.env.DB_POOL_MAX || '3';
   process.env.MAIL_OUTBOX_DIR = process.env.MAIL_OUTBOX_DIR || '/tmp/mail-outbox';
+  if (!process.env.DB_BACKEND) process.env.DB_BACKEND = 'postgres';
 }
 
 const { loadEnv } = require('../src/server/env');
@@ -26,10 +28,23 @@ loadEnv();
 const db = require('../src/server/db');
 const mailer = require('../src/server/mailer');
 
+function dsnConfigured() {
+  loadEnv();
+  return Boolean(String(process.env.DATABASE_URL || process.env.DIRECT_URL || '').trim());
+}
+
 let booted = false;
 
 /** Tạo bảng + nạp dữ liệu mẫu một lần cho mỗi cold start. */
 async function ensureBoot() {
+  if (!dsnConfigured()) {
+    const err = new Error(
+      'Chưa cấu hình DATABASE_URL. Vào Vercel → Project → Settings → Environment Variables, '
+      + 'thêm DATABASE_URL (chuỗi Session Pooler của Supabase) cùng DB_SSL=true, sau đó Redeploy.'
+    );
+    err.status = 503;
+    throw err;
+  }
   if (booted) return;
   await db.ensureSchema();
   await db.seedIfEmpty();
@@ -75,12 +90,12 @@ function readBody(req) {
 function fail(res, err) {
   const status = err && err.status ? err.status : 503;
   const message = err && err.message ? err.message : 'Lỗi máy chủ';
+  const needsHint = !/DATABASE_URL/i.test(message)
+    && /password|connect|ENOTFOUND|ECONNREFUSED|timeout/i.test(message);
   return sendJson(res, status, {
     ok: false,
     message,
-    detail: /DATABASE_URL|password|connect|ENOTFOUND|ECONNREFUSED/i.test(message)
-      ? 'Kiểm tra biến môi trường DATABASE_URL và kết nối Supabase.'
-      : undefined,
+    detail: needsHint ? 'Kiểm tra biến môi trường DATABASE_URL và kết nối Supabase.' : undefined,
   });
 }
 
