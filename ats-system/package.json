@@ -11,7 +11,8 @@
     "seed:export": "node scripts/export-seed.js",
     "test": "node test-suite.js",
     "test:cv": "node scripts/test-cv-parse.js",
-    "test:email": "node scripts/test-email-flow.js"
+    "test:email": "node scripts/test-email-flow.js",
+    "test:email:candidate": "node scripts/test-candidate-email.js"
   },
   "keywords": [
     "ats",
