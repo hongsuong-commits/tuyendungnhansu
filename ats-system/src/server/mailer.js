@@ -290,6 +290,13 @@ async function processQueue(minCreatedAt) {
 }
 
 async function queueStats() {
+  // Khởi tạo transport trước để báo đúng chế độ gửi (smtp/ethereal/file),
+  // kể cả khi chưa từng gửi thư nào trong tiến trình hiện tại.
+  try {
+    await init();
+  } catch (err) {
+    console.warn('[mail] Không khởi tạo được transport:', err.message);
+  }
   await ensureSchema();
   const stats = await mailQueue.stats();
   const recent = await mailQueue.recent(5);
