@@ -239,11 +239,18 @@ assert(
 );
 
 // ── TEST 9b: Email tự động gửi ứng viên ─────────────────────────────────────
-console.log('\n--- LUỒNG 9B: EMAIL TỰ ĐỘNG CHO ỨNG VIÊN ---');
+// Đặc tả: hệ thống CHỈ gửi email khi HR duyệt CV và hẹn phỏng vấn, gửi tới
+// đúng email ứng viên đã đăng ký lúc nộp CV, kèm giờ – ngày – địa điểm.
+console.log('\n--- LUỒNG 9B: EMAIL TỰ ĐỘNG KHI HẸN PHỎNG VẤN ---');
 const inviteMail = ATSStore.getEmails({ type: 'interview_invite' })
   .find(m => m.relatedId === newIv.id || m.to === onlineCandidate.email);
-assert(!!inviteMail, 'Tự động gửi email mời phỏng vấn tới ' + onlineCandidate.email);
+assert(!!inviteMail, 'Gửi email mời phỏng vấn tới email ứng viên đã đăng ký: ' + onlineCandidate.email);
 assert(inviteMail && newIv.inviteEmailId === inviteMail.id, 'Lịch phỏng vấn lưu liên kết tới email mời đã gửi');
+assert(inviteMail && inviteMail.to === onlineCandidate.email, 'Thư mời gửi đúng địa chỉ email đăng ký lúc nộp CV');
+assert(
+  inviteMail && (inviteMail.facts || []).some(f => /thời gian/i.test(f.label)) && (inviteMail.facts || []).some(f => /địa điểm/i.test(f.label)),
+  'Thư mời có thông tin giờ giấc và địa điểm/liên kết phỏng vấn'
+);
 
 const rescheduledIv = ATSStore.updateInterview(newIv.id, {
   date: '2026-11-12',
@@ -253,7 +260,7 @@ const rescheduledIv = ATSStore.updateInterview(newIv.id, {
 assert(rescheduledIv && rescheduledIv.id === newIv.id, 'Đổi lịch phỏng vấn thành công sang lịch mới');
 const rescheduleMail = ATSStore.getEmails({ type: 'interview_reschedule' })
   .find(m => m.relatedId === newIv.id);
-assert(!!rescheduleMail, 'Tự động gửi email thông báo thay đổi lịch phỏng vấn');
+assert(!rescheduleMail, 'Không tự gửi thư khi chỉ đổi lịch (chỉ gửi ở bước hẹn phỏng vấn)');
 
 // Ứng viên được phép có vòng khác vào khung giờ KHÔNG trùng
 const secondIv = ATSStore.createInterview({
@@ -304,24 +311,19 @@ assert(ATSStore.getApplicationById(onlineApp.id).status === 'proposed', 'Hồ s�
 ATSStore.updateApplicationStatus(onlineApp.id, 'hired', 'Giám đốc phê duyệt Offer và tuyển dụng chính thức');
 assert(ATSStore.getApplicationById(onlineApp.id).status === 'hired', 'Ứng viên được chuyển sang trạng thái Đã tuyển thành công');
 
-// Email kết quả đánh giá + email quyết định tuyển dụng đều tự động
-const evalMail = ATSStore.getEmails({ type: 'evaluation_result' })
-  .find(m => m.relatedId === newEval.id || m.applicationId === onlineApp.id);
-assert(!!evalMail, 'Tự động gửi email kết quả đánh giá tới ứng viên');
-assert(
-  ATSStore.getEmailsByApplication(onlineApp.id).filter(m => m.type === 'decision' && m.subject.includes('trúng tuyển')).length === 1,
-  'Đề xuất tuyển dụng không sinh email quyết định trùng; chỉ gửi đúng một email khi chốt Đã tuyển'
-);
-const hiredMail = ATSStore.getEmails({ type: 'decision' })
-  .find(m => m.applicationId === onlineApp.id && m.subject.includes('trúng tuyển'));
-assert(hiredMail && hiredMail.to === onlineCandidate.email, 'Email quyết định trúng tuyển gửi đúng địa chỉ ứng viên: ' + (hiredMail ? hiredMail.to : ''));
-assert(
-  !!hiredMail.subject && (hiredMail.facts || []).length > 0,
-  'Email quyết định có tiêu đề và bảng thông tin đầy đủ'
-);
+// Đặc tả mới: đổi trạng thái / phiếu đánh giá / quyết định KHÔNG tự gửi thư.
+const evalMail = ATSStore.getEmails({ type: 'evaluation_result' }).find(m => m.relatedId === newEval.id);
+assert(!evalMail, 'Không tự gửi email kết quả đánh giá (chỉ gửi thư mời phỏng vấn)');
+const decisionMails = ATSStore.getEmails({ type: 'decision' });
+assert(decisionMails.length === 0, 'Không tự gửi email quyết định tuyển dụng (chỉ gửi thư mời phỏng vấn)');
 
-const mailCounts = ATSStore.getEmailCounts();
-assert(mailCounts.all >= 4, 'Hộp thư tự động ghi nhận đủ các email đã gửi: ' + mailCounts.all);
+const allMails = ATSStore.getEmails();
+assert(allMails.length === 2, 'Hộp thư chỉ có đúng 2 thư mời phỏng vấn đã hẹn: ' + allMails.length);
+assert(allMails.every(m => m.type === 'interview_invite'), 'Tất cả email đều là thư mời phỏng vấn');
+assert(
+  allMails.every(m => m.to === onlineCandidate.email),
+  'Mọi thư đều gửi tới email ứng viên đã đăng ký lúc nộp CV'
+);
 
 // ── TEST 11: Số liệu Dashboard & Báo cáo tuyển dụng động ─────────────────────
 console.log('\n--- LUỒNG 11: THỐNG KÊ DASHBOARD & BÁO CÁO ĐỘNG ---');

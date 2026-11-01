@@ -1369,11 +1369,20 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         }
       }
 
-      // Extract Education — prefer the labelled field, then a university line
+      // Extract Education — prefer the labelled field, then a university line.
+      // Một dòng học vấn thường có dạng:
+      //   "Cử nhân Công nghệ Thông tin - Đại học Bách Khoa Hà Nội (2015 - 2019)"
+      // nên giữ nguyên cả dòng (thay vì cắt ở dấu gạch) để không mất tên trường
+      // và bậc học — nếu mất, bước đối chiếu tiêu chí sẽ trượt oan.
       let education = 'Đại học';
-      const eduLabel = cleanText.match(/(?:HỌC\s*VẤN|TRÌNH\s*ĐỘ|EDUCATION)\s*[:：]?\s*\n?\s*([^\n]{2,120})/i);
+      const eduLabel = cleanText.match(/(?:HỌC\s*VẤN|TRÌNH\s*ĐỘ|EDUCATION)\s*[:：]?\s*\n?\s*([^\n]{2,160})/i);
       if (eduLabel && eduLabel[1]) {
-        education = cleanupValue(eduLabel[1]).substring(0, 90) || 'Đại học';
+        const eduLine = String(eduLabel[1])
+          .replace(/^[\s\-•*|–—]+/, '')
+          .replace(/\s+/g, ' ')
+          .replace(/[.;,]+$/, '')
+          .trim();
+        education = eduLine.substring(0, 90) || 'Đại học';
       } else if (/thạc sĩ|master/i.test(cleanText)) {
         education = 'Thạc sĩ';
       } else if (/cao đẳng|college/i.test(cleanText)) {
@@ -1737,17 +1746,25 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     ] : [];
 
     switch (type) {
-      case 'interview_invite':
+      case 'interview_invite': {
+        const hasSchedule = !!interview;
         return {
-          subject: `[SmartATS] Thư mời phỏng vấn vị trí ${position}${interview && interview.round ? ` (${interview.round})` : ''}`,
+          subject: hasSchedule
+            ? `[SmartATS] Thư mời phỏng vấn vị trí ${position}${interview.round ? ` (${interview.round})` : ''}`
+            : `[SmartATS] Hồ sơ của bạn đã được duyệt vào vòng phỏng vấn vị trí ${position}`,
           greeting: `Kính gửi ${name},`,
           paragraphs: [
             `Cảm ơn bạn đã quan tâm và ứng tuyển vào vị trí ${position} tại ${company}.`,
-            `Hồ sơ của bạn đã vượt qua vòng sàng lọc. Chúng tôi trân trọng kính mời bạn tham dự buổi phỏng vấn với các thông tin sau:`
+            hasSchedule
+              ? 'Hồ sơ của bạn đã vượt qua vòng sàng lọc. Chúng tôi trân trọng kính mời bạn tham dự buổi phỏng vấn với các thông tin sau:'
+              : 'Hồ sơ của bạn đã vượt qua vòng sàng lọc và được chuyển sang bước phỏng vấn. Bộ phận Tuyển dụng sẽ liên hệ để sắp xếp lịch phỏng vấn cụ thể sớm nhất.'
           ],
           facts: interviewFacts,
-          closing: `Bạn vui lòng phản hồi email này để xác nhận tham dự. Nếu cần điều chỉnh, hãy cho chúng tôi biết trước 24 giờ.\n\n${signOff}`
+          closing: hasSchedule
+            ? `Bạn vui lòng phản hồi email này để xác nhận tham dự. Nếu cần điều chỉnh, hãy cho chúng tôi biết trước 24 giờ.\n\n${signOff}`
+            : `Vui lòng theo dõi điện thoại và email để nhận lịch phỏng vấn chi tiết.\n\n${signOff}`
         };
+      }
 
       case 'interview_reschedule':
         return {
@@ -2275,22 +2292,10 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
       saveState();
 
-      // A hiring decision always reaches the candidate by e-mail, no manual step.
-      if (
-        options.notify !== false &&
-        oldStatus !== newStatus &&
-        (newStatus === 'hired' || newStatus === 'rejected')
-      ) {
-        const candidate = findCandidateFor(app);
-        const mail = dispatchCandidateEmail('decision', {
-          candidate,
-          application: app,
-          status: newStatus,
-          note
-        });
-        if (mail) app.decisionEmailId = mail.id;
-        saveState();
-      }
+      // Lưu ý nghiệp vụ: đổi trạng thái hồ sơ (duyệt CV, đề xuất, tuyển dụng…)
+      // KHÔNG tự gửi thư. Thư cho ứng viên chỉ được gửi khi HR thực sự hẹn
+      // phỏng vấn — xem createInterview()/updateInterview() bên dưới, nơi thư
+      // mời chứa đầy đủ giờ, ngày, địa điểm và hội đồng phỏng vấn.
 
       return app;
     },
@@ -2341,7 +2346,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           dob: candidateData.dob || '',
           address: candidateData.address || '',
           education: candidateData.education || '',
-          experienceYears: candidateData.experienceYears || 0,
+          // Chặn số âm/NaN ở tầng dữ liệu, kể cả khi hồ sơ đến từ nguồn khác.
+          experienceYears: Helpers.normalizeExperienceYears(candidateData.experienceYears),
           skills: candidateData.skills || [],
           certifications: candidateData.certifications || [],
           rawResumeText: candidateData.rawResumeText || ''
@@ -2510,8 +2516,9 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         }
       }
 
-      // Automatic invitation e-mail to the candidate.
-      const candidate = (data.candidateId && (_data.candidates || []).find(c => c.id === data.candidateId))
+      // Thư mời chỉ gửi tới email ứng viên đã đăng ký lúc nộp CV.
+      const candidate = (_data.candidates || []).find(c => c.id === data.candidateId)
+        || (app ? findCandidateFor(app) : null)
         || { fullName: data.candidateName, email: data.email };
       const invite = dispatchCandidateEmail('interview_invite', { candidate, application: app, interview: newIv });
       if (invite) newIv.inviteEmailId = invite.id;
@@ -2548,26 +2555,17 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       _data.interviews[idx] = next;
       saveState();
 
-      // Lần đầu chuyển sang "Đã xác nhận": gửi thư mời tới email ứng viên đã đăng ký khi nộp CV.
+      // Chỉ gửi đúng MỘT thư mời khi HR hẹn/chốt lịch phỏng vấn, tới email
+      // ứng viên đã đăng ký lúc nộp CV, kèm giờ – ngày – địa điểm phỏng vấn.
       const confirmedNow = String(next.status) === 'confirmed' && String(prev.status) !== 'confirmed';
       if (confirmedNow && !next.inviteEmailId) {
-        const candidate = (_data.candidates || []).find(c => c.id === next.candidateId)
-          || { fullName: next.candidateName, email: next.email };
         const app = (_data.applications || []).find(a => a.candidateId === next.candidateId && a.requisitionId === next.requisitionId);
+        const candidate = (_data.candidates || []).find(c => c.id === next.candidateId)
+          || (app ? findCandidateFor(app) : null)
+          || { fullName: next.candidateName, email: next.email };
         const invite = dispatchCandidateEmail('interview_invite', { candidate, application: app, interview: next });
         if (invite) {
           _data.interviews[idx].inviteEmailId = invite.id;
-          saveState();
-        }
-      }
-
-      if (timingChanged) {
-        const candidate = (_data.candidates || []).find(c => c.id === next.candidateId)
-          || { fullName: next.candidateName };
-        const app = (_data.applications || []).find(a => a.candidateId === next.candidateId && a.requisitionId === next.requisitionId);
-        const mail = dispatchCandidateEmail('interview_reschedule', { candidate, application: app, interview: next });
-        if (mail) {
-          _data.interviews[idx].rescheduleEmailId = mail.id;
           saveState();
         }
       }
@@ -2581,11 +2579,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       iv.status = 'cancelled';
       iv.cancelReason = reason;
 
-      const candidate = (_data.candidates || []).find(c => c.id === iv.candidateId)
-        || { fullName: iv.candidateName };
-      const mail = dispatchCandidateEmail('interview_cancel', { candidate, interview: iv, note: reason });
-      if (mail) iv.cancelEmailId = mail.id;
-
+      // Không tự gửi thư khi hủy lịch: thư chỉ dành cho bước hẹn phỏng vấn.
       saveState();
       return iv;
     },
@@ -2621,16 +2615,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         }
       }
 
-      // Automatic result e-mail to the candidate.
-      const candidate = (data.candidateId && (_data.candidates || []).find(c => c.id === data.candidateId))
-        || { fullName: data.candidateName };
-      const mail = dispatchCandidateEmail('evaluation_result', {
-        candidate,
-        application: app,
-        evaluation: newEval
-      });
-      if (mail) newEval.resultEmailId = mail.id;
-
+      // Không tự gửi thư kết quả đánh giá. Thư cho ứng viên chỉ được gửi
+      // ở bước HR hẹn phỏng vấn (xem createInterview/updateInterview).
       saveState();
       return newEval;
     },

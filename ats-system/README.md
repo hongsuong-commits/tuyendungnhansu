@@ -14,11 +14,7 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò nội bộ với dữ liệu th�
 | **Trưởng phòng** | `head_it` | `123456` | Lê Văn Hùng | Giám đốc Công nghệ (CTO) | Xem & tạo yêu cầu tuyển dụng phòng CNTT; Theo dõi & chấm điểm phỏng vấn ứng viên phòng mình |
 | **Trưởng phòng** | `head_sales` | `123456` | Phạm Thị Mai | Trưởng phòng Kinh doanh | Tạo yêu cầu vị trí B2B Sales; Phỏng vấn chuyên môn và đề xuất tuyển dụng |
 | **Nhân sự (HR)** | `hr1` | `123456` | Nguyễn Thu Hà | Senior Talent Acquisition | Toàn quyền nghiệp vụ tuyển dụng: Đăng tin, thiết lập tiêu chí, duyệt CV, xếp lịch phỏng vấn, cấu hình cài đặt |
-<<<<<<< HEAD
-
 > Ứng viên **không có tài khoản nội bộ**. Họ nộp hồ sơ và tra cứu tiến độ tại Cổng tuyển dụng công khai `#/portal` bằng email/số điện thoại đã dùng khi nộp CV.
-=======
->>>>>>> 8e1e6349499a4113f43429b93d52b76f0de314d7
 
 > *Gợi ý:* Tại màn hình Đăng nhập `#/login`, bạn có thể bấm vào mục **"Tài khoản demo"** để tự động điền nhanh tài khoản và mật khẩu chỉ bằng 1 cú nhấp chuột.
 
@@ -199,17 +195,17 @@ ats-system/
 
 ## 4. HƯỚNG DẪN CÀI ĐẶT & CHẠY ỨNG DỤNG
 
-### Cách 1: Chạy bản full-stack (PostgreSQL + gửi thư tự động) — khuyên dùng
-Yêu cầu: [Node.js](https://nodejs.org/) 16 trở lên và một cơ sở dữ liệu PostgreSQL (dự án dùng Supabase).
+### Cách 1: Chạy bản full-stack (gửi thư tự động) — khuyên dùng
+Yêu cầu: [Node.js](https://nodejs.org/) 16 trở lên. Cơ sở dữ liệu PostgreSQL (Supabase) là **tùy chọn**: nếu chưa điền `DATABASE_URL`, máy chủ tự dùng backend tệp `data/store.json` để mọi tính năng (kể cả hàng đợi email) vẫn chạy.
 
 1. Cài thư viện:
    ```bash
    cd "d:\Quản lý quy trình\Tuyển dụng nhân sự\ats-system"
    npm install
    ```
-2. Tạo tệp `.env` từ `.env.example` và điền chuỗi kết nối:
+2. Tạo tệp `.env` từ `.env.example`:
    ```
-   DATABASE_URL=postgresql://<user>:<password>@<host>:6543/<database>
+   DATABASE_URL=postgresql://<user>:<password>@<host>:5432/<database>   # bỏ trống nếu chưa có DB
    DB_SSL=true
    EMAIL_TRANSPORT=ethereal   # auto | smtp | ethereal | file
    SMTP_HOST=                 # để trống nếu dùng ethereal/file
@@ -218,8 +214,9 @@ Yêu cầu: [Node.js](https://nodejs.org/) 16 trở lên và một cơ sở dữ
    SMTP_PASS=
    MAIL_FROM=hr@smartats.vn
    ```
-   > Với Supabase, dùng chuỗi **Session pooler** (cổng `6543`) và `DB_SSL=true`; cổng trực tiếp `5432` thường không truy cập được từ mạng IPv4.
-3. Kiểm tra kết nối cơ sở dữ liệu:
+   > Với Supabase, dùng chuỗi **Session pooler** và `DB_SSL=true`; cổng trực tiếp `5432` thường không truy cập được từ mạng IPv4.
+   > Không có `DATABASE_URL` → dữ liệu lưu tại `data/store.json` (tự tạo, đã nằm trong `.gitignore`).
+3. Kiểm tra kết nối cơ sở dữ liệu (nếu đã điền):
    ```bash
    npm run db:check
    ```
@@ -233,7 +230,10 @@ Yêu cầu: [Node.js](https://nodejs.org/) 16 trở lên và một cơ sở dữ
    - **Cổng Tuyển dụng Ứng viên:** `http://localhost:3000/#/portal`
    - **Kiểm tra API:** `http://localhost:3000/api/health`
 
-#### Các chế độ gửi thư
+#### Gửi thư tự động — đúng một tình huống
+Hệ thống **chỉ gửi email cho ứng viên khi HR duyệt CV và hẹn phỏng vấn**. Thư đi tới đúng địa chỉ email ứng viên đã đăng ký lúc nộp CV và chứa giờ – ngày – hình thức – địa điểm/liên kết – hội đồng phỏng vấn.
+Các thao tác khác (đổi trạng thái hồ sơ, đổi lịch, chấm điểm, chốt tuyển dụng) **không** tự gửi thư.
+
 | Chế độ | Hành vi |
 | :--- | :--- |
 | `smtp` | Gửi thật qua máy chủ SMTP của doanh nghiệp (Gmail App Password, Brevo, Resend...). Dùng khi triển khai thật. |
@@ -243,8 +243,22 @@ Yêu cầu: [Node.js](https://nodejs.org/) 16 trở lên và một cơ sở dữ
 
 Kiểm tra thư đã gửi: `GET http://localhost:3000/api/health` → trường `mail.recent[].previewUrl`.
 
-### Cách 2: Chạy riêng giao diện (không cần cơ sở dữ liệu)
-Mở `index.html` trực tiếp bằng trình duyệt hoặc chạy `node server.js` khi chưa có `.env`. Khi API không phản hồi, ứng dụng tự dùng dữ liệu mẫu trong bộ nhớ và vẫn thao tác được (chỉ mất tính bền vững và tính năng gửi thư).
+### Cách 2: Chạy khi chưa cấu hình gì
+Chỉ cần `npm install && npm start`. Máy chủ dùng backend tệp `data/store.json`, nạp sẵn dữ liệu mẫu, và gửi thư thật qua Ethereal (nếu có mạng) — không cần PostgreSQL.
+
+### 5.1. Kiểm chứng bộ quét CV bằng CV giả định
+Đã kèm sẵn CV mẫu `sample-data/cv-mau-tran-thi-minh-thu.txt`. Chạy:
+```bash
+npm run test:cv
+```
+Lệnh này trích xuất họ tên, email, điện thoại, học vấn, số năm kinh nghiệm, kỹ năng, chứng chỉ từ CV rồi đối chiếu với vị trí tuyển dụng mẫu và in điểm sàng lọc.
+
+### 5.2. Kiểm chứng luồng email tự động
+```bash
+npm start            # cửa sổ 1
+npm run test:email   # cửa sổ 2
+```
+Kiểm tra: duyệt CV không gửi thư · hẹn phỏng vấn gửi đúng 1 thư tới email đã đăng ký, có giờ giấc/địa điểm · đổi lịch và chốt tuyển dụng không gửi thêm · máy chủ gửi thật và trả `preview_url`.
 
 ---
 
@@ -265,17 +279,19 @@ Kết quả thực tế:
 - **Luồng 7:** Thao tác duyệt hồ sơ & Ghi nhận lịch sử (Audit Log): `PASSED` (2/2 tests)
 - **Luồng 8:** Tìm kiếm và lọc đa tiêu chí: `PASSED` (2/2 tests)
 - **Luồng 9:** Lên lịch phỏng vấn & Thuật toán phát hiện trùng lịch: `PASSED` (3/3 tests)
+- **Luồng 9B:** Email tự động khi hẹn phỏng vấn (đúng người nhận, có giờ giấc, không gửi trùng): `PASSED`
 - **Luồng 10:** Nhập phiếu đánh giá & Quyết định tuyển dụng: `PASSED` (3/3 tests)
 - **Luồng 11:** Thống kê Dashboard & Tính toán báo cáo động: `PASSED` (5/5 tests)
 - **Luồng 12:** Kiểm thử các trường hợp dữ liệu lỗi & Validation: `PASSED` (5/5 tests)
 - **Luồng 13:** Quản lý tài khoản người dùng & chống trùng tên đăng nhập: `PASSED` (2/2 tests)
-- **Tổng kết:** **46/46 Bài kiểm thử Thành công (100% ĐẠT)**.
+- **Tổng kết:** **63/63 Bài kiểm thử Thành công (100% ĐẠT)**.
+- **Kiểm chứng bổ sung:** `npm run test:cv` (quét CV giả định) và `npm run test:email` (luồng gửi thư thật) đều đạt.
 
 ---
 
 ## 6. GIỚI HẠN NỀN TẢNG PROTOTYPE & HƯỚNG MỞ RỘNG PRODUCTION
 
-1. **Lưu trữ dữ liệu:** Phiên bản hiện tại sử dụng `localStorage` trên trình duyệt để lưu giữ dữ liệu mượt mà giữa các lần tải lại trang mà không cần cài đặt cơ sở dữ liệu phức tạp. Để đưa vào sử dụng thực tế cho doanh nghiệp nhiều chi nhánh, cần kết nối với Backend API (Node.js/NestJS/Spring Boot) và Cơ sở dữ liệu tập trung (PostgreSQL/MySQL).
+1. **Lưu trữ dữ liệu:** Mặc định dữ liệu lưu ở `data/store.json` (hoặc PostgreSQL khi điền `DATABASE_URL`). Để dùng thật cho doanh nghiệp nhiều chi nhánh, chỉ cần điền chuỗi kết nối Supabase/PostgreSQL — không phải sửa mã nguồn.
 2. **Xác thực bảo mật:** Kiểm tra phiên làm việc hiện tại sử dụng Mock Session. Trong môi trường thực tế, hệ thống sẽ tích hợp JWT (JSON Web Token), OAuth2 hoặc SSO nội bộ (Google Workspace / Microsoft Azure AD).
-3. **Dịch vụ Email & Lịch ngoại vi:** Tính năng thông báo email và lịch họp Google Meet hiện hiển thị bản xem trước mẫu thư thông báo. Khi triển khai chính thức, chỉ cần cấu hình thông số máy chủ SMTP hoặc kết nối Google Calendar API tại trang Cài đặt.
+3. **Dịch vụ Email:** Hệ thống gửi thư thật qua `nodemailer` (SMTP hoặc Ethereal). Hiện chỉ gửi một loại thư: thư mời phỏng vấn khi HR duyệt CV và hẹn phỏng vấn. Muốn gửi tới hộp thư ứng viên thật, điền `SMTP_HOST/SMTP_USER/SMTP_PASS` trong `.env` và đặt `EMAIL_TRANSPORT=smtp`.
 4. **Đồng bộ sàn việc làm bên ngoài (đang mô phỏng):** Các nguồn TopCV, LinkedIn, VietnamWorks hiện chỉ có giao diện quản trị nguồn và dữ liệu demo, **không gọi API thật**. Muốn đăng tin tự động thật cần: (1) tài khoản doanh nghiệp/đối tác và API key của từng nền tảng, (2) backend trung gian giữ bí mật key và xử lý webhook/đồng bộ trạng thái, (3) ánh xạ schema tin đăng và hồ sơ ứng viên giữa SmartATS và từng sàn. Khi có các điều kiện trên, module tích hợp đã sẵn sàng để cắm adapter mà không phải đổi luồng nghiệp vụ.

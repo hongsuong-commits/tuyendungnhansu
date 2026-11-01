@@ -55,7 +55,7 @@ async function handleApi(req, res, options) {
       return sendJson(res, 200, {
         ok: true,
         service: 'smartats-api',
-        database: 'postgres',
+        database: db.getBackendMode(),
         counts,
         mail,
         startedAt: options.startedAt,
@@ -90,6 +90,20 @@ async function handleApi(req, res, options) {
     if (route === '/api/mail/process' && method === 'POST') {
       const result = await mailer.processQueue(options.mailSince);
       return sendJson(res, 200, { ok: true, ...result });
+    }
+
+    // Hộp thư ứng viên: danh sách thư đã soạn/gửi kèm trạng thái và link xem lại.
+    if (route === '/api/emails' && method === 'GET') {
+      const limit = Math.min(500, Number(url.searchParams.get('limit') || 200) || 200);
+      const emails = await db.mailQueue.list(limit);
+      const mail = await mailer.queueStats();
+      return sendJson(res, 200, {
+        ok: true,
+        database: db.getBackendMode(),
+        mailMode: mail.mode,
+        stats: mail.stats,
+        emails,
+      });
     }
 
     return sendJson(res, 404, { ok: false, message: 'Không tìm thấy API.' });

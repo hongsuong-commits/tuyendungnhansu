@@ -1,0 +1,29 @@
+HỌ VÀ TÊN: TRẦN THỊ MINH THƯ
+Email: minhthu.tran.test@gmail.com
+Điện thoại: 0912 345 678
+Địa chỉ: 42 Nguyễn Trãi, Thanh Xuân, Hà Nội
+Giới tính: Nữ - Ngày sinh: 12/03/1997
+
+HỌC VẤN:
+- Cử nhân Công nghệ Thông tin - Đại học Bách Khoa Hà Nội (2015 - 2019), tốt nghiệp loại Giỏi.
+
+KINH NGHIỆM LÀM VIỆC:
+- 2021 - Nay (3.5 năm): Frontend Developer tại Công ty Cổ phần Giải pháp Số Sao Mai
+  + Phát triển giao diện web quản trị bằng React, TypeScript và Tailwind CSS.
+  + Tối ưu hiệu năng trang, giảm thời gian tải trang từ 4.2s xuống 1.6s.
+  + Phối hợp với đội Backend xây dựng RESTful API và tích hợp hệ thống thanh toán.
+- 2019 - 2021 (2 năm): Junior Web Developer tại FPT Software
+  + Xây dựng module quản lý khách hàng với JavaScript, HTML/CSS và Node.js.
+  + Sử dụng Git, tham gia quy trình CI/CD cơ bản.
+
+KỸ NĂNG CHUYÊN MÔN:
+- React, TypeScript, JavaScript, Next.js, Tailwind CSS, Redux Toolkit
+- Node.js, RESTful API, MongoDB, SQL
+- Git, Docker, CI/CD
+
+CHỨNG CHỈ:
+- IELTS 7.0 (2023)
+- AWS Certified Cloud Practitioner (2024)
+
+MỤC TIÊU NGHỀ NGHIỆP:
+- Trở thành Senior Frontend Developer, đảm nhận kiến trúc giao diện cho các sản phẩm SaaS quy mô lớn.

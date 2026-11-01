@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const { loadEnv } = require('./env');
-const { getPool, ensureSchema } = require('./db');
+const { getSettings, mailQueue, ensureSchema } = require('./db');
 
 let transport = null;
 let transportMode = 'file';
@@ -183,8 +183,7 @@ function buildText(record, company) {
 }
 
 async function loadCompany() {
-  const { rows } = await getPool().query('select doc from app_settings where id = 1');
-  const settings = (rows[0] && rows[0].doc) || {};
+  const settings = (await getSettings()) || {};
   return {
     companyName: settings.companyName || 'SmartATS Solutions Việt Nam',
     companyAddress: settings.companyAddress || '',
@@ -248,94 +247,53 @@ async function processQueue(minCreatedAt) {
   await init();
   await ensureSchema();
 
-  const { rows } = await getPool().query(
-    `select id, doc, to_email
-       from email_log
-      where sent_at is null
-        and status in ('pending', 'sent')
-        and coalesce(doc->>'createdAt', '') >= $1
-      order by created_at asc
-      limit 25`,
-    [minCreatedAt]
-  );
-
-  if (!rows.length) return { processed: 0 };
+  const rows = await mailQueue.listPending(minCreatedAt);
+  if (!rows.length) return { processed: 0, failed: 0 };
 
   const company = await loadCompany();
   let processed = 0;
+  let failed = 0;
+  const sent = [];
 
   for (const row of rows) {
-    const claim = await getPool().query(
-      `update email_log
-          set status = 'sending'
-        where id = $1 and sent_at is null and status in ('pending', 'sent')
-        returning id`,
-      [row.id]
-    );
-    if (claim.rowCount === 0) continue;
+    const claimed = await mailQueue.claim(row.id);
+    if (!claimed) continue;
 
     try {
       const result = await sendRecord(row, company);
-      await getPool().query(
-        `update email_log
-            set status = $2, provider = $3, provider_message_id = $4,
-                preview_url = $5,
-                sent_at = case when $2 = 'sent' then now() else sent_at end,
-                error = null
-          where id = $1`,
-        [row.id, result.status, result.provider, result.messageId, result.previewUrl || null]
-      );
+      await mailQueue.markResult(row.id, result);
       processed += 1;
+      sent.push({
+        id: row.id,
+        to: row.doc.to || row.to_email,
+        subject: row.doc.subject || '',
+        status: result.status,
+        provider: result.provider,
+        previewUrl: result.previewUrl || null,
+      });
       console.log(
         result.provider === 'file'
-          ? `[mail] Đã ghi ${result.messageId} (chưa cấu hình SMTP)`
+          ? `[mail] Đã ghi ${result.messageId} (chưa cấu hình SMTP/Ethereal)`
           : `[mail] Đã gửi "${row.doc.subject}" tới ${row.doc.to || row.to_email}`
       );
       if (result.previewUrl) {
         console.log(`       Xem lại thư: ${result.previewUrl}`);
       }
     } catch (err) {
-      await getPool().query(
-        `update email_log set status = 'failed', error = $2 where id = $1`,
-        [row.id, String(err.message || err).slice(0, 500)]
-      );
+      failed += 1;
+      await mailQueue.markFailed(row.id, err && err.message ? err.message : String(err));
       console.error(`[mail] Gửi thất bại tới ${row.doc.to || row.to_email}: ${err.message}`);
     }
   }
 
-  return { processed };
+  return { processed, failed, sent };
 }
 
 async function queueStats() {
   await ensureSchema();
-  const { rows } = await getPool().query(
-    `select status, count(*)::int as total from email_log group by status`
-  );
-  const stats = {};
-  rows.forEach((r) => { stats[r.status] = r.total; });
-
-  // Vài thư gần nhất (kèm preview_url) để tiện kiểm tra khi thử nghiệm.
-  const recent = await getPool().query(
-    `select id, type, to_email, subject, status, provider, preview_url, sent_at
-       from email_log
-      order by created_at desc
-      limit 5`
-  );
-
-  return {
-    mode: transportMode,
-    stats,
-    recent: recent.rows.map((r) => ({
-      id: r.id,
-      type: r.type,
-      to: r.to_email,
-      subject: r.subject,
-      status: r.status,
-      provider: r.provider,
-      previewUrl: r.preview_url || null,
-      sentAt: r.sent_at,
-    })),
-  };
+  const stats = await mailQueue.stats();
+  const recent = await mailQueue.recent(5);
+  return { mode: transportMode, stats, recent };
 }
 
 module.exports = { init, processQueue, queueStats };

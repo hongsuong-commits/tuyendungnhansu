@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Biến môi trường & bí mật
+.env
+.env.local
+
+# Thư gửi thư ở chế độ file
+mail-outbox/
+
+# Log & tệp tạm
+*.log
+out*.txt
+err*.txt
+
+# Hệ điều hành / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

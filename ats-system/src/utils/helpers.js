@@ -270,6 +270,26 @@ const Helpers = (() => {
       return true;
     },
 
+    /**
+     * Số năm kinh nghiệm hợp lệ: là số hữu hạn, không âm và không vượt quá 60.
+     * Dùng chung cho form ứng viên công khai và form HR tải CV thủ công.
+     */
+    isValidExperienceYears(value) {
+      if (value === null || value === undefined || value === '') return false;
+      const num = Number(value);
+      return Number.isFinite(num) && num >= 0 && num <= 60;
+    },
+
+    /**
+     * Chuẩn hoá số năm kinh nghiệm về khoảng [0, 60] (làm tròn 1 chữ số thập phân).
+     * Giá trị không hợp lệ trở thành 0 thay vì số âm hoặc NaN.
+     */
+    normalizeExperienceYears(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return 0;
+      return Math.min(60, Math.max(0, Math.round(num * 10) / 10));
+    },
+
     // ═══════════════════════════════════════════════════════════════════
     // String Helpers
     // ═══════════════════════════════════════════════════════════════════

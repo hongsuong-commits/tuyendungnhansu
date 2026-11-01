@@ -9,7 +9,9 @@
     "db:check": "node scripts/db-check.js",
     "db:inspect": "node scripts/db-inspect.js",
     "seed:export": "node scripts/export-seed.js",
-    "test": "node test-suite.js"
+    "test": "node test-suite.js",
+    "test:cv": "node scripts/test-cv-parse.js",
+    "test:email": "node scripts/test-email-flow.js"
   },
   "keywords": [
     "ats",

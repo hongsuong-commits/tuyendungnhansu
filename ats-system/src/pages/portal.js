@@ -452,8 +452,8 @@ const PortalPage = (() => {
                       <input type="text" name="education" id="portal-edu" class="form-input" value="Đại học" placeholder="Đại học / Cao đẳng...">
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Số năm kinh nghiệm (Năm)</label>
-                      <input type="number" step="0.5" name="experienceYears" id="portal-exp" class="form-input" value="3">
+                      <label class="form-label required">Số năm kinh nghiệm (Năm)</label>
+                      <input type="number" step="0.5" min="0" name="experienceYears" id="portal-exp" class="form-input" value="3" placeholder="Ví dụ: 2.5">
                     </div>
                   </div>
 
@@ -524,11 +524,20 @@ const PortalPage = (() => {
           // Parse skills and keywords automatically from CV text using NLP
           const parsedFromCV = ATSStore.parseCVText ? ATSStore.parseCVText(rawCV) : { skills: [] };
 
+          const experienceYears = parseFloat(fd.get('experienceYears'));
+          if (!Helpers.isValidExperienceYears(experienceYears)) {
+            UI.toast({
+              message: 'Số năm kinh nghiệm phải là số không âm (từ 0 đến 60). Vui lòng nhập lại.',
+              type: 'warning'
+            });
+            return;
+          }
+
           const candidateData = {
             fullName: fd.get('fullName'),
             email: fd.get('email'),
             phone: fd.get('phone'),
-            experienceYears: parseFloat(fd.get('experienceYears')) || 0,
+            experienceYears,
             education: fd.get('education') || 'Đại học',
             skills: parsedFromCV.skills || [],
             rawResumeText: rawCV

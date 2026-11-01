@@ -108,16 +108,29 @@ async function boot() {
   console.log('  SmartATS - Hệ thống Quản lý Tuyển dụng Thông minh  ');
   console.log('=====================================================');
 
+  const mode = db.getBackendMode();
+  console.log(
+    mode === 'postgres'
+      ? '[db] Backend: PostgreSQL (Supabase)'
+      : '[db] Backend: file (data/store.json — điền DATABASE_URL trong .env để dùng PostgreSQL)'
+  );
+
   try {
     await db.ensureSchema();
     const seed = await db.seedIfEmpty();
-    if (seed.seeded) console.log('[db] Đã nạp dữ liệu mẫu ban đầu vào PostgreSQL');
+    if (seed.seeded) console.log('[db] Đã nạp dữ liệu mẫu ban đầu');
     else if (seed.reason) console.warn('[db] Không nạp được dữ liệu mẫu:', seed.reason);
-    else console.log('[db] Dữ liệu đã có sẵn trong PostgreSQL');
+    else console.log('[db] Dữ liệu đã có sẵn');
+  } catch (err) {
+    console.error('[db] Không kết nối được cơ sở dữ liệu:', err.message);
+    console.error('      Giao diện vẫn chạy nhưng dữ liệu chỉ lưu tạm trong trình duyệt.');
+  }
+
+  // Mailer hoạt động độc lập với backend dữ liệu (queue nằm cùng nơi lưu dữ liệu).
+  try {
     await mailer.init();
   } catch (err) {
-    console.error('[db] Không kết nối được PostgreSQL:', err.message);
-    console.error('      Giao diện vẫn chạy nhưng dữ liệu chỉ lưu tạm trong trình duyệt.');
+    console.error('[mail] Không khởi tạo được bộ gửi thư:', err.message);
   }
 
   setInterval(() => {
