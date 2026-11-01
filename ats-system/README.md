@@ -316,3 +316,47 @@ Kết quả thực tế:
 2. **Xác thực bảo mật:** Kiểm tra phiên làm việc hiện tại sử dụng Mock Session. Trong môi trường thực tế, hệ thống sẽ tích hợp JWT (JSON Web Token), OAuth2 hoặc SSO nội bộ (Google Workspace / Microsoft Azure AD).
 3. **Dịch vụ Email:** Hệ thống gửi thư thật qua `nodemailer` (SMTP hoặc Ethereal). Hiện chỉ gửi một loại thư: thư mời phỏng vấn khi HR duyệt CV và hẹn phỏng vấn. Muốn gửi tới hộp thư ứng viên thật, điền `SMTP_HOST/SMTP_USER/SMTP_PASS` trong `.env` và đặt `EMAIL_TRANSPORT=smtp`.
 4. **Đồng bộ sàn việc làm bên ngoài (đang mô phỏng):** Các nguồn TopCV, LinkedIn, VietnamWorks hiện chỉ có giao diện quản trị nguồn và dữ liệu demo, **không gọi API thật**. Muốn đăng tin tự động thật cần: (1) tài khoản doanh nghiệp/đối tác và API key của từng nền tảng, (2) backend trung gian giữ bí mật key và xử lý webhook/đồng bộ trạng thái, (3) ánh xạ schema tin đăng và hồ sơ ứng viên giữa SmartATS và từng sàn. Khi có các điều kiện trên, module tích hợp đã sẵn sàng để cắm adapter mà không phải đổi luồng nghiệp vụ.
+
+---
+
+## 7. TRIỂN KHAI LÊN VERCEL (có API + database + gửi mail)
+
+Vercel chỉ phục vụ file tĩnh, **không chạy `server.js`**. Vì vậy dự án có thêm thư mục `api/` gồm các Serverless Function tương ứng:
+
+| Endpoint | File | Chức năng |
+| :--- | :--- | :--- |
+| `GET /api/state` | `api/state.js` | Đọc toàn bộ dữ liệu từ PostgreSQL |
+| `POST /api/sync` | `api/sync.js` | Ghi thay đổi + gửi thư đang chờ |
+| `GET /api/health` | `api/health.js` | Kiểm tra kết nối DB, hàng đợi email |
+| `POST /api/login` | `api/login.js` | Đăng nhập nhân sự |
+| `GET /api/emails` | `api/emails.js` | Danh sách thư đã soạn/gửi |
+| `POST /api/mail/process` | `api/mail/process.js` | Xử lý lại hàng đợi email |
+
+### Các bước bắt buộc
+
+1. **Khai báo biến môi trường** trong Vercel → Project → Settings → Environment Variables (không commit `.env`):
+
+```
+DATABASE_URL        = postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+DB_SSL              = true
+EMAIL_TRANSPORT     = smtp
+SMTP_HOST           = smtp.gmail.com
+SMTP_PORT           = 587
+SMTP_SECURE         = false
+SMTP_USER           = <gmail-của-bạn>@gmail.com
+SMTP_PASS           = <App Password 16 ký tự>
+MAIL_FROM           = <gmail-của-bạn>@gmail.com
+```
+
+2. **Redeploy** (Deployments → Redeploy, hoặc push commit mới).
+
+3. **Kiểm tra**: mở `https://<tên-miền>/api/health` — phải thấy `ok: true`, `database: "postgres"` và số bản ghi. Nếu thấy `ok: false` + thông báo `DATABASE_URL` nghĩa là chưa khai báo biến môi trường.
+
+4. Mở lại trang web: chỉ báo trên thanh tiêu đề chuyển sang **“CSDL đã lưu”** (xanh) và dữ liệu đọc/ghi trực tiếp từ Supabase.
+
+### Lưu ý riêng cho Vercel
+
+- Function ghi tệp tạm vào `/tmp` (ổ đĩa chỉ-đọc), đã tự cấu hình khi phát hiện `VERCEL`.
+- Dùng **Session Pooler** của Supabase; giới hạn pool được hạ xuống 3 kết nối/instance để tránh vượt hạn mức.
+- Thư viện đọc PDF/DOCX (`pdfjs-dist`, `mammoth`) được nạp từ `node_modules` khi chạy local và **tự chuyển sang CDN** khi deploy (Vercel không phục vụ `node_modules` tĩnh).
+- Kiểm thử nhanh các function ngay trên máy: `npm run test:vercel`
