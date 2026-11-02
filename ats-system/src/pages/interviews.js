@@ -44,7 +44,7 @@ const InterviewsPage = (() => {
           <div class="page-header">
             <div>
               <h1 class="page-title">Lịch phỏng vấn</h1>
-              <p class="page-subtitle">Quản lý các vòng phỏng vấn, điều phối hội đồng và gửi thông báo mời ứng viên</p>
+              <p class="page-subtitle">Quản lý các vòng phỏng vấn, điều phối hội đồng và gửi thông báo mời ứng viên — danh sách sắp xếp theo lịch phỏng vấn gần nhất</p>
             </div>
             <div class="page-actions">
               ${canSchedule ? `

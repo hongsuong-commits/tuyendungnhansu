@@ -3150,6 +3150,26 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           (i.code && i.code.toLowerCase().includes(q))
         );
       }
+
+      // ── Sắp xếp theo LỊCH phỏng vấn (ngày + giờ bắt đầu), KHÔNG theo thời điểm tạo.
+      // Lịch sắp tới xếp trước (gần nhất lên đầu); lịch đã qua xếp sau (mới nhất trước).
+      const nowTs = Date.now();
+      const startTs = (iv) => {
+        if (!iv || !iv.date) return Number.MAX_SAFE_INTEGER;
+        const parsed = new Date(`${iv.date}T${iv.startTime || '00:00'}:00`).getTime();
+        return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+      };
+
+      list.sort((a, b) => {
+        const ta = startTs(a);
+        const tb = startTs(b);
+        const aPast = ta < nowTs ? 1 : 0;
+        const bPast = tb < nowTs ? 1 : 0;
+        if (aPast !== bPast) return aPast - bPast;   // sắp tới trước, đã qua sau
+        if (aPast === 1) return tb - ta;             // đã qua: gần đây nhất trước
+        return ta - tb;                              // sắp tới: gần nhất trước
+      });
+
       return list;
     },
 
@@ -3203,7 +3223,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
       const code = Helpers.generateCode('LPV');
       const newIv = {
-        id: 'iv_' + Date.now(),
+        // Thêm hậu tố ngẫu nhiên: tạo nhiều lịch trong cùng mili-giây không bị trùng ID.
+        id: 'iv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
         code,
         status: 'confirmed',
         createdAt: new Date().toISOString(),

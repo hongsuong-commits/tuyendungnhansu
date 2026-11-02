@@ -19,6 +19,7 @@
     "test:email": "node scripts/test-email-flow.js",
     "test:interview-mails": "node scripts/test-interview-notifications.js",
     "test:ui": "node scripts/test-ui-fixes.js",
+    "test:interviews-order": "node scripts/test-interviews-order.js",
     "test:email:candidate": "node scripts/test-candidate-email.js",
     "sample:pdf": "python scripts/make-sample-cv-pdf.py"
   },
