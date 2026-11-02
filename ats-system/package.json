@@ -17,6 +17,7 @@
     "test:exceptions": "node scripts/test-exceptions.js",
     "test:auth": "node scripts/test-auth-guard.js",
     "test:email": "node scripts/test-email-flow.js",
+    "test:interview-mails": "node scripts/test-interview-notifications.js",
     "test:email:candidate": "node scripts/test-candidate-email.js",
     "sample:pdf": "python scripts/make-sample-cv-pdf.py"
   },

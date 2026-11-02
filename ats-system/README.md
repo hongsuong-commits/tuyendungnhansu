@@ -137,7 +137,7 @@ Trình duyệt (SPA Vanilla JS)
 ```
 
 - Giao diện vẫn đọc dữ liệu đồng bộ như trước; việc ghi đi qua API nên không phải chờ mạng.
-- Khi HR xếp/ xác nhận lịch phỏng vấn, `ATSStore` tạo bản ghi trong `emailLog`; máy chủ nhận bản ghi qua `/api/sync` và gửi thư ngay, sau đó đánh dấu `sent` / `preview` / `failed` trong bảng `email_log`.
+- Khi HR hẹn / đổi / hủy lịch phỏng vấn, `ATSStore` tạo bản ghi trong `emailLog`; máy chủ nhận bản ghi qua `/api/sync` và gửi thư ngay, sau đó đánh dấu `sent` / `preview` / `failed` trong bảng `email_log`.
 
 ### 3.2.1. Lưu trữ: PostgreSQL là nguồn chính, localStorage chỉ là bản đệm
 
@@ -251,9 +251,17 @@ Yêu cầu: [Node.js](https://nodejs.org/) 16 trở lên. Cơ sở dữ liệu P
    - **Cổng Tuyển dụng Ứng viên:** `http://localhost:3000/#/portal`
    - **Kiểm tra API:** `http://localhost:3000/api/health`
 
-#### Gửi thư tự động — đúng một tình huống
-Hệ thống **chỉ gửi email cho ứng viên khi HR duyệt CV và hẹn phỏng vấn**. Thư đi tới đúng địa chỉ email ứng viên đã đăng ký lúc nộp CV và chứa giờ – ngày – hình thức – địa điểm/liên kết – hội đồng phỏng vấn.
-Các thao tác khác (đổi trạng thái hồ sơ, đổi lịch, chấm điểm, chốt tuyển dụng) **không** tự gửi thư.
+#### Gửi thư tự động — 3 tình huống phỏng vấn
+Hệ thống tự gửi email tới **đúng địa chỉ ứng viên đã đăng ký lúc nộp CV** ở ba thời điểm:
+
+| Tình huống | Loại thư | Nội dung chính |
+| :--- | :--- | :--- |
+| HR hẹn phỏng vấn (tạo lịch) | `interview_invite` | Giờ – ngày – hình thức – địa điểm/liên kết – hội đồng |
+| Đổi giờ/ngày/địa điểm lịch đã thông báo | `interview_reschedule` | Lịch **mới** (giờ, ngày, địa điểm, hội đồng) |
+| Hủy lịch đã thông báo | `interview_cancel` | Lịch dự kiến + lý do hủy |
+
+Các thao tác khác (đổi trạng thái hồ sơ, chấm điểm, chốt tuyển dụng) **không** tự gửi thư.
+Chống gửi trùng: mỗi lần đổi lịch/hủy chỉ sinh **một** thư; hủy lần hai và hủy lịch chưa từng thông báo thì không gửi.
 
 | Chế độ | Hành vi |
 | :--- | :--- |
@@ -279,7 +287,7 @@ Lệnh này trích xuất họ tên, email, điện thoại, học vấn, số n
 npm start            # cửa sổ 1
 npm run test:email   # cửa sổ 2
 ```
-Kiểm tra: duyệt CV không gửi thư · hẹn phỏng vấn gửi đúng 1 thư tới email đã đăng ký, có giờ giấc/địa điểm · đổi lịch và chốt tuyển dụng không gửi thêm · máy chủ gửi thật và trả `preview_url`.
+Kiểm tra: duyệt CV không gửi thư · hẹn phỏng vấn gửi đúng 1 thư tới email đã đăng ký, có giờ giấc/địa điểm · đổi lịch gửi thư đổi lịch có giờ mới · hủy lịch gửi thư hủy kèm lý do · chốt tuyển dụng không gửi thêm · máy chủ gửi thật và trả `preview_url`.
 
 ---
 
@@ -300,13 +308,13 @@ Kết quả thực tế:
 - **Luồng 7:** Thao tác duyệt hồ sơ & Ghi nhận lịch sử (Audit Log): `PASSED` (2/2 tests)
 - **Luồng 8:** Tìm kiếm và lọc đa tiêu chí: `PASSED` (2/2 tests)
 - **Luồng 9:** Lên lịch phỏng vấn & Thuật toán phát hiện trùng lịch: `PASSED` (3/3 tests)
-- **Luồng 9B:** Email tự động khi hẹn phỏng vấn (đúng người nhận, có giờ giấc, không gửi trùng): `PASSED`
+- **Luồng 9B:** Email tự động khi hẹn / đổi lịch / hủy lịch phỏng vấn (đúng người nhận, có giờ giấc, không gửi trùng): `PASSED`
 - **Luồng 10:** Nhập phiếu đánh giá & Quyết định tuyển dụng: `PASSED` (3/3 tests)
 - **Luồng 11:** Thống kê Dashboard & Tính toán báo cáo động: `PASSED` (5/5 tests)
 - **Luồng 12:** Kiểm thử các trường hợp dữ liệu lỗi & Validation: `PASSED` (5/5 tests)
 - **Luồng 13:** Quản lý tài khoản người dùng & chống trùng tên đăng nhập: `PASSED` (2/2 tests)
-- **Tổng kết:** **63/63 Bài kiểm thử Thành công (100% ĐẠT)**.
-- **Kiểm chứng bổ sung:** `npm run test:cv` (quét CV giả định) và `npm run test:email` (luồng gửi thư thật) đều đạt.
+- **Tổng kết:** **69/69 Bài kiểm thử Thành công (100% ĐẠT)**.
+- **Kiểm chứng bổ sung:** `npm run test:cv` (quét CV giả định), `npm run test:interview-mails` (email hẹn/đổi/hủy lịch) và `npm run test:email` (luồng gửi thư thật) đều đạt.
 
 ---
 
@@ -314,7 +322,7 @@ Kết quả thực tế:
 
 1. **Lưu trữ dữ liệu:** Mặc định dữ liệu lưu ở `data/store.json` (hoặc PostgreSQL khi điền `DATABASE_URL`). Để dùng thật cho doanh nghiệp nhiều chi nhánh, chỉ cần điền chuỗi kết nối Supabase/PostgreSQL — không phải sửa mã nguồn.
 2. **Xác thực bảo mật:** Kiểm tra phiên làm việc hiện tại sử dụng Mock Session. Trong môi trường thực tế, hệ thống sẽ tích hợp JWT (JSON Web Token), OAuth2 hoặc SSO nội bộ (Google Workspace / Microsoft Azure AD).
-3. **Dịch vụ Email:** Hệ thống gửi thư thật qua `nodemailer` (SMTP hoặc Ethereal). Hiện chỉ gửi một loại thư: thư mời phỏng vấn khi HR duyệt CV và hẹn phỏng vấn. Muốn gửi tới hộp thư ứng viên thật, điền `SMTP_HOST/SMTP_USER/SMTP_PASS` trong `.env` và đặt `EMAIL_TRANSPORT=smtp`.
+3. **Dịch vụ Email:** Hệ thống gửi thư thật qua `nodemailer` (SMTP hoặc Ethereal). Hiện gửi 3 loại thư gắn với lịch phỏng vấn: mời phỏng vấn, đổi lịch và hủy lịch (kèm lý do). Muốn gửi tới hộp thư ứng viên thật, điền `SMTP_HOST/SMTP_USER/SMTP_PASS` trong `.env` và đặt `EMAIL_TRANSPORT=smtp`.
 4. **Đồng bộ sàn việc làm bên ngoài (đang mô phỏng):** Các nguồn TopCV, LinkedIn, VietnamWorks hiện chỉ có giao diện quản trị nguồn và dữ liệu demo, **không gọi API thật**. Muốn đăng tin tự động thật cần: (1) tài khoản doanh nghiệp/đối tác và API key của từng nền tảng, (2) backend trung gian giữ bí mật key và xử lý webhook/đồng bộ trạng thái, (3) ánh xạ schema tin đăng và hồ sơ ứng viên giữa SmartATS và từng sàn. Khi có các điều kiện trên, module tích hợp đã sẵn sàng để cắm adapter mà không phải đổi luồng nghiệp vụ.
 
 ---

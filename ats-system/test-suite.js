@@ -260,7 +260,12 @@ const rescheduledIv = ATSStore.updateInterview(newIv.id, {
 assert(rescheduledIv && rescheduledIv.id === newIv.id, 'Đổi lịch phỏng vấn thành công sang lịch mới');
 const rescheduleMail = ATSStore.getEmails({ type: 'interview_reschedule' })
   .find(m => m.relatedId === newIv.id);
-assert(!rescheduleMail, 'Không tự gửi thư khi chỉ đổi lịch (chỉ gửi ở bước hẹn phỏng vấn)');
+assert(!!rescheduleMail, 'Đổi lịch tự gửi thư thông báo lịch mới tới ứng viên');
+assert(rescheduleMail && rescheduleMail.to === onlineCandidate.email, 'Thư đổi lịch gửi đúng email đăng ký lúc nộp CV');
+assert(
+  rescheduleMail && (rescheduleMail.facts || []).some(f => /thời gian/i.test(f.label) && /14:00/.test(f.value)),
+  'Thư đổi lịch có giờ phỏng vấn mới (14:00)'
+);
 
 // Ứng viên được phép có vòng khác vào khung giờ KHÔNG trùng
 const secondIv = ATSStore.createInterview({
@@ -313,13 +318,30 @@ assert(ATSStore.getApplicationById(onlineApp.id).status === 'hired', 'Ứng viê
 
 // Đặc tả mới: đổi trạng thái / phiếu đánh giá / quyết định KHÔNG tự gửi thư.
 const evalMail = ATSStore.getEmails({ type: 'evaluation_result' }).find(m => m.relatedId === newEval.id);
-assert(!evalMail, 'Không tự gửi email kết quả đánh giá (chỉ gửi thư mời phỏng vấn)');
+assert(!evalMail, 'Không tự gửi email kết quả đánh giá');
 const decisionMails = ATSStore.getEmails({ type: 'decision' });
-assert(decisionMails.length === 0, 'Không tự gửi email quyết định tuyển dụng (chỉ gửi thư mời phỏng vấn)');
+assert(decisionMails.length === 0, 'Không tự gửi email quyết định tuyển dụng');
 
+// Hủy lịch đã thông báo → phải gửi thư hủy kèm lý do.
+const cancelledIv = ATSStore.cancelInterview(secondIv.id, 'Hủy lịch vì hội đồng bận đột xuất');
+const cancelMail = ATSStore.getEmails({ type: 'interview_cancel' })
+  .find(m => m.relatedId === secondIv.id);
+assert(cancelledIv && cancelledIv.status === 'cancelled', 'Hủy lịch phỏng vấn thành công');
+assert(!!cancelMail, 'Hủy lịch tự gửi thư thông báo hủy tới ứng viên');
+assert(cancelMail && cancelMail.to === onlineCandidate.email, 'Thư hủy gửi đúng email đăng ký lúc nộp CV');
+assert(
+  cancelMail && (cancelMail.paragraphs || []).join(' ').includes('Hủy lịch vì hội đồng bận đột xuất'),
+  'Thư hủy có nêu lý do hủy'
+);
+
+// Đếm theo loại: 2 thư mời + 1 thư đổi lịch + 1 thư hủy.
+const inviteMails = ATSStore.getEmails({ type: 'interview_invite' });
+assert(inviteMails.length === 2, 'Hộp thư có đúng 2 thư mời phỏng vấn đã hẹn: ' + inviteMails.length);
 const allMails = ATSStore.getEmails();
-assert(allMails.length === 2, 'Hộp thư chỉ có đúng 2 thư mời phỏng vấn đã hẹn: ' + allMails.length);
-assert(allMails.every(m => m.type === 'interview_invite'), 'Tất cả email đều là thư mời phỏng vấn');
+assert(
+  allMails.every(m => ['interview_invite', 'interview_reschedule', 'interview_cancel'].includes(m.type)),
+  'Chỉ gửi 3 loại thư đúng phạm vi (mời/đổi lịch/hủy lịch): ' + allMails.map(m => m.type).join(', ')
+);
 assert(
   allMails.every(m => m.to === onlineCandidate.email),
   'Mọi thư đều gửi tới email ứng viên đã đăng ký lúc nộp CV'

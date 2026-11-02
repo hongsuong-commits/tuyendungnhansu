@@ -776,8 +776,10 @@ const InterviewsPage = (() => {
           return;
         }
 
+        const emailed = !!(result && result.rescheduleEmailId);
         UI.toast({
-          message: `Đã đổi lịch phỏng vấn cho ${iv.candidateName}.`,
+          message: `Đã đổi lịch phỏng vấn cho ${iv.candidateName}.`
+            + (emailed ? ' Đã gửi email thông báo lịch mới tới ứng viên.' : ''),
           type: 'success',
           duration: 5000
         });
@@ -853,9 +855,11 @@ const InterviewsPage = (() => {
         confirmText: 'Xác nhận hủy lịch',
         onConfirm: () => {
           const iv = ATSStore.getInterviewById(id);
-          ATSStore.cancelInterview(id, 'Hủy lịch theo yêu cầu nhân sự');
+          const cancelled = ATSStore.cancelInterview(id, 'Hủy lịch theo yêu cầu nhân sự');
+          const emailed = !!(cancelled && cancelled.cancelEmailId);
           UI.toast({
-            message: `Đã hủy lịch phỏng vấn${iv ? ` của ${iv.candidateName}` : ''}.`,
+            message: `Đã hủy lịch phỏng vấn${iv ? ` của ${iv.candidateName}` : ''}.`
+              + (emailed ? ' Đã gửi email thông báo hủy tới ứng viên.' : ''),
             type: 'warning',
             duration: 5000
           });

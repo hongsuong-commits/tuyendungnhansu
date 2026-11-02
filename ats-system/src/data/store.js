@@ -2153,6 +2153,21 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     };
   }
 
+  /**
+   * Gom ngữ cảnh (ứng viên + hồ sơ + lịch) cho một buổi phỏng vấn,
+   * dùng chung cho thư mời / đổi lịch / hủy lịch.
+   */
+  function interviewContext(iv) {
+    if (!iv) return { candidate: {}, application: {}, interview: null };
+    const application = (_data.applications || []).find(
+      a => a.candidateId === iv.candidateId && a.requisitionId === iv.requisitionId
+    ) || null;
+    const candidate = (_data.candidates || []).find(c => c.id === iv.candidateId)
+      || (application ? findCandidateFor(application) : null)
+      || { fullName: iv.candidateName, email: iv.email };
+    return { candidate, application, interview: iv };
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Public Store API
   // ─────────────────────────────────────────────────────────────
@@ -3245,17 +3260,36 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       _data.interviews[idx] = next;
       saveState();
 
-      // Chỉ gửi đúng MỘT thư mời khi HR hẹn/chốt lịch phỏng vấn, tới email
-      // ứng viên đã đăng ký lúc nộp CV, kèm giờ – ngày – địa điểm phỏng vấn.
       const confirmedNow = String(next.status) === 'confirmed' && String(prev.status) !== 'confirmed';
+      // Đổi giờ / ngày / địa điểm của buổi phỏng vấn.
+      const scheduleChanged = ['date', 'startTime', 'endTime', 'location'].some(key =>
+        Object.prototype.hasOwnProperty.call(updates, key)
+        && String(updates[key] ?? '') !== String(prev[key] ?? '')
+      );
+      // Chỉ thông báo khi lịch còn hiệu lực (không gửi khi chuyển sang completed/cancelled).
+      const stillActive = ['confirmed', 'pending'].includes(String(next.status));
+      // Ứng viên chỉ biết lịch nếu trước đó đã nhận thư mời/đổi lịch.
+      const alreadyNotified = !!prev.inviteEmailId || !!prev.rescheduleEmailId
+        || String(prev.status) === 'confirmed';
+
       if (confirmedNow && !next.inviteEmailId) {
-        const app = (_data.applications || []).find(a => a.candidateId === next.candidateId && a.requisitionId === next.requisitionId);
-        const candidate = (_data.candidates || []).find(c => c.id === next.candidateId)
-          || (app ? findCandidateFor(app) : null)
-          || { fullName: next.candidateName, email: next.email };
-        const invite = dispatchCandidateEmail('interview_invite', { candidate, application: app, interview: next });
+        // Thư mời đầu tiên — nội dung đã kèm lịch mới nhất.
+        const invite = dispatchCandidateEmail('interview_invite', interviewContext(next));
         if (invite) {
           _data.interviews[idx].inviteEmailId = invite.id;
+          saveState();
+        }
+      } else if (scheduleChanged && stillActive && alreadyNotified) {
+        // Đổi lịch của buổi phỏng vấn đã thông báo → gửi thư thông báo lịch mới.
+        const notice = dispatchCandidateEmail('interview_reschedule', {
+          ...interviewContext(next),
+          note: updates.note || updates.rescheduleReason || ''
+        });
+        if (notice) {
+          const record = _data.interviews[idx];
+          record.rescheduleEmailId = notice.id;
+          record.lastRescheduledAt = new Date().toISOString();
+          record.rescheduleCount = (record.rescheduleCount || 0) + 1;
           saveState();
         }
       }
@@ -3266,10 +3300,25 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     cancelInterview(id, reason = '') {
       const iv = this.getInterviewById(id);
       if (!iv) return null;
+      // Đã hủy trước đó → không gửi lại thư.
+      if (String(iv.status) === 'cancelled') return iv;
+
+      const previousStatus = iv.status;
       iv.status = 'cancelled';
       iv.cancelReason = reason;
+      iv.cancelledAt = new Date().toISOString();
 
-      // Không tự gửi thư khi hủy lịch: thư chỉ dành cho bước hẹn phỏng vấn.
+      // Chỉ gửi thư hủy khi ứng viên đã từng được thông báo về buổi phỏng vấn này.
+      const alreadyNotified = !!iv.inviteEmailId || !!iv.rescheduleEmailId
+        || String(previousStatus) === 'confirmed';
+      if (alreadyNotified) {
+        const notice = dispatchCandidateEmail('interview_cancel', {
+          ...interviewContext(iv),
+          note: reason
+        });
+        if (notice) iv.cancelEmailId = notice.id;
+      }
+
       saveState();
       return iv;
     },
@@ -3306,7 +3355,8 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       }
 
       // Không tự gửi thư kết quả đánh giá. Thư cho ứng viên chỉ được gửi
-      // ở bước HR hẹn phỏng vấn (xem createInterview/updateInterview).
+      // ở các bước hẹn / đổi lịch / hủy lịch phỏng vấn
+      // (xem createInterview/updateInterview/cancelInterview).
       saveState();
       return newEval;
     },

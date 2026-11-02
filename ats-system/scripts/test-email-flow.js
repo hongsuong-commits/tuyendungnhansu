@@ -110,15 +110,28 @@ const mailCount = () => ATSStore.getEmails().length;
     check('Có thông tin vòng phỏng vấn', facts.some((f) => /vòng/i.test(f.label) && !!f.value));
   }
 
-  // ── 3. Đổi lịch và chốt tuyển dụng: không sinh thêm email ────────────────
+  // ── 3. Đổi lịch → thư đổi lịch; hủy lịch → thư hủy; chốt tuyển dụng → không gửi ──
   const afterInvite = mailCount();
   ATSStore.updateInterview(iv.id, { date: '2026-11-21', startTime: '14:00', endTime: '15:30' });
-  check('Đổi lịch không sinh email', mailCount() === afterInvite, `số mail: ${afterInvite} → ${mailCount()}`);
+  check('Đổi lịch sinh email thông báo lịch mới', mailCount() === afterInvite + 1,
+    `số mail: ${afterInvite} → ${mailCount()}`);
 
+  const rescheduleMail = ATSStore.getEmails()[0];
+  check('Email đổi lịch đúng loại', rescheduleMail.type === 'interview_reschedule', rescheduleMail.type);
+  check('Email đổi lịch gửi đúng ứng viên đã đăng ký', rescheduleMail.to === registeredEmail, rescheduleMail.to);
+
+  const afterReschedule = mailCount();
+  ATSStore.cancelInterview(iv.id, 'Hủy để kiểm thử luồng thông báo');
+  check('Hủy lịch sinh email thông báo hủy', mailCount() === afterReschedule + 1,
+    `số mail: ${afterReschedule} → ${mailCount()}`);
+  check('Email hủy đúng loại', ATSStore.getEmails()[0].type === 'interview_cancel', ATSStore.getEmails()[0].type);
+
+  const afterCancel = mailCount();
   ATSStore.updateApplicationStatus(app.id, 'hired', 'Chốt tuyển dụng');
-  check('Chốt tuyển dụng không sinh email', mailCount() === afterInvite, `số mail: ${afterInvite} → ${mailCount()}`);
-  check('Không có email loại khác ngoài thư mời phỏng vấn',
-    ATSStore.getEmails().every((m) => m.type === 'interview_invite'));
+  check('Chốt tuyển dụng không sinh email', mailCount() === afterCancel, `số mail: ${afterCancel} → ${mailCount()}`);
+  check('Chỉ có 3 loại email đúng phạm vi (mời/đổi lịch/hủy lịch)',
+    ATSStore.getEmails().every((m) => ['interview_invite', 'interview_reschedule', 'interview_cancel'].includes(m.type)),
+    ATSStore.getEmails().map((m) => m.type));
 
   // ── 4. Gửi thật qua máy chủ ──────────────────────────────────────────────
   const pending = ATSStore.getEmails().filter((m) => !m._pushed);
@@ -151,7 +164,7 @@ const mailCount = () => ATSStore.getEmails().length;
 
   console.log('\n' + '='.repeat(70));
   console.log(failed === 0
-    ? ' KẾT QUẢ: ĐÚNG ĐẶC TẢ — CHỈ GỬI EMAIL KHI DUYỆT CV + HẸN PHỎNG VẤN'
+    ? ' KẾT QUẢ: ĐÚNG ĐẶC TẢ — EMAIL GỬI KHI DUYỆT CV + HẸN/ĐỔI/HỦY LỊCH PHỎNG VẤN'
     : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
   console.log('='.repeat(70) + '\n');
   process.exitCode = failed === 0 ? 0 : 1;
