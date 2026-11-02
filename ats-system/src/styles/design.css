@@ -2705,3 +2705,35 @@ body.modal-open { overflow: hidden !important; }
   gap: 6px;
   flex-wrap: wrap;
 }
+
+/* ── Nút "×" xoá nhanh nội dung ô tìm kiếm (áp dụng mọi trang) ── */
+.search-clear-host { position: relative; }
+.search-clear-host input { padding-right: 34px !important; }
+.search-clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.12);
+  color: #334155;
+  font-size: 16px;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  z-index: 3;
+  -webkit-tap-highlight-color: transparent;
+}
+.search-clear-btn.is-visible { display: inline-flex; }
+.search-clear-btn:hover { background: rgba(15, 23, 42, 0.24); }
+.search-clear-btn:active { transform: translateY(-50%) scale(0.92); }
+
+@media (max-width: 640px) {
+  .search-clear-btn { width: 28px; height: 28px; right: 4px; font-size: 18px; }
+}

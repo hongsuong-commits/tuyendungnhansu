@@ -158,9 +158,11 @@ const Layout = (() => {
       const initials = getInitials(currentUser.fullName || currentUser.username);
       const activeRoute = getActiveRoute();
 
-      // Get unread notification count
+      // Get unread notification count — chỉ đếm thông báo phù hợp vai trò
       let unreadCount = 0;
-      if (typeof ATSStore !== 'undefined' && ATSStore.getUnreadCount) {
+      if (typeof ATSStore !== 'undefined' && ATSStore.getUnreadCountForUser) {
+        unreadCount = ATSStore.getUnreadCountForUser(currentUser.role);
+      } else if (typeof ATSStore !== 'undefined' && ATSStore.getUnreadCount) {
         unreadCount = ATSStore.getUnreadCount();
       }
 
@@ -184,9 +186,17 @@ const Layout = (() => {
 
       const pageTitle = PAGE_TITLES[activeRoute] || 'SmartATS';
 
-      // Get notifications for dropdown
+      // Get notifications for dropdown — lọc theo vai trò, ưu tiên tin CHƯA ĐỌC lên đầu
       let notifications = [];
-      if (typeof ATSStore !== 'undefined' && ATSStore.getNotifications) {
+      if (typeof ATSStore !== 'undefined' && ATSStore.getNotificationsForUser) {
+        notifications = [...ATSStore.getNotificationsForUser(currentUser.role)]
+          .sort((a, b) => {
+            const byRead = (a.read ? 1 : 0) - (b.read ? 1 : 0);
+            if (byRead !== 0) return byRead;
+            return new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0);
+          })
+          .slice(0, 5);
+      } else if (typeof ATSStore !== 'undefined' && ATSStore.getNotifications) {
         notifications = ATSStore.getNotifications().slice(0, 5);
       }
 
@@ -486,6 +496,8 @@ const Layout = (() => {
           e.preventDefault();
           e.stopPropagation();
           this.toggleDropdown('notification');
+          // Mở chuông ra xem = đã đọc các thông báo đang hiển thị (không cần bấm thêm).
+          this.markVisibleNotificationsRead();
         });
       }
 
@@ -520,7 +532,10 @@ const Layout = (() => {
             ATSStore.markNotificationRead(notifId);
           }
           item.classList.remove('notification-unread');
-          const unreadCount = typeof ATSStore !== 'undefined' && ATSStore.getUnreadCount ? ATSStore.getUnreadCount() : 0;
+          const currentUser = (typeof ATSStore !== 'undefined' && ATSStore.getCurrentUser) ? ATSStore.getCurrentUser() : null;
+          const unreadCount = (currentUser && ATSStore.getUnreadCountForUser)
+            ? ATSStore.getUnreadCountForUser(currentUser.role)
+            : (typeof ATSStore !== 'undefined' && ATSStore.getUnreadCount ? ATSStore.getUnreadCount() : 0);
           const badge = document.querySelector('.notification-badge');
           if (badge) {
             if (unreadCount <= 0) badge.remove();
@@ -623,11 +638,43 @@ const Layout = (() => {
     },
 
     /**
+     * Đánh dấu đã đọc các thông báo đang hiển thị trong dropdown chuông.
+     * Nhờ vậy mở ra xem là hết báo "có tin nhắn mới" ở lần đăng nhập sau.
+     */
+    markVisibleNotificationsRead() {
+      if (typeof ATSStore === 'undefined') return;
+      const items = document.querySelectorAll('.notification-item[data-notification-id]');
+      if (!items.length) return;
+
+      const ids = [...items]
+        .map(el => el.getAttribute('data-notification-id'))
+        .filter(Boolean);
+
+      if (ATSStore.markNotificationsRead) ATSStore.markNotificationsRead(ids);
+      items.forEach(el => el.classList.remove('notification-unread'));
+
+      this.updateNotificationBadge();
+
+      const user = ATSStore.getCurrentUser ? ATSStore.getCurrentUser() : null;
+      const remaining = (user && ATSStore.getUnreadCountForUser)
+        ? ATSStore.getUnreadCountForUser(user.role)
+        : 0;
+      const markAllBtn = document.getElementById('markAllReadBtn');
+      if (markAllBtn && remaining <= 0) markAllBtn.remove();
+    },
+
+    /**
      * Update the notification badge count without re-rendering
      */
     updateNotificationBadge() {
       let unreadCount = 0;
-      if (typeof ATSStore !== 'undefined' && ATSStore.getUnreadCount) {
+      const user = (typeof ATSStore !== 'undefined' && ATSStore.getCurrentUser)
+        ? ATSStore.getCurrentUser()
+        : null;
+
+      if (typeof ATSStore !== 'undefined' && ATSStore.getUnreadCountForUser && user) {
+        unreadCount = ATSStore.getUnreadCountForUser(user.role);
+      } else if (typeof ATSStore !== 'undefined' && ATSStore.getUnreadCount) {
         unreadCount = ATSStore.getUnreadCount();
       }
       const btn = document.querySelector('.notification-btn');

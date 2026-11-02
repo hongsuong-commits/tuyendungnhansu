@@ -25,6 +25,8 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò nội bộ với dữ liệu th�
 ### 2.1. Thiết kế Giao diện Tổng thể & Responsive
 - Thiết kế SaaS Dashboard chuẩn phong cách quốc tế với bảng màu nhận diện: Xanh dương chủ đạo (`#1e40af`, `#3b82f6`), Xanh lá cho trạng thái Đạt (`#16a34a`), Vàng cam cho trạng thái Đang xử lý (`#d97706`), Đỏ cho trạng thái Từ chối (`#dc2626`).
 - Font chữ tiếng Việt hiện đại Inter, bố cục Sidebar có thể thu gọn, Header điều hướng thông minh với chuông thông báo và menu hồ sơ.
+- **Thông báo theo vai trò:** mỗi người chỉ thấy thông báo chung và thông báo đúng vai trò của mình (HR không thấy nhắc nhở riêng của giám đốc). Mở chuông xem thông báo sẽ **tự đánh dấu đã đọc** và lưu vào database, nên lần đăng nhập sau không báo lại tin cũ.
+- **Ô tìm kiếm trên mọi trang** (việc làm, hồ sơ đã ứng tuyển, ứng viên, yêu cầu, tin tuyển dụng, lịch phỏng vấn, tìm kiếm nhanh ở header) đều có nút **×** để xoá nhanh toàn bộ nội dung — thuận tiện khi nhập sai trên điện thoại.
 - Đáp ứng tốt mọi kích thước màn hình: Desktop (1440px), Laptop/Tablet (1024px, 768px) và Mobile (640px, 375px) với Drawer menu và table cuộn mượt mà.
 
 ### 2.2. Phân quyền Người dùng theo 3 Vai trò Nội bộ (RBAC)
@@ -62,7 +64,7 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò nội bộ với dữ liệu th�
 
 ### 2.6. Danh sách Ứng viên & Quy trình Duyệt Hồ sơ
 - Bảng danh sách ứng viên đầy đủ thông tin: STT, Họ tên, Vị trí, Email, SĐT, Nguồn, Ngày nộp, Kết quả sàng lọc, Điểm phù hợp, Trạng thái, Thao tác.
-- Tìm kiếm tức thì theo Tên, Email, SĐT; Bộ lọc theo Vị trí, Nguồn, Trạng thái, Kết quả sàng lọc và Sắp xếp theo ngày/điểm.
+- Tìm kiếm tức thì theo Tên, Email, SĐT; mọi ô tìm kiếm đều có nút **×** xoá nhanh nội dung (tiện trên điện thoại); Bộ lọc theo Vị trí, Nguồn, Trạng thái, Kết quả sàng lọc và Sắp xếp theo ngày/điểm.
 - Màn hình Chi tiết Ứng viên đa tab:
   - Tab 1: Tổng quan liên hệ, kinh nghiệm, kỹ năng và xem nội dung tệp CV gốc.
   - Tab 2: Kết quả đối chiếu sàng lọc tự động chi tiết.

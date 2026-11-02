@@ -51,6 +51,11 @@
       pageComponent.init(params);
     }
 
+    // ── 4. Nút "×" xoá nhanh nội dung các ô tìm kiếm ───────────
+    if (typeof Helpers !== 'undefined' && Helpers.attachSearchClear) {
+      Helpers.attachSearchClear(appEl);
+    }
+
     // Refresh Lucide icons
     requestAnimationFrame(() => {
       if (typeof lucide !== 'undefined' && lucide.createIcons) {

@@ -481,6 +481,70 @@ const Helpers = (() => {
     },
 
     /**
+     * Thông báo có hiển thị với vai trò này không.
+     * Thông báo chung (không gán role) hiển thị cho mọi người;
+     * thông báo có role chỉ hiển thị đúng vai trò đó.
+     */
+    isNotificationForRole(notification, role) {
+      if (!notification) return false;
+      if (!notification.role) return true;
+      return notification.role === role;
+    },
+
+    /**
+     * Gắn nút "×" xoá nhanh nội dung ô tìm kiếm (tiện trên điện thoại).
+     * Gọi sau mỗi lần render trang; gọi lặp an toàn nhờ data-clear-attached.
+     */
+    attachSearchClear(root = document) {
+      const SELECTORS = [
+        '.search-box input.form-input',
+        '.portal-job-search-input',
+        '.portal-lookup-input',
+        '#headerSearchInput'
+      ];
+      const inputs = root.querySelectorAll(SELECTORS.join(','));
+      inputs.forEach((input) => {
+        if (input.getAttribute('data-clear-attached') === '1') return;
+        input.setAttribute('data-clear-attached', '1');
+
+        const wrap = input.parentElement;
+        if (!wrap) return;
+        wrap.classList.add('search-clear-host');
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'search-clear-btn';
+        button.setAttribute('aria-label', 'Xoá nội dung tìm kiếm');
+        button.title = 'Xoá nội dung';
+        button.innerHTML = '&times;';
+
+        const sync = () => button.classList.toggle('is-visible', String(input.value || '').length > 0);
+        button.addEventListener('mousedown', (e) => e.preventDefault());
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          input.value = '';
+          sync();
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+          input.focus();
+
+          // Cổng ứng viên: ô tìm kiếm nằm trong form → gửi lại để danh sách về mặc định.
+          const form = input.closest('form');
+          if (form && (form.id === 'form-hero-job-search' || form.id === 'form-hero-lookup')) {
+            if (typeof form.requestSubmit === 'function') form.requestSubmit();
+            else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+          }
+        });
+
+        input.addEventListener('input', sync);
+        input.addEventListener('change', sync);
+        wrap.appendChild(button);
+        sync();
+      });
+    },
+
+    /**
      * Check if user can edit an entity
      * Director: view only
      * Dept head: can edit own department's items

@@ -11,7 +11,9 @@ const NotificationsPage = (() => {
       const user = ATSStore.getCurrentUser();
       if (!user) return '<div class="page-container"><p>Vui lòng đăng nhập.</p></div>';
 
-      const all = ATSStore.getNotifications();
+      const all = (ATSStore.getNotificationsForUser)
+        ? ATSStore.getNotificationsForUser(user.role)
+        : ATSStore.getNotifications();
       const unreadCount = all.filter(n => !n.read).length;
       const notifications = _filter === 'unread' ? all.filter(n => !n.read) : all;
 

@@ -3544,6 +3544,33 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       return (_data.notifications || []).filter(n => !n.read).length;
     },
 
+    /** Thông báo hiển thị theo vai trò (không gán role = thông báo chung). */
+    getNotificationsForUser(role) {
+      const all = _data.notifications || [];
+      if (!role) return all;
+      return all.filter(n => !n.role || n.role === role);
+    },
+
+    getUnreadCountForUser(role) {
+      return this.getNotificationsForUser(role).filter(n => !n.read).length;
+    },
+
+    /** Đánh dấu đã đọc nhiều thông báo trong MỘT lần lưu (tránh nhiều lần sync). */
+    markNotificationsRead(ids = []) {
+      const set = new Set(ids.filter(Boolean));
+      if (!set.size) return false;
+
+      let changed = false;
+      (_data.notifications || []).forEach((n) => {
+        if (set.has(n.id) && !n.read) {
+          n.read = true;
+          changed = true;
+        }
+      });
+      if (changed) saveState();
+      return changed;
+    },
+
     markAllNotificationsRead() {
       (_data.notifications || []).forEach(n => { n.read = true; });
       saveState();
