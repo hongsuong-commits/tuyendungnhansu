@@ -469,19 +469,26 @@ const PortalPage = (() => {
                     </div>
                   </div>
 
-                  <!-- Section 3: Upload CV / Dán văn bản CV (Nằm phía dưới phần Kinh nghiệm) -->
+                  <!-- Section 3: Upload CV (Bắt buộc) -->
                   <h4 class="form-section-title">
-                    Tệp CV
+                    Tệp CV <span class="text-danger" aria-hidden="true">*</span>
                   </h4>
                   <div class="form-group mb-2">
-                    <div class="cv-dropzone" id="portal-cv-dropzone">
+                    <div class="cv-dropzone" id="portal-cv-dropzone" role="button" tabindex="0"
+                         aria-label="Tải lên tệp CV: bấm để chọn tệp hoặc kéo thả tệp vào khung này">
                       <i data-lucide="upload" class="icon-md"></i>
-                      <div class="text-xs text-gray-700">Kéo thả tệp CV (.txt, .pdf, .docx) vào đây hoặc <label for="portal-file-input" class="text-primary font-bold cursor-pointer underline">chọn tệp từ thiết bị</label></div>
+                      <div class="text-xs text-gray-700">
+                        Kéo thả tệp CV (.txt, .pdf, .docx) vào đây hoặc
+                        <span class="text-primary font-bold underline">chọn tệp từ thiết bị</span>
+                      </div>
                       <input type="file" id="portal-file-input" class="hidden" accept=".txt,.pdf,.docx">
                     </div>
 
                     <input type="hidden" id="portal-raw-cv" name="rawResumeText" value="">
-                    <p class="portal-cv-note" id="portal-cv-status">Tệp CV được lưu kèm hồ sơ để bộ phận tuyển dụng đọc và sàng lọc.</p>
+                    <p class="portal-cv-error" id="portal-cv-error" role="alert">
+                      Bắt buộc: vui lòng tải lên tệp CV trước khi gửi hồ sơ.
+                    </p>
+                    <p class="portal-cv-note" id="portal-cv-status">Tệp CV được lưu kèm hồ sơ để bộ phận tuyển dụng đọc và sàng lọc. Đây là thông tin bắt buộc.</p>
                   </div>
                 </div>
 
@@ -503,8 +510,85 @@ const PortalPage = (() => {
         UI.openModal('modal-portal-apply');
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        // File drop/change — đọc nội dung tệp và TỰ ĐỘNG ĐIỀN các trường.
+        // ── Khung tải CV: bấm vào BẤT KỲ đâu cũng mở hộp chọn tệp, hỗ trợ kéo–thả ──
         const fileInput = document.getElementById('portal-file-input');
+        const dropzone = document.getElementById('portal-cv-dropzone');
+
+        const setCvInvalid = (invalid) => {
+          if (dropzone) {
+            dropzone.classList.toggle('is-invalid', !!invalid);
+            if (invalid) dropzone.setAttribute('aria-invalid', 'true');
+            else dropzone.removeAttribute('aria-invalid');
+          }
+          const errorEl = document.getElementById('portal-cv-error');
+          if (errorEl) errorEl.style.display = invalid ? 'block' : 'none';
+        };
+
+        const openFilePicker = () => {
+          if (fileInput) fileInput.click();
+        };
+
+        /** Gán tệp kéo–thả vào input file để dùng chung một luồng xử lý. */
+        const assignDroppedFiles = (fileList) => {
+          if (!fileInput || !fileList || !fileList.length) return false;
+          try {
+            if (typeof DataTransfer === 'function') {
+              const dt = new DataTransfer();
+              dt.items.add(fileList[0]);
+              fileInput.files = dt.files;
+            } else {
+              fileInput.files = fileList;
+            }
+          } catch (_) {
+            return false;
+          }
+          fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        };
+
+        if (dropzone && fileInput) {
+          dropzone.addEventListener('click', (e) => {
+            // Không mở hộp chọn tệp lần hai nếu sự kiện bắt nguồn từ chính input.
+            if (e.target === fileInput) return;
+            e.preventDefault();
+            openFilePicker();
+          });
+
+          dropzone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+              e.preventDefault();
+              openFilePicker();
+            }
+          });
+
+          ['dragenter', 'dragover'].forEach((eventName) => {
+            dropzone.addEventListener(eventName, (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              dropzone.classList.add('is-dragover');
+            });
+          });
+
+          ['dragleave', 'dragend'].forEach((eventName) => {
+            dropzone.addEventListener(eventName, (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              dropzone.classList.remove('is-dragover');
+            });
+          });
+
+          dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('is-dragover');
+            const files = e.dataTransfer && e.dataTransfer.files;
+            if (files && files.length && !assignDroppedFiles(files)) {
+              UI.toast({ message: 'Không nhận được tệp. Vui lòng bấm vào khung để chọn tệp.', type: 'warning' });
+            }
+          });
+        }
+
+        // File drop/change — đọc nội dung tệp và TỰ ĐỘNG ĐIỀN các trường.
         if (fileInput) {
           fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -518,6 +602,7 @@ const PortalPage = (() => {
               }
               const hidden = document.getElementById('portal-raw-cv');
               if (hidden) hidden.value = text;
+              setCvInvalid(false);
 
               const filled = this.autofillPortalForm(text);
               if (status) {
@@ -536,7 +621,26 @@ const PortalPage = (() => {
         document.getElementById('form-portal-apply')?.addEventListener('submit', (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const rawCV = fd.get('rawResumeText') || '';
+          const rawCV = String(fd.get('rawResumeText') || '').trim();
+
+          // ── BẮT BUỘC nộp CV: thiếu thì tô đỏ khung kéo thả và dừng lại ──
+          if (!rawCV) {
+            setCvInvalid(true);
+            const status = document.getElementById('portal-cv-status');
+            if (status) {
+              status.textContent = 'Bắt buộc: vui lòng tải lên tệp CV (.pdf, .docx, .txt) trước khi gửi hồ sơ.';
+            }
+            if (dropzone) {
+              dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              if (typeof dropzone.focus === 'function') dropzone.focus();
+            }
+            UI.toast({
+              message: 'Bạn chưa nộp CV. Vui lòng tải lên tệp CV trước khi gửi hồ sơ ứng tuyển.',
+              type: 'warning',
+              duration: 6000
+            });
+            return;
+          }
 
           // Parse skills and keywords automatically from CV text using NLP
           const parsedFromCV = ATSStore.parseCVText ? ATSStore.parseCVText(rawCV) : { skills: [] };

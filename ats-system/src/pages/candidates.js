@@ -905,9 +905,9 @@ const CandidatesPage = (() => {
                   <!-- Upload or Paste CV Zone (Placed below Experience) -->
                   <div class="form-group mb-3">
                     <label class="form-label required font-bold">Tải lên tệp CV (PDF/DOCX/TXT) hoặc dán văn bản CV</label>
-                    <div class="border-2 border-dashed border-gray-300 p-3.5 rounded text-center mb-2 hover:bg-gray-50 transition cursor-pointer" id="drop-cv-zone">
+                    <div class="border-2 border-dashed border-gray-300 p-3.5 rounded text-center mb-2 hover:bg-gray-50 transition cursor-pointer" id="drop-cv-zone" role="button" tabindex="0" aria-label="Tải lên tệp CV: bấm hoặc kéo thả tệp vào khung này">
                       <i data-lucide="file-up" class="w-7 h-7 text-primary mx-auto mb-1"></i>
-                      <div class="text-xs text-muted">Kéo thả tệp CV vào đây hoặc <label for="file-cv-input" class="text-primary font-bold cursor-pointer">chọn tệp từ máy</label></div>
+                      <div class="text-xs text-muted">Kéo thả tệp CV vào đây hoặc <span class="text-primary font-bold underline">chọn tệp từ máy</span></div>
                       <input type="file" id="file-cv-input" class="hidden" accept=".txt,.pdf,.docx">
                     </div>
                     <textarea name="rawResumeText" id="textarea-raw-cv" class="form-textarea font-mono text-xs" rows="5" placeholder="Dán nội dung CV văn bản tại đây để hệ thống tự động trích xuất thông tin, phân tích từ khóa NLP và đối chiếu tiêu chí..."></textarea>
@@ -935,8 +935,64 @@ const CandidatesPage = (() => {
         UI.openModal('modal-manual-upload');
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        // Wire file input — dùng CVFile.extractText để đọc đúng PDF/DOCX/TXT (không dùng readAsText với PDF nhị phân)
+        // Bấm vào BẤT KỲ đâu trong khung hoặc kéo–thả tệp vào khung để chọn CV
+        const dropZone = document.getElementById('drop-cv-zone');
         const fileInput = document.getElementById('file-cv-input');
+
+        const assignDroppedFile = (list) => {
+          if (!fileInput || !list || !list.length) return false;
+          try {
+            if (typeof DataTransfer === 'function') {
+              const dt = new DataTransfer();
+              dt.items.add(list[0]);
+              fileInput.files = dt.files;
+            } else {
+              fileInput.files = list;
+            }
+          } catch (_) {
+            return false;
+          }
+          fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        };
+
+        if (dropZone && fileInput) {
+          dropZone.addEventListener('click', (e) => {
+            if (e.target === fileInput) return;
+            e.preventDefault();
+            fileInput.click();
+          });
+          dropZone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+              e.preventDefault();
+              fileInput.click();
+            }
+          });
+          ['dragenter', 'dragover'].forEach((eventName) => {
+            dropZone.addEventListener(eventName, (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              dropZone.classList.add('bg-primary-50', 'border-primary');
+            });
+          });
+          ['dragleave', 'dragend'].forEach((eventName) => {
+            dropZone.addEventListener(eventName, (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              dropZone.classList.remove('bg-primary-50', 'border-primary');
+            });
+          });
+          dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('bg-primary-50', 'border-primary');
+            const files = e.dataTransfer && e.dataTransfer.files;
+            if (files && files.length && !assignDroppedFile(files)) {
+              UI.toast({ message: 'Không nhận được tệp. Vui lòng bấm vào khung để chọn tệp.', type: 'warning' });
+            }
+          });
+        }
+
         if (fileInput) {
           fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];

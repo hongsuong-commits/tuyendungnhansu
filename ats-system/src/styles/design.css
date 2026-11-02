@@ -2737,3 +2737,30 @@ body.modal-open { overflow: hidden !important; }
 @media (max-width: 640px) {
   .search-clear-btn { width: 28px; height: 28px; right: 4px; font-size: 18px; }
 }
+
+/* ── Khung tải CV: bấm/kéo–thả, trạng thái lỗi bắt buộc ── */
+.cv-dropzone { cursor: pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+.cv-dropzone:focus-visible { outline: 2px solid var(--primary, #1e40af); outline-offset: 3px; }
+.cv-dropzone.is-dragover {
+  border-color: var(--primary, #1e40af) !important;
+  background: var(--primary-50, #eff6ff) !important;
+}
+.cv-dropzone.is-invalid {
+  border-color: #dc2626 !important;
+  background: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, .12);
+  animation: cv-shake .35s ease;
+}
+.cv-dropzone.is-invalid svg { color: #dc2626 !important; }
+.portal-cv-error {
+  display: none;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 6px 0 2px;
+}
+@keyframes cv-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}

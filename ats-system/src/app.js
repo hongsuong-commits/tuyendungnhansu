@@ -151,6 +151,11 @@
     setupRoutes();
     renderBootScreen();
 
+    // Nút "×" trong ô tìm kiếm: gắn ngay và tự gắn lại sau mỗi lần trang render lại.
+    if (typeof Helpers !== 'undefined' && Helpers.installSearchClearObserver) {
+      Helpers.installSearchClearObserver();
+    }
+
     const currentUser = typeof ATSStore.getCurrentUser === 'function' ? ATSStore.getCurrentUser() : null;
     const initialPath = Router.getCurrentPath();
 

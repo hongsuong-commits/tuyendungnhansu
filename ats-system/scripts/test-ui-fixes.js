@@ -63,6 +63,14 @@ global.Event = class Event {
   constructor(type, opts = {}) { this.type = type; this.bubbles = !!opts.bubbles; }
 };
 
+// MutationObserver giả lập để kiểm tra cơ chế gắn lại nút "×" sau khi render lại.
+global.__observed = null;
+global.MutationObserver = class MutationObserver {
+  constructor(callback) { this.callback = callback; }
+  observe(target, options) { global.__observed = { target, options }; }
+  disconnect() {}
+};
+
 const ROOT = path.join(__dirname, '..');
 function loadModule(relPath, globalName) {
   let code = fs.readFileSync(path.join(ROOT, relPath), 'utf-8');
@@ -155,10 +163,64 @@ check('Sau khi đọc hết, HR không còn thông báo chưa đọc',
 check('Giám đốc vẫn còn thông báo chưa đọc riêng của mình',
   ATSStore.getUnreadCountForUser('director') >= 0);
 
+// ── 3. Form ứng tuyển: bắt buộc CV + bấm cả khung để chọn tệp ──────────────
+console.log('\n[3] Form ứng tuyển: bắt buộc nộp CV, bấm được cả khung tải tệp');
+loadModule('src/pages/portal.js', 'PortalPage');
+
+let portalHtml = '';
+try {
+  portalHtml = PortalPage.render({});
+} catch (err) {
+  console.log('    Lỗi render portal:', err.message);
+}
+check('Render được trang cổng ứng viên', typeof portalHtml === 'string' && portalHtml.length > 0);
+
+// Form ứng tuyển nằm trong modal (showApplyModal) → kiểm tra markup trong mã nguồn.
+const portalSource = fs.readFileSync(path.join(ROOT, 'src/pages/portal.js'), 'utf-8');
+check('Có khung tải CV', /id="portal-cv-dropzone"/.test(portalSource));
+check('Khung tải CV bấm được (role=button + tabindex)',
+  /id="portal-cv-dropzone"[^>]*role="button"/.test(portalSource)
+  && /id="portal-cv-dropzone"[^>]*tabindex="0"/.test(portalSource));
+check('Khung có nhãn trợ năng hướng dẫn bấm/kéo thả',
+  /aria-label="Tải lên tệp CV/.test(portalSource));
+check('Nhãn "Tệp CV" có dấu bắt buộc *', /Tệp CV <span class="text-danger"/.test(portalSource));
+check('Có vùng cảnh báo đỏ khi thiếu CV', /id="portal-cv-error"/.test(portalSource));
+check('Có trường ẩn lưu nội dung CV', /id="portal-raw-cv"/.test(portalSource));
+check('Chặn gửi hồ sơ khi chưa có CV (validate trước khi submit)',
+  /BẮT BUỘC nộp CV/.test(portalSource) && /if \(!rawCV\)/.test(portalSource));
+check('Tô đỏ khung khi thiếu CV', /classList\.toggle\('is-invalid'/.test(portalSource));
+check('Hỗ trợ kéo–thả tệp vào khung', /'drop'/.test(portalSource) && /DataTransfer/.test(portalSource));
+check('Bấm cả khung mở hộp chọn tệp', /dropzone\.addEventListener\('click'/.test(portalSource)
+  && /fileInput\.click\(\)/.test(portalSource));
+
+// ── 1b. Nút "×" phải tự xuất hiện lại sau khi trang render lại (sau khi tìm kiếm) ──
+console.log('\n[1b] Nút "×" tự gắn lại sau mỗi lần trang render lại');
+check('Có hàm Helpers.installSearchClearObserver', typeof Helpers.installSearchClearObserver === 'function');
+const observerInstalled = Helpers.installSearchClearObserver();
+check('Cài đặt observer thành công', observerInstalled === true);
+check('Observer theo dõi toàn bộ DOM (subtree)', !!global.__observed && global.__observed.options.subtree === true);
+check('Không cài đặt trùng observer', Helpers.installSearchClearObserver() === true);
+
+// Mô phỏng: trang render lại tạo ô tìm kiếm mới → phải được gắn nút ngay.
+const reRenderedWrap = makeElement('div');
+const reRenderedInput = makeElement('input');
+reRenderedInput.value = '';
+reRenderedWrap.appendChild(reRenderedInput);
+reRenderedInput.parentElement = reRenderedWrap;
+Helpers.attachSearchClear({ querySelectorAll: () => [reRenderedInput] });
+check('Ô tìm kiếm mới sau khi render lại vẫn có nút "×"',
+  reRenderedWrap.children.some(c => String(c.className).includes('search-clear-btn')));
+
+// Khung tải CV ở trang quản trị (thêm hồ sơ thủ công) cũng bấm/kéo–thả được.
+const candidatesSource = fs.readFileSync(path.join(ROOT, 'src/pages/candidates.js'), 'utf-8');
+check('Trang Ứng viên: khung tải CV cũng bấm/kéo–thả được',
+  /drop-cv-zone" role="button"/.test(candidatesSource)
+  && /dropZone\.addEventListener\('click'/.test(candidatesSource));
+
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
 console.log(failed === 0
-  ? ' KẾT QUẢ: Ô TÌM KIẾM CÓ NÚT XOÁ & THÔNG BÁO KHÔNG BÁO LẠI TIN CŨ'
+  ? ' KẾT QUẢ: Ô TÌM KIẾM CÓ NÚT XOÁ & THÔNG BÁO KHÔNG BÁO LẠI TIN CŨ • FORM ỨNG TUYỂN BẮT BUỘC CV'
   : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
 console.log('='.repeat(74) + '\n');
 process.exitCode = failed === 0 ? 0 : 1;

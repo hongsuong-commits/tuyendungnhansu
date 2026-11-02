@@ -545,6 +545,42 @@ const Helpers = (() => {
     },
 
     /**
+     * Tự gắn lại nút "×" mỗi khi DOM thay đổi.
+     * Các trang tự render lại nội dung sau khi tìm kiếm/lọc (không qua router),
+     * nếu chỉ gắn một lần sau render trang thì nút sẽ mất — observer giải quyết việc này.
+     */
+    installSearchClearObserver(target = null) {
+      if (typeof MutationObserver !== 'function') return false;
+      if (typeof window !== 'undefined' && window.__searchClearObserverInstalled) return true;
+
+      const root = target || (typeof document !== 'undefined' ? document.body : null);
+      if (!root) return false;
+
+      if (typeof window !== 'undefined') window.__searchClearObserverInstalled = true;
+
+      let scheduled = false;
+      const run = () => {
+        scheduled = false;
+        try {
+          this.attachSearchClear(document);
+        } catch (_) { /* bỏ qua lỗi DOM tạm thời */ }
+      };
+
+      const observer = new MutationObserver(() => {
+        if (scheduled) return;
+        scheduled = true;
+        // Gom nhiều thay đổi trong cùng một khung hình để không gắn lặp.
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+        else setTimeout(run, 0);
+      });
+      observer.observe(root, { childList: true, subtree: true });
+
+      if (typeof window !== 'undefined') window.__searchClearObserver = observer;
+      this.attachSearchClear(document);
+      return true;
+    },
+
+    /**
      * Check if user can edit an entity
      * Director: view only
      * Dept head: can edit own department's items
