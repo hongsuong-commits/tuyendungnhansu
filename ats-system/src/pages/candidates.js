@@ -439,7 +439,7 @@ const CandidatesPage = (() => {
                       <div class="text-xs space-y-1.5">
                         <div><span class="text-muted">Email:</span> <a href="mailto:${cand.email}" class="text-primary font-medium">${cand.email || '—'}</a></div>
                         <div><span class="text-muted">Số điện thoại:</span> <a href="tel:${cand.phone}" class="font-medium text-gray-800">${cand.phone || '—'}</a></div>
-                        <div><span class="text-muted">Giới tính / Ngày sinh:</span> ${cand.gender || 'Khác'} • ${cand.dob ? Helpers.formatDate(cand.dob) : '—'}</div>
+                        <div><span class="text-muted">Giới tính / Ngày sinh:</span> ${['Nam', 'Nữ'].includes(cand.gender) ? cand.gender : '—'} • ${cand.dob ? Helpers.formatDate(cand.dob) : '—'}</div>
                         <div><span class="text-muted">Địa chỉ:</span> ${cand.address || 'Hà Nội'}</div>
                       </div>
                     </div>
@@ -885,9 +885,9 @@ const CandidatesPage = (() => {
                     <div class="form-group">
                       <label class="form-label">Giới tính</label>
                       <select name="gender" id="upload-gender" class="form-select">
+                        <option value="" selected>Vui lòng chọn giới tính</option>
                         <option value="Nam">Nam</option>
                         <option value="Nữ">Nữ</option>
-                        <option value="Khác" selected>Khác</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -1048,7 +1048,7 @@ const CandidatesPage = (() => {
             fullName: fd.get('fullName'),
             email: fd.get('email'),
             phone: fd.get('phone'),
-            gender: fd.get('gender') || 'Khác',
+            gender: fd.get('gender') || '',
             dob: fd.get('dob') || '',
             experienceYears,
             education: fd.get('education') || 'Đại học',
@@ -1078,7 +1078,7 @@ const CandidatesPage = (() => {
       if (parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' && document.getElementById('upload-name')) document.getElementById('upload-name').value = parsed.name;
       if (parsed.email && document.getElementById('upload-email')) document.getElementById('upload-email').value = parsed.email;
       if (parsed.phone && document.getElementById('upload-phone')) document.getElementById('upload-phone').value = parsed.phone;
-      if (parsed.gender && parsed.gender !== 'Khác' && document.getElementById('upload-gender')) document.getElementById('upload-gender').value = parsed.gender;
+      if (parsed.gender && document.getElementById('upload-gender')) document.getElementById('upload-gender').value = parsed.gender;
       if (parsed.dob && document.getElementById('upload-dob')) document.getElementById('upload-dob').value = parsed.dob;
       if (parsed.education && parsed.education !== 'Đang cập nhật' && document.getElementById('upload-edu')) document.getElementById('upload-edu').value = parsed.education;
       if (parsed.experienceYears && document.getElementById('upload-exp')) document.getElementById('upload-exp').value = parsed.experienceYears;

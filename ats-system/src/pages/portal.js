@@ -454,9 +454,9 @@ const PortalPage = (() => {
                     <div class="form-group">
                       <label class="form-label">Giới tính</label>
                       <select name="gender" id="portal-gender" class="form-select">
+                        <option value="" selected>Vui lòng chọn giới tính</option>
                         <option value="Nam">Nam</option>
                         <option value="Nữ">Nữ</option>
-                        <option value="Khác" selected>Khác</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -617,11 +617,33 @@ const PortalPage = (() => {
           });
         }
 
+        // Chọn giới tính hợp lệ → bỏ viền cảnh báo đỏ
+        document.getElementById('portal-gender')?.addEventListener('change', (e) => {
+          const select = e.target;
+          if (select && select.value) select.classList.remove('is-invalid');
+        });
+
         // Form Submit
         document.getElementById('form-portal-apply')?.addEventListener('submit', (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
           const rawCV = String(fd.get('rawResumeText') || '').trim();
+
+          // ── Giới tính: chỉ Nam/Nữ, bắt buộc chọn (không mặc định "Khác") ──
+          const genderValue = String(fd.get('gender') || '').trim();
+          if (genderValue !== 'Nam' && genderValue !== 'Nữ') {
+            const genderSelect = document.getElementById('portal-gender');
+            if (genderSelect) {
+              genderSelect.classList.add('is-invalid');
+              if (typeof genderSelect.focus === 'function') genderSelect.focus();
+            }
+            UI.toast({
+              message: 'Vui lòng chọn giới tính: Nam hoặc Nữ.',
+              type: 'warning',
+              duration: 5000
+            });
+            return;
+          }
 
           // ── BẮT BUỘC nộp CV: thiếu thì tô đỏ khung kéo thả và dừng lại ──
           if (!rawCV) {
@@ -658,7 +680,7 @@ const PortalPage = (() => {
             fullName: fd.get('fullName'),
             email: fd.get('email'),
             phone: fd.get('phone'),
-            gender: fd.get('gender') || 'Khác',
+            gender: fd.get('gender') || '',
             dob: fd.get('dob') || '',
             experienceYears,
             education: fd.get('education') || 'Đại học',
@@ -715,7 +737,7 @@ const PortalPage = (() => {
       setValue('portal-name', parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' ? parsed.name : '');
       setValue('portal-email', parsed.email);
       setValue('portal-phone', parsed.phone);
-      setValue('portal-gender', parsed.gender && parsed.gender !== 'Khác' ? parsed.gender : '');
+      setValue('portal-gender', parsed.gender || '');
       setValue('portal-dob', parsed.dob);
       setValue('portal-edu', parsed.education && parsed.education !== 'Đang cập nhật' ? parsed.education : '');
       if (parsed.experienceYears > 0) setValue('portal-exp', parsed.experienceYears);

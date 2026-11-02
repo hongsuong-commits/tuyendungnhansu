@@ -217,10 +217,50 @@ check('Trang Ứng viên: khung tải CV cũng bấm/kéo–thả được',
   /drop-cv-zone" role="button"/.test(candidatesSource)
   && /dropZone\.addEventListener\('click'/.test(candidatesSource));
 
+// ── 4. Giới tính: chỉ Nam/Nữ, mặc định "Vui lòng chọn giới tính" ─────────
+console.log('\n[4] Giới tính chỉ có Nam/Nữ, không mặc định "Khác"');
+const portalSrc = fs.readFileSync(path.join(ROOT, 'src/pages/portal.js'), 'utf-8');
+const candidatesSrc = fs.readFileSync(path.join(ROOT, 'src/pages/candidates.js'), 'utf-8');
+const storeSrc = fs.readFileSync(path.join(ROOT, 'src/data/store.js'), 'utf-8');
+
+check('Portal: có dòng "Vui lòng chọn giới tính"', /Vui lòng chọn giới tính/.test(portalSrc));
+check('Portal: KHÔNG còn lựa chọn "Khác"',
+  !/<option value="Khác"[^>]*>Khác<\/option>/.test(portalSrc));
+check('Portal: chỉ có 2 lựa chọn Nam/Nữ',
+  /<option value="Nam">Nam<\/option>\s*<option value="Nữ">Nữ<\/option>/.test(portalSrc));
+check('Portal: chặn gửi khi chưa chọn giới tính',
+  /genderValue !== 'Nam' && genderValue !== 'Nữ'/.test(portalSrc));
+check('Portal: không gán mặc định "Khác" khi gửi',
+  /gender: fd\.get\('gender'\) \|\| ''/.test(portalSrc));
+
+check('Trang Ứng viên: có dòng "Vui lòng chọn giới tính"', /Vui lòng chọn giới tính/.test(candidatesSrc));
+check('Trang Ứng viên: KHÔNG còn lựa chọn "Khác"',
+  !/<option value="Khác"[^>]*>Khác<\/option>/.test(candidatesSrc));
+check('Trang Ứng viên: chỉ có 2 lựa chọn Nam/Nữ',
+  /<option value="Nam">Nam<\/option>\s*<option value="Nữ">Nữ<\/option>/.test(candidatesSrc));
+check('Trang Ứng viên: không hiển thị "Khác" khi thiếu giới tính',
+  /\['Nam', 'Nữ'\]\.includes\(cand\.gender\) \? cand\.gender : '—'/.test(candidatesSrc));
+
+check('Bộ đọc CV: giới tính mặc định là rỗng (không phải "Khác")',
+  !/let gender = 'Khác'/.test(storeSrc) && /let gender = '';/.test(storeSrc));
+check('Lưu hồ sơ: không gán "Khác" khi thiếu giới tính',
+  /gender: candidateData\.gender \|\| ''/.test(storeSrc));
+
+// Hành vi thật của bộ đọc CV với từng trường hợp.
+const g1 = ATSStore.parseCVText('Họ tên: Nguyễn Văn A\nGiới tính: Nam\nEmail: a@example.com');
+const g2 = ATSStore.parseCVText('Họ tên: Trần Thị B\nGiới tính: Nữ\nEmail: b@example.com');
+const g3 = ATSStore.parseCVText('Họ tên: Lê Văn C\nGiới tính: Khác\nEmail: c@example.com');
+const g4 = ATSStore.parseCVText('Họ tên: Phạm Thị D\nEmail: d@example.com');
+
+check('Đọc CV: "Giới tính: Nam" → Nam', g1.gender === 'Nam', g1.gender);
+check('Đọc CV: "Giới tính: Nữ" → Nữ', g2.gender === 'Nữ', g2.gender);
+check('Đọc CV: "Giới tính: Khác" → để trống (không lưu "Khác")', g3.gender === '', g3.gender);
+check('Đọc CV: không ghi giới tính → để trống', g4.gender === '', g4.gender);
+
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
 console.log(failed === 0
-  ? ' KẾT QUẢ: Ô TÌM KIẾM CÓ NÚT XOÁ & THÔNG BÁO KHÔNG BÁO LẠI TIN CŨ • FORM ỨNG TUYỂN BẮT BUỘC CV'
+  ? ' KẾT QUẢ: Ô TÌM KIẾM • THÔNG BÁO • BẮT BUỘC CV • GIỚI TÍNH CHUẨN'
   : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
 console.log('='.repeat(74) + '\n');
 process.exitCode = failed === 0 ? 0 : 1;

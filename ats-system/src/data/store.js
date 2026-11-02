@@ -1508,7 +1508,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           phone: '',
           education: '',
           experienceYears: 0,
-          gender: 'Khác',
+          gender: '',
           dob: '',
           skills: [],
           certifications: []
@@ -1568,8 +1568,9 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       }
 
       // Extract Gender — chỉ lấy khi CV ghi rõ, không tự suy đoán từ tên.
+      // Giới tính chỉ có 2 giá trị hợp lệ: Nam / Nữ; CV không ghi rõ → để trống.
       // Lưu ý: không dùng \b vì ký tự tiếng Việt có dấu không phải "word char".
-      let gender = 'Khác';
+      let gender = '';
       const genderMatch = cleanText.match(
         /(?:GIỚI\s*TÍNH|GENDER|SEX)\s*[:：\-]?\s*(NAM|NỮ|NU|MALE|FEMALE|KHÁC|OTHER)(?=\s|$|[-–—,;/.)])/iu
       );
@@ -1577,7 +1578,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         const value = genderMatch[1].toLowerCase();
         if (value === 'nam' || value === 'male') gender = 'Nam';
         else if (value === 'nữ' || value === 'nu' || value === 'female') gender = 'Nữ';
-        else gender = 'Khác';
+        else gender = '';
       }
 
       // Extract Date of Birth — chỉ lấy khi CV ghi rõ ngày/tháng/năm.
@@ -3047,7 +3048,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           fullName: candidateData.fullName,
           email: candidateData.email,
           phone: candidateData.phone || '',
-          gender: candidateData.gender || 'Khác',
+          gender: candidateData.gender || '',
           dob: candidateData.dob || '',
           address: candidateData.address || '',
           education: candidateData.education || '',
