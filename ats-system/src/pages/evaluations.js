@@ -465,8 +465,9 @@ const EvaluationsPage = (() => {
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label">Điểm tổng kết quy đổi (0 - 100)</label>
-                      <input type="number" name="overallScore" min="0" max="100" class="form-input font-bold text-primary" value="85">
+                      <label class="form-label">Điểm tổng kết (tự động = trung bình 4 tiêu chí × 20)</label>
+                      <input type="text" name="overallScore" id="eval-overall-score" class="form-input font-bold text-primary" value="80" readonly aria-readonly="true">
+                      <small class="text-xs text-muted">Chỉ chấm 4 tiêu chí theo thang 1 – 5; điểm tổng kết tính tự động, không nhập tay.</small>
                     </div>
                   </div>
 
@@ -494,9 +495,54 @@ const EvaluationsPage = (() => {
         UI.openModal('modal-scorecard-form');
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
+        // ── Điểm tiêu chí chỉ nhận 1–5; điểm tổng tự tính = trung bình × 20 ──
+        const SCORE_FIELDS = ['score_knowledge', 'score_skills', 'score_exp', 'score_comms'];
+        const readScore = (name) => {
+          const el = document.querySelector(`#form-scorecard-submit [name="${name}"]`);
+          const value = el ? parseInt(el.value, 10) : NaN;
+          return Number.isFinite(value) ? value : NaN;
+        };
+        const computeOverall = () => {
+          const values = SCORE_FIELDS.map(readScore);
+          if (values.some((v) => !Number.isFinite(v) || v < 1 || v > 5)) return null;
+          const average = values.reduce((sum, v) => sum + v, 0) / values.length;
+          return Math.round(average * 20);
+        };
+        const syncOverall = () => {
+          const output = document.getElementById('eval-overall-score');
+          const computed = computeOverall();
+          if (output) output.value = computed == null ? '—' : String(computed);
+        };
+        SCORE_FIELDS.forEach((name) => {
+          document.querySelector(`#form-scorecard-submit [name="${name}"]`)?.addEventListener('change', syncOverall);
+        });
+        syncOverall();
+
         document.getElementById('form-scorecard-submit')?.addEventListener('submit', (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
+
+          // Chặn giá trị ngoài thang 1–5 ở tầng giao diện.
+          const rawScores = {
+            professionalKnowledge: parseInt(fd.get('score_knowledge'), 10),
+            workSkills: parseInt(fd.get('score_skills'), 10),
+            experience: parseInt(fd.get('score_exp'), 10),
+            teamworkCommunication: parseInt(fd.get('score_comms'), 10)
+          };
+          const invalidEntry = Object.entries(rawScores)
+            .find(([, value]) => !Number.isFinite(value) || value < 1 || value > 5);
+          if (invalidEntry) {
+            UI.toast({
+              message: 'Điểm tiêu chí chỉ được từ 1 đến 5. Vui lòng chọn lại.',
+              type: 'warning',
+              duration: 5000
+            });
+            syncOverall();
+            return;
+          }
+
+          const averageScore = Object.values(rawScores).reduce((sum, v) => sum + v, 0) / 4;
+          const computedOverall = Math.round(averageScore * 20);
 
           const payload = {
             candidateId: activeApp.candidateId,
@@ -505,19 +551,14 @@ const EvaluationsPage = (() => {
             round: fd.get('round'),
             evaluatorName: fd.get('evaluatorName'),
             evaluatorRole: user.title || Helpers.getRoleLabel(user.role),
-            scores: {
-              professionalKnowledge: parseFloat(fd.get('score_knowledge')),
-              workSkills: parseFloat(fd.get('score_skills')),
-              experience: parseFloat(fd.get('score_exp')),
-              teamworkCommunication: parseFloat(fd.get('score_comms'))
-            },
+            scores: rawScores,
             criteriaComments: {
               professionalKnowledge: fd.get('comment_knowledge'),
               workSkills: fd.get('comment_skills'),
               experience: fd.get('comment_exp'),
               teamworkCommunication: fd.get('comment_comms')
             },
-            overallScore: parseInt(fd.get('overallScore'), 10) || 85,
+            overallScore: computedOverall,
             recommendation: fd.get('recommendation'),
             comment: fd.get('comment'),
             finalDecision: fd.get('recommendation') === 'continue' ? 'Đề xuất tuyển dụng' : (fd.get('recommendation') === 'consider' ? 'Cân nhắc' : 'Từ chối')

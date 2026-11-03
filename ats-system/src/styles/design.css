@@ -2771,3 +2771,20 @@ body.modal-open { overflow: hidden !important; }
   border-color: #dc2626 !important;
   box-shadow: 0 0 0 3px rgba(220, 38, 38, .12);
 }
+
+/* ── Status colors: shared by Helpers.statusBadge and UI.statusBadge ── */
+.status-success { background: #e7f3ec; color: #14603c; border-color: #c6e3d2; }
+.status-warning { background: #fdf1d6; color: #7a4c05; border-color: #f0d79a; }
+.status-danger  { background: #fde9e8; color: #931b22; border-color: #f2c9cb; }
+.status-info    { background: #e6f0fd; color: #14428c; border-color: #c3daf8; }
+.status-primary { background: #e9eefc; color: #1e3a8a; border-color: #c9d7f6; }
+.status-secondary { background: #eef1f5; color: #3a4d61; border-color: #dbe2ea; }
+
+/* Badge trang thai de doc hon */
+.badge { font-weight: 600; }
+.badge-success { background: #e7f3ec; color: #14603c; border-color: #c6e3d2; }
+.badge-warning { background: #fdf1d6; color: #7a4c05; border-color: #f0d79a; }
+.badge-danger  { background: #fde9e8; color: #931b22; border-color: #f2c9cb; }
+.badge-info    { background: #e6f0fd; color: #14428c; border-color: #c3daf8; }
+.badge-primary { background: #e9eefc; color: #1e3a8a; border-color: #c9d7f6; }
+.badge-secondary { background: #eef1f5; color: #3a4d61; border-color: #dbe2ea; }

@@ -225,7 +225,7 @@ const DashboardPage = {
           <td><span class="table-sub">${applied}</span></td>
           <td>${score !== null ? `<span class="badge badge-secondary">${score} điểm</span>` : '<span class="text-muted">—</span>'}</td>
           <td class="text-right">
-            <button class="btn btn-xs btn-outline" onclick="Router.navigate('/candidates', { search: '${name.replace(/'/g, "\\'")}' })">
+            <button class="btn btn-xs btn-outline" onclick="Router.navigate('/candidates', { open: '${app.id}', search: '${name.replace(/'/g, "\\'")}' })">
               Mở hồ sơ
             </button>
           </td>

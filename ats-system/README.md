@@ -28,6 +28,9 @@ Hệ thống đã chuẩn bị sẵn 4 vai trò nội bộ với dữ liệu th�
 - **Thông báo theo vai trò:** mỗi người chỉ thấy thông báo chung và thông báo đúng vai trò của mình (HR không thấy nhắc nhở riêng của giám đốc). Mở chuông xem thông báo sẽ **tự đánh dấu đã đọc** và lưu vào database, nên lần đăng nhập sau không báo lại tin cũ.
 - **Ô tìm kiếm trên mọi trang** (việc làm, hồ sơ đã ứng tuyển, ứng viên, yêu cầu, tin tuyển dụng, lịch phỏng vấn, tìm kiếm nhanh ở header) đều có nút **×** để xoá nhanh toàn bộ nội dung — thuận tiện khi nhập sai trên điện thoại. Nút này **tự gắn lại sau mỗi lần tìm kiếm/lọc** (trang render lại vẫn còn nút).
 - **Lịch phỏng vấn sắp theo lịch**, không theo lúc tạo: lịch sắp tới đứng trước (gần nhất lên đầu, cùng ngày thì giờ sớm trước), lịch đã qua xếp cuối danh sách.
+- **Màu trạng thái rõ ràng:** mỗi trạng thái có màu riêng dễ nhận biết — Đang tuyển (xanh dương), Đã tuyển/Đạt (xanh lá), Chờ phê duyệt/Đang xử lý (vàng cam), Từ chối/Hủy (đỏ), Đã đóng/Nháp (xám).
+- **Tổng quan → Mở hồ sơ:** mở thẳng hồ sơ ứng viên tương ứng, có nút **Quay lại Tổng quan**; nút “Xem hồ sơ ứng viên đầy đủ” ở trang Sàng lọc CV cũng mở đúng hồ sơ từ mọi trang.
+- **Đánh giá ứng viên theo thang 1–5:** 4 tiêu chí chỉ nhận giá trị 1–5 (chặn cả ở giao diện lẫn tầng dữ liệu); **điểm tổng kết tự tính** = trung bình 4 tiêu chí × 20, không cho nhập tay.
 - Đáp ứng tốt mọi kích thước màn hình: Desktop (1440px), Laptop/Tablet (1024px, 768px) và Mobile (640px, 375px) với Drawer menu và table cuộn mượt mà.
 
 ### 2.2. Phân quyền Người dùng theo 3 Vai trò Nội bộ (RBAC)

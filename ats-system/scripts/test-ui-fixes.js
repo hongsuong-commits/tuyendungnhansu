@@ -257,10 +257,55 @@ check('Đọc CV: "Giới tính: Nữ" → Nữ', g2.gender === 'Nữ', g2.gende
 check('Đọc CV: "Giới tính: Khác" → để trống (không lưu "Khác")', g3.gender === '', g3.gender);
 check('Đọc CV: không ghi giới tính → để trống', g4.gender === '', g4.gender);
 
+// ── 5. Màu trạng thái • nút quay lại • đánh giá 1–5 ─────────────────────
+console.log('\n[5] Màu trạng thái, nút quay lại, thang điểm 1–5');
+const designCss = fs.readFileSync(path.join(ROOT, 'src/styles/design.css'), 'utf-8');
+const dashboardSrc = fs.readFileSync(path.join(ROOT, 'src/pages/dashboard.js'), 'utf-8');
+const evalSrc = fs.readFileSync(path.join(ROOT, 'src/pages/evaluations.js'), 'utf-8');
+const screeningSrc = fs.readFileSync(path.join(ROOT, 'src/pages/screening.js'), 'utf-8');
+const candidatesSource2 = fs.readFileSync(path.join(ROOT, 'src/pages/candidates.js'), 'utf-8');
+const helpersSrc = fs.readFileSync(path.join(ROOT, 'src/utils/helpers.js'), 'utf-8');
+
+check('CSS có đủ 6 nhóm màu trạng thái',
+  ['.status-success', '.status-warning', '.status-danger', '.status-info', '.status-primary', '.status-secondary']
+    .every((cls) => designCss.includes(cls)));
+check('Trạng thái "Đang tuyển" dùng màu info', /recruiting:\s*'status-info'/.test(helpersSrc));
+check('Trạng thái "Đã tuyển" dùng màu success', /hired:\s*'status-success'/.test(helpersSrc));
+check('Trạng thái "Chờ phê duyệt" dùng màu warning', /pending:\s*'status-warning'/.test(helpersSrc));
+const badgeHtml = Helpers.statusBadge('recruiting');
+check('statusBadge sinh class màu có định nghĩa CSS',
+  /status-info/.test(badgeHtml) && designCss.includes('.status-info'));
+
+check('Tổng quan: nút Mở hồ sơ mở đúng hồ sơ (tham số open)',
+  /open: '\$\{app\.id\}'/.test(dashboardSrc));
+check('Hồ sơ ứng viên có nút "Quay lại Tổng quan"', /Quay lại Tổng quan/.test(candidatesSource2));
+check('Hồ sơ ứng viên tự tạo container khi mở từ trang khác',
+  /candidate-modals-container/.test(candidatesSource2) && /document\.createElement\('div'\)/.test(candidatesSource2));
+check('Sàng lọc: nút "Xem hồ sơ ứng viên đầy đủ" gọi đúng hàm',
+  /showCandidateDetailModal\('\$\{app\.id\}'\)/.test(screeningSrc));
+
+check('Đánh giá: chặn điểm ngoài thang 1–5', /value < 1 \|\| value > 5/.test(evalSrc));
+check('Đánh giá: điểm tổng không cho nhập tay (readonly)',
+  /id="eval-overall-score"[^>]*readonly/.test(evalSrc));
+
+// Tầng dữ liệu cũng phải kẹp điểm ngoài 1–5.
+const savedEval = ATSStore.createEvaluation({
+  candidateId: 'cand_test_scale',
+  requisitionId: 'req_test_scale',
+  evaluatorName: 'Người kiểm thử',
+  round: 'Vòng 1 - HR Sơ loại',
+  scores: { professionalKnowledge: 9, workSkills: 0, experience: 3, teamworkCommunication: 4 },
+  comment: 'Kiểm thử thang điểm'
+});
+check('Lưu phiếu: điểm 9 bị kẹp về 5', savedEval.scores.professionalKnowledge === 5, savedEval.scores.professionalKnowledge);
+check('Lưu phiếu: điểm 0 bị kẹp về 1', savedEval.scores.workSkills === 1, savedEval.scores.workSkills);
+check('Lưu phiếu: điểm tổng tính từ 1–5',
+  savedEval.overallScore === Math.round(((5 + 1 + 3 + 4) / 4) * 20), savedEval.overallScore);
+
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
 console.log(failed === 0
-  ? ' KẾT QUẢ: Ô TÌM KIẾM • THÔNG BÁO • BẮT BUỘC CV • GIỚI TÍNH CHUẨN'
+  ? ' KẾT QUẢ: Ô TÌM KIẾM • THÔNG BÁO • BẮT BUỘC CV • GIỚI TÍNH • MÀU TRẠNG THÁI • QUAY LẠI • ĐIỂM 1–5'
   : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
 console.log('='.repeat(74) + '\n');
 process.exitCode = failed === 0 ? 0 : 1;

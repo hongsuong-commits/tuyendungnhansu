@@ -3355,10 +3355,31 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     },
 
     createEvaluation(data) {
+      // Chấm điểm tiêu chí chỉ hợp lệ trong thang 1–5; ngoài phạm vi thì kẹp về biên.
+      const clampCriterion = (value) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return 1;
+        return Math.min(5, Math.max(1, Math.round(numeric)));
+      };
+      const rawScores = (data.scores && typeof data.scores === 'object') ? data.scores : {};
+      const scores = {
+        professionalKnowledge: clampCriterion(rawScores.professionalKnowledge),
+        workSkills: clampCriterion(rawScores.workSkills),
+        experience: clampCriterion(rawScores.experience),
+        teamworkCommunication: clampCriterion(rawScores.teamworkCommunication)
+      };
+      const averageScore = Object.values(scores).reduce((sum, value) => sum + value, 0) / 4;
+      const providedOverall = Number(data.overallScore);
+      const overallScore = Number.isFinite(providedOverall)
+        ? Math.min(100, Math.max(0, Math.round(providedOverall)))
+        : Math.round(averageScore * 20);
+
       const newEval = {
         id: 'eval_' + Date.now(),
         createdAt: new Date().toISOString(),
-        ...data
+        ...data,
+        scores,
+        overallScore
       };
       _data.evaluations.unshift(newEval);
 

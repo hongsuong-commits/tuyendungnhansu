@@ -10,6 +10,7 @@ const CandidatesPage = (() => {
   let _activeScreening = 'all';
   let _searchQuery = '';
   let _sortBy = 'date_desc';
+  let _openAppId = null;
 
   return {
     render(params = {}) {
@@ -18,6 +19,11 @@ const CandidatesPage = (() => {
 
       if (typeof params.search === 'string') {
         _searchQuery = params.search;
+      }
+
+      // Mở thẳng hồ sơ ứng viên khi điều hướng từ Tổng quan: #/candidates?open=<appId>
+      if (params.open) {
+        _openAppId = String(params.open);
       }
 
       const requisitions = ATSStore.getRequisitions();
@@ -334,6 +340,13 @@ const CandidatesPage = (() => {
             { key: 'appliedDate', label: 'Ngày ứng tuyển' }
           ], `danh-sach-ung-vien-${Date.now()}.csv`);
         });
+      }
+
+      // Điều hướng từ Tổng quan: mở ngay hồ sơ ứng viên tương ứng
+      if (_openAppId) {
+        const appId = _openAppId;
+        _openAppId = null;
+        this.showCandidateDetailModal(appId);
       }
     },
 
@@ -686,6 +699,9 @@ const CandidatesPage = (() => {
               </div>
 
               <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="UI.closeModal('modal-cand-detail'); Router.navigate('/dashboard')">
+                  <i data-lucide="arrow-left" class="icon-sm"></i> Quay lại Tổng quan
+                </button>
                 <button type="button" class="btn btn-secondary" onclick="UI.closeModal('modal-cand-detail')">Đóng</button>
               </div>
             </div>
@@ -693,12 +709,17 @@ const CandidatesPage = (() => {
         </div>
       `;
 
-      const container = document.getElementById('candidate-modals-container');
-      if (container) {
-        container.innerHTML = modalHtml;
-        UI.openModal('modal-cand-detail');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+      // Container có sẵn ở trang Ứng viên; khi mở từ trang khác (Sàng lọc, Tổng quan…)
+      // thì tự tạo để nút "Xem hồ sơ ứng viên đầy đủ" luôn hoạt động.
+      let container = document.getElementById('candidate-modals-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'candidate-modals-container';
+        document.body.appendChild(container);
       }
+      container.innerHTML = modalHtml;
+      UI.openModal('modal-cand-detail');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     },
 
     switchDetailTab(tabBtn, tabId) {
