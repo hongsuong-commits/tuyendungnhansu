@@ -360,10 +360,27 @@ if (postingReq) {
   check('Tìm được yêu cầu tuyển dụng để tạo tin kiểm thử', false);
 }
 
+// ── 8. Lỗi runtime & hiển thị ngày đúng múi giờ ──────────────────────────
+console.log('\n[8] Sửa lỗi runtime và hiển thị ngày đúng');
+const candidatesSrc2 = fs.readFileSync(path.join(ROOT, 'src/pages/candidates.js'), 'utf-8');
+const interviewsSrc2 = fs.readFileSync(path.join(ROOT, 'src/pages/interviews.js'), 'utf-8');
+const storeSrc2 = fs.readFileSync(path.join(ROOT, 'src/data/store.js'), 'utf-8');
+
+check('candidates.js: nút Lên lịch nằm trong điều kiện chưa tuyển',
+  /app\.status !== 'hired' \?[\s\S]{0,400}Lên lịch phỏng vấn/.test(candidatesSrc2));
+check('interviews.js: dùng ATSStore.getApplicationById', /ATSStore\.getApplicationById/.test(interviewsSrc2));
+check('interviews.js: không còn tham chiếu _data', !/_data\./.test(interviewsSrc2));
+check('store.js: có isHiredInterview (ẩn lịch ứng viên đã tuyển)',
+  /isHiredInterview/.test(storeSrc2) && /upcomingInterviewsList[\s\S]{0,200}isHiredInterview/.test(storeSrc2));
+check('formatDate("2026-11-04") → 04/11/2026', Helpers.formatDate('2026-11-04') === '04/11/2026');
+check('formatDate(Date object) → 04/11/2026', Helpers.formatDate(new Date(2026, 10, 4)) === '04/11/2026');
+check('formatDate ISO timestamp giữ đúng ngày đã lưu',
+  Helpers.formatDate('2026-11-04T17:00:00.000Z') === '04/11/2026');
+
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
 console.log(failed === 0
-  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM'
+  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM • LỊCH/NGÀY'
   : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
 console.log('='.repeat(74) + '\n');
 process.exitCode = failed === 0 ? 0 : 1;

@@ -139,12 +139,23 @@ const Helpers = (() => {
      */
     formatDate(dateStr) {
       if (!dateStr) return '—';
-      const parts = String(dateStr).split(/[T ]/)[0].split('-');
-      const y = Number(parts[0]);
-      const m = Number(parts[1]);
-      const d = Number(parts[2]);
-      if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return '—';
-      return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+      const pad = (n) => String(n).padStart(2, '0');
+
+      // Nếu là Date object: hiển thị theo ngày của máy người dùng.
+      if (dateStr instanceof Date) {
+        if (isNaN(dateStr.getTime())) return '—';
+        return `${pad(dateStr.getDate())}/${pad(dateStr.getMonth() + 1)}/${dateStr.getFullYear()}`;
+      }
+
+      const text = String(dateStr).trim();
+
+      // Chuỗi "YYYY-MM-DD" hoặc ISO timestamp: giữ đúng ngày đã lưu (không đổi múi giờ).
+      const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (iso) return `${pad(iso[3])}/${pad(iso[2])}/${iso[1]}`;
+
+      const d = new Date(text);
+      if (isNaN(d.getTime())) return '—';
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
     },
 
     /**
