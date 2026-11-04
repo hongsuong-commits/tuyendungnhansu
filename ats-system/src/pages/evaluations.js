@@ -179,7 +179,7 @@ const EvaluationsPage = (() => {
                   <div><dt>Điểm sàng lọc CV</dt><dd>${app.screeningScore || 0}%</dd></div>
                   <div><dt>Số phiếu đã nộp</dt><dd>${row.evaluations.length}</dd></div>
                 </dl>
-                ${canDecide ? `
+                ${canDecide && app.status !== 'hired' ? `
                   <div class="eval-decision">
                     <span class="text-xs font-semibold">Quyết định tuyển dụng</span>
                     <div class="flex flex-wrap items-center gap-2">
