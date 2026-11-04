@@ -465,7 +465,7 @@ const PortalPage = (() => {
                     </div>
                     <div class="form-group">
                       <label class="form-label required">Số năm kinh nghiệm (Năm)</label>
-                      <input type="number" step="0.5" min="0" name="experienceYears" id="portal-exp" class="form-input" value="3" placeholder="Ví dụ: 2.5">
+                      <input type="number" step="0.5" min="0" max="60" name="experienceYears" id="portal-exp" class="form-input" value="3" placeholder="Ví dụ: 2.5" oninput="this.value = Math.max(0, Math.min(60, parseFloat(this.value) || 0)); if (this.value === '') this.value = '';">
                     </div>
                   </div>
 
@@ -671,8 +671,11 @@ const PortalPage = (() => {
           if (!Helpers.isValidExperienceYears(experienceYears)) {
             UI.toast({
               message: 'Số năm kinh nghiệm phải là số không âm (từ 0 đến 60). Vui lòng nhập lại.',
-              type: 'warning'
+              type: 'warning',
+              duration: 6000
             });
+            const expInput = document.getElementById('portal-exp');
+            if (expInput) expInput.focus();
             return;
           }
 
