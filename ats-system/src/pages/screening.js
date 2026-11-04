@@ -128,7 +128,7 @@ const ScreeningPage = (() => {
                 </div>
                 <div class="form-group">
                   <label class="form-label text-xs font-semibold">Số năm kinh nghiệm tối thiểu</label>
-                  ${user.role === 'hr' ? `<input type="number" id="criteria-exp-input" class="form-input text-xs" min="0" max="20" step="0.5" value="${activeReq ? (activeReq.minExperience || 2) : 2}">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs text-gray-700 font-mono">${activeReq ? (activeReq.minExperience || 2) : 2}</div>`}
+                  ${user.role === 'hr' ? `<input type="number" id="criteria-exp-input" class="form-input text-xs" min="0" max="20" step="0.5" value="${activeReq ? (activeReq.minExperience || 2) : 2}" oninput="this.value = Math.max(0, Math.min(20, parseFloat(this.value) || 0)); if (this.value === '') this.value = '';">` : `<div class="bg-gray-50 border rounded px-2 py-1.5 text-xs text-gray-700 font-mono">${activeReq ? (activeReq.minExperience || 2) : 2}</div>`}
                   <small class="text-2xs text-muted">Số năm tối thiểu yêu cầu cho ứng viên</small>
                 </div>
                 <div class="form-group">
@@ -296,6 +296,12 @@ const ScreeningPage = (() => {
           }
           const skillsRaw = document.getElementById('criteria-skills-input')?.value || '';
           const minExp = parseFloat(document.getElementById('criteria-exp-input')?.value) || 0;
+          if (!Helpers.isValidExperienceYears(minExp) || minExp > 20) {
+            UI.toast({ message: 'Số năm kinh nghiệm tối thiểu phải từ 0 đến 20 năm. Vui lòng nhập lại.', type: 'warning', duration: 6000 });
+            const expInput = document.getElementById('criteria-exp-input');
+            if (expInput) expInput.focus();
+            return;
+          }
           const education = document.getElementById('criteria-edu-input')?.value || 'Đại học';
           const passScore = parseInt(document.getElementById('criteria-pass-score')?.value, 10) || 80;
           const reviewScore = parseInt(document.getElementById('criteria-review-score')?.value, 10) || 60;
