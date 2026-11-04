@@ -2450,7 +2450,6 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       });
 
       // Filter upcoming interviews
-      const nowStr = new Date().toISOString().split('T')[0];
       const upcomingInterviewsList = ivs
         .filter(i => i.status === 'confirmed' && !isHiredInterview(i))
         .sort((a, b) => new Date(a.date) - new Date(b.date));

@@ -231,8 +231,9 @@ const InterviewsPage = (() => {
       }
 
       const sunday = weekDays[6];
-      const todayStr = new Date().toISOString().split('T')[0];
-      const weekLabel = `Tuần từ ${Helpers.formatDate(monday.toISOString())} đến ${Helpers.formatDate(sunday.toISOString())}`;
+      // Dùng ngày theo múi giờ máy (tránh UTC làm nhảy sang ngày hôm sau sau 17h VN).
+      const todayStr = Helpers.toLocalDateStr(new Date());
+      const weekLabel = `Tuần từ ${Helpers.formatDate(monday)} đến ${Helpers.formatDate(sunday)}`;
 
       const hourLabels = Array.from({ length: HOURS }, (_, i) => {
         const hour = 7 + i;
@@ -240,7 +241,7 @@ const InterviewsPage = (() => {
       }).join('');
 
       const dayHeads = weekDays.map((dateObj, idx) => {
-        const dateStr = dateObj.toISOString().split('T')[0];
+        const dateStr = Helpers.toLocalDateStr(dateObj);
         const isToday = dateStr === todayStr;
         const dayFormatted = `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
         return `
@@ -253,7 +254,7 @@ const InterviewsPage = (() => {
       }).join('');
 
       const dayCols = weekDays.map((dateObj, idx) => {
-        const dateStr = dateObj.toISOString().split('T')[0];
+        const dateStr = Helpers.toLocalDateStr(dateObj);
         const isToday = dateStr === todayStr;
         const dayInterviews = interviews
           .filter(iv => iv.date === dateStr && iv.status !== 'cancelled')
@@ -465,7 +466,7 @@ const InterviewsPage = (() => {
                     </div>
                     <div class="form-group">
                       <label class="form-label required">Ngày phỏng vấn</label>
-                      <input type="date" name="date" id="iv-date-input" class="form-input" required value="2026-11-05">
+                      <input type="date" name="date" id="iv-date-input" class="form-input" required value="${Helpers.toLocalDateStr(new Date())}">
                     </div>
                   </div>
 

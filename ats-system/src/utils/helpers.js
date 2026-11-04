@@ -159,6 +159,17 @@ const Helpers = (() => {
     },
 
     /**
+     * Ngày dạng "YYYY-MM-DD" theo múi giờ máy người dùng (KHÔNG dùng UTC).
+     * Dùng cho input type="date", so sánh "hôm nay" và cột lịch tuần.
+     */
+    toLocalDateStr(date = new Date()) {
+      const d = date instanceof Date ? date : new Date(date);
+      if (isNaN(d.getTime())) return '';
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    },
+
+    /**
      * Format date + time: "27/10/2026 14:30".
      * Parse theo múi giờ local để tránh bị dịch ngày do UTC.
      */

@@ -376,6 +376,14 @@ check('formatDate("2026-11-04") → 04/11/2026', Helpers.formatDate('2026-11-04'
 check('formatDate(Date object) → 04/11/2026', Helpers.formatDate(new Date(2026, 10, 4)) === '04/11/2026');
 check('formatDate ISO timestamp giữ đúng ngày đã lưu',
   Helpers.formatDate('2026-11-04T17:00:00.000Z') === '04/11/2026');
+check('toLocalDateStr trả YYYY-MM-DD theo giờ máy',
+  Helpers.toLocalDateStr(new Date(2026, 10, 4)) === '2026-11-04');
+check('interviews.js: không còn toISOString cho ngày lịch',
+  !/toISOString\(\)\.split\('T'\)\[0\]/.test(interviewsSrc2));
+check('interviews.js: ngày mặc định của form là hôm nay',
+  /id="iv-date-input"[\s\S]{0,200}toLocalDateStr/.test(interviewsSrc2));
+check('Lịch tuần: nhãn tuần dùng formatDate(Date) không qua UTC',
+  /formatDate\(monday\)/.test(interviewsSrc2) && /formatDate\(sunday\)/.test(interviewsSrc2));
 
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
