@@ -177,7 +177,7 @@ const CandidatesPage = (() => {
           <tr>
             <td>
               <a href="javascript:void(0)" class="table-name btn-view-candidate" data-id="${app.id}">${app.candidateName || cand.fullName}</a>
-              <span class="table-sub">${Helpers.truncate(app.positionTitle || '—', 34)}</span>
+              <span class="table-sub">${Helpers.truncate(app.positionTitle || '—', 28)}</span>
             </td>
             <td class="col-optional"><span class="badge badge-secondary text-2xs">${sourceLabels[app.source] || app.source || 'Website'}</span></td>
             <td><span class="table-sub">${Helpers.formatDate(app.appliedDate)}</span></td>
@@ -192,10 +192,10 @@ const CandidatesPage = (() => {
                   <i data-lucide="eye" class="icon-xs"></i>
                 </button>
                 ${canReview && app.status === 'pending_review' ? `
-                  <button class="btn btn-xs btn-icon btn-outline btn-quick-approve" data-id="${app.id}" title="Duyệt vào phỏng vấn" aria-label="Duyệt hồ sơ">
+                  <button class="btn btn-xs btn-outline btn-quick-approve" data-id="${app.id}" title="Duyệt vào phỏng vấn" aria-label="Duyệt hồ sơ">
                     <i data-lucide="check" class="icon-xs"></i>
                   </button>
-                  <button class="btn btn-xs btn-icon btn-outline btn-quick-reject" data-id="${app.id}" title="Từ chối hồ sơ" aria-label="Từ chối hồ sơ">
+                  <button class="btn btn-xs btn-outline btn-quick-reject" data-id="${app.id}" title="Từ chối hồ sơ" aria-label="Từ chối hồ sơ">
                     <i data-lucide="x" class="icon-xs"></i>
                   </button>
                 ` : ''}
@@ -206,8 +206,8 @@ const CandidatesPage = (() => {
       }).join('');
 
       return `
-        <div class="table-responsive">
-          <table class="data-table data-table-compact table-sticky-actions">
+        <div class="table-responsive table-responsive-sm">
+          <table class="data-table data-table-compact table-sticky-actions table-compact">
             <thead>
               <tr>
                 <th>Ứng viên · vị trí</th>

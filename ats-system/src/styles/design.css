@@ -2794,3 +2794,15 @@ body.modal-open { overflow: hidden !important; }
 #form-portal-apply .form-label { margin-bottom: 4px; }
 #form-portal-apply .form-section-title { margin: 8px 0 6px; font-size: 12.5px; }
 #form-portal-apply .cv-dropzone { padding: 10px; }
+
+/* Thu gọn bảng danh sách ứng viên: không bị kéo ngang, nút nhỏ gọn hơn */
+.table-compact .table-actions .btn { padding: 2px 6px; font-size: 11px; }
+.table-compact .table-actions .btn i { font-size: 10px; }
+.table-compact th, .table-compact td { padding: 6px 8px; font-size: 12.5px; }
+.table-compact .table-actions { gap: 4px; }
+.table-responsive-sm { max-width: 100%; overflow-x: auto; }
+.table-compact .badge { font-size: 11px; padding: 2px 6px; }
+.table-compact .table-sub { font-size: 11px; }
+.table-compact .table-name { font-size: 12.5px; max-width: 150px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.table-compact .col-optional { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.table-compact th.col-optional, .table-compact td.col-optional { width: 120px; }
