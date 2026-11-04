@@ -2413,11 +2413,22 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       const apps = _data.applications || [];
       const ivs = _data.interviews || [];
 
+      // Lịch của ứng viên đã tuyển (hired) không còn hiển thị trên bảng điều khiển.
+      const appById = new Map(apps.map(a => [a.id, a]));
+      const appByCandReq = new Map(apps.map(a => [`${a.candidateId}|${a.requisitionId}`, a]));
+      const getInterviewApp = (iv) => iv.applicationId
+        ? appById.get(iv.applicationId)
+        : appByCandReq.get(`${iv.candidateId}|${iv.requisitionId}`);
+      const isHiredInterview = (iv) => {
+        const app = getInterviewApp(iv);
+        return !!(app && app.status === 'hired');
+      };
+
       const activeRequisitions = reqs.filter(r => r.status === 'recruiting' || r.status === 'approved').length;
       const totalCandidates = apps.length;
       const pendingReview = apps.filter(a => a.status === 'pending_review').length;
       const passedScreening = apps.filter(a => a.status === 'passed_screening').length;
-      const upcomingInterviews = ivs.filter(i => i.status === 'confirmed').length;
+      const upcomingInterviews = ivs.filter(i => i.status === 'confirmed' && !isHiredInterview(i)).length;
       const hired = apps.filter(a => a.status === 'hired').length;
 
       // Group by stage
@@ -2441,7 +2452,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       // Filter upcoming interviews
       const nowStr = new Date().toISOString().split('T')[0];
       const upcomingInterviewsList = ivs
-        .filter(i => i.status === 'confirmed')
+        .filter(i => i.status === 'confirmed' && !isHiredInterview(i))
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
       // Pending applications list

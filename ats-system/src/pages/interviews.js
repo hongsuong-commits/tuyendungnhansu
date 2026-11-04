@@ -37,8 +37,10 @@ const InterviewsPage = (() => {
       }).filter(iv => {
         // Ứng viên đã tuyển ('hired') thì không hiển thị trong danh sách lịch phỏng vấn,
         // nhưng vẫn giữ nguyên trong Danh sách ứng viên.
-        const app = (_data.applications || []).find(a => a.id === iv.applicationId);
-        return app && app.status !== 'hired';
+        const app = iv.applicationId
+          ? ATSStore.getApplicationById(iv.applicationId)
+          : ATSStore.getApplications().find(a => a.candidateId === iv.candidateId && a.requisitionId === iv.requisitionId);
+        return !app || app.status !== 'hired';
       });
 
       const users = ATSStore.getUsers().filter(u => u.role !== 'candidate');

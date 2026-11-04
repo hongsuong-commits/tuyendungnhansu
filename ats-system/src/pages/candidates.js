@@ -413,18 +413,19 @@ const CandidatesPage = (() => {
                         <i data-lucide="check-circle" class="icon-xs"></i> Đạt – Chờ phỏng vấn
                       </button>
 
-                      <button class="btn btn-sm btn-outline" onclick="UI.closeModal('modal-cand-detail'); Router.navigate('/interviews', { candidateId: '${app.candidateId}', reqId: '${app.requisitionId}' })">
-                        <i data-lucide="calendar" class="icon-xs"></i> Lên lịch phỏng vấn
-                      </button>
-
                       ${app.status !== 'hired' ? `
-                      <button class="btn btn-sm btn-outline" onclick="CandidatesPage.handleStatusChange('${app.id}', 'need_info', 'Yêu cầu ứng viên cung cấp thêm thông tin chứng chỉ và bằng cấp')">
-                        <i data-lucide="help-circle" class="icon-xs"></i> Yêu cầu bổ sung
-                      </button>
+                        <button class="btn btn-sm btn-outline" onclick="UI.closeModal('modal-cand-detail'); Router.navigate('/interviews', { candidateId: '${app.candidateId}', reqId: '${app.requisitionId}' })">
+                          <i data-lucide="calendar" class="icon-xs"></i> Lên lịch phỏng vấn
+                        </button>
 
-                      <button class="btn btn-sm btn-outline btn-quick-reject" onclick="CandidatesPage.showRejectModal('${app.id}')">
-                        <i data-lucide="x-circle" class="icon-xs"></i> Từ chối
-                      </button>
+                        <button class="btn btn-sm btn-outline" onclick="CandidatesPage.handleStatusChange('${app.id}', 'need_info', 'Yêu cầu ứng viên cung cấp thêm thông tin chứng chỉ và bằng cấp')">
+                          <i data-lucide="help-circle" class="icon-xs"></i> Yêu cầu bổ sung
+                        </button>
+
+                        <button class="btn btn-sm btn-outline btn-quick-reject" onclick="CandidatesPage.showRejectModal('${app.id}')">
+                          <i data-lucide="x-circle" class="icon-xs"></i> Từ chối
+                        </button>
+                      ` : ''}
                     </div>
                   ` : ''}
                 </div>
