@@ -302,10 +302,68 @@ check('Lưu phiếu: điểm 0 bị kẹp về 1', savedEval.scores.workSkills =
 check('Lưu phiếu: điểm tổng tính từ 1–5',
   savedEval.overallScore === Math.round(((5 + 1 + 3 + 4) / 4) * 20), savedEval.overallScore);
 
+// ── 6. Tất cả ô "số năm" đều chặn số âm ──────────────────────────────────
+console.log('\n[6] Chặn số âm ở TẤT CẢ ô nhập số năm');
+const requisitionsSrc = fs.readFileSync(path.join(ROOT, 'src/pages/requisitions.js'), 'utf-8');
+
+check('Ứng tuyển công khai: chặn số âm (0–60)',
+  /id="portal-exp"[\s\S]{0,200}Math\.max\(0, Math\.min\(60/.test(portalSrc));
+check('Tải CV thủ công: chặn số âm (0–60)',
+  /id="upload-exp"[\s\S]{0,200}Math\.max\(0, Math\.min\(60/.test(candidatesSrc));
+check('Sàng lọc CV: chặn số âm kinh nghiệm tối thiểu (0–20)',
+  /id="criteria-exp-input"[\s\S]{0,200}Math\.max\(0, Math\.min\(20/.test(screeningSrc));
+check('Yêu cầu tuyển dụng (Trưởng phòng): chặn số âm (0–60)',
+  /id="req-min-exp"[\s\S]{0,200}Math\.max\(0, Math\.min\(60/.test(requisitionsSrc));
+check('Yêu cầu tuyển dụng: chặn lưu khi ngoài 0–60',
+  /isValidExperienceYears\(minExperienceValue\)/.test(requisitionsSrc));
+check('Sàng lọc CV: chặn lưu khi ngoài 0–20',
+  /isValidExperienceYears\(minExp\) \|\| minExp > 20/.test(screeningSrc));
+
+// Tầng dữ liệu cũng phải kẹp số âm.
+const negativeReq = ATSStore.createRequisition({ title: 'Kiểm thử số âm', minExperience: -5 });
+check('Lưu yêu cầu: minExperience âm bị kẹp về 0',
+  negativeReq.minExperience === 0, negativeReq.minExperience);
+const tooBigReq = ATSStore.createRequisition({ title: 'Kiểm thử quá lớn', minExperience: 99 });
+check('Lưu yêu cầu: minExperience 99 bị kẹp về 60',
+  tooBigReq.minExperience === 60, tooBigReq.minExperience);
+ATSStore.updateRequisition(negativeReq.id, { minExperience: -2 });
+check('Cập nhật yêu cầu: minExperience âm bị kẹp về 0',
+  ATSStore.getRequisitionById(negativeReq.id).minExperience === 0,
+  ATSStore.getRequisitionById(negativeReq.id).minExperience);
+
+// ── 7. JD hiển thị số năm kinh nghiệm yêu cầu ────────────────────────────
+console.log('\n[7] JD hiển thị số năm kinh nghiệm yêu cầu');
+const portalSrc2 = fs.readFileSync(path.join(ROOT, 'src/pages/portal.js'), 'utf-8');
+const postingsSrc = fs.readFileSync(path.join(ROOT, 'src/pages/postings.js'), 'utf-8');
+
+check('Thẻ việc làm ở cổng ứng viên có "Kinh nghiệm"', /Kinh nghiệm: \$\{minExpText\}/.test(portalSrc2));
+check('JD công khai có dòng "Kinh nghiệm tối thiểu"', /Kinh nghiệm tối thiểu:/.test(portalSrc2));
+check('Trang Tin tuyển dụng: xem trước có "Kinh nghiệm tối thiểu"',
+  /Kinh nghiệm tối thiểu:<\/span> <strong>\$\{Helpers\.formatMinExperience/.test(postingsSrc));
+check('Định dạng 0 năm → "Không yêu cầu"', Helpers.formatMinExperience(0) === 'Không yêu cầu');
+check('Định dạng 2 năm → "2 năm"', Helpers.formatMinExperience(2) === '2 năm');
+check('Định dạng 2.5 năm → "2.5 năm"', Helpers.formatMinExperience(2.5) === '2.5 năm');
+
+// Hành vi thật: tin tuyển dụng lưu kinh nghiệm từ yêu cầu và đọc lại đúng.
+const postingReq = ATSStore.getRequisitions().find(r => r.status === 'approved' || r.status === 'recruiting');
+if (postingReq) {
+  const exp = Number(postingReq.minExperience || 0);
+  const post = ATSStore.createPostingFromRequisition(postingReq.id, { title: 'Kiểm thử JD kinh nghiệm' });
+  check('Tin tuyển dụng lưu minExperience từ yêu cầu gốc',
+    Number(post.minExperience) === exp, post.minExperience);
+  check('getPostingMinExperience đọc đúng từ tin', ATSStore.getPostingMinExperience(post) === exp,
+    ATSStore.getPostingMinExperience(post));
+  delete post.minExperience;
+  check('Tin cũ chưa có minExperience → lấy từ yêu cầu gốc',
+    ATSStore.getPostingMinExperience(post) === exp, ATSStore.getPostingMinExperience(post));
+} else {
+  check('Tìm được yêu cầu tuyển dụng để tạo tin kiểm thử', false);
+}
+
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
 console.log(failed === 0
-  ? ' KẾT QUẢ: Ô TÌM KIẾM • THÔNG BÁO • BẮT BUỘC CV • GIỚI TÍNH • MÀU TRẠNG THÁI • QUAY LẠI • ĐIỂM 1–5'
+  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM'
   : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
 console.log('='.repeat(74) + '\n');
 process.exitCode = failed === 0 ? 0 : 1;

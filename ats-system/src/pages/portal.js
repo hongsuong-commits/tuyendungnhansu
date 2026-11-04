@@ -155,7 +155,9 @@ const PortalPage = (() => {
         `;
       }
 
-      const jobCards = jobs.map(j => `
+      const jobCards = jobs.map(j => {
+        const minExpText = Helpers.formatMinExperience(ATSStore.getPostingMinExperience(j));
+        return `
         <article class="portal-job-card">
           <span class="portal-job-code">${j.code}</span>
           <h3 class="portal-job-title">${cleanJobTitle(j.title)}</h3>
@@ -165,6 +167,7 @@ const PortalPage = (() => {
           <div class="portal-job-meta">
             <span class="portal-tag"><i data-lucide="map-pin"></i>${j.location}</span>
             <span class="portal-tag"><i data-lucide="clock"></i>${j.workType}</span>
+            <span class="portal-tag"><i data-lucide="briefcase"></i>Kinh nghiệm: ${minExpText}</span>
             <span class="portal-tag"><i data-lucide="calendar"></i>Hạn nộp ${Helpers.formatDate(j.deadline)}</span>
           </div>
 
@@ -178,8 +181,7 @@ const PortalPage = (() => {
               Ứng tuyển
             </button>
           </div>
-        </article>
-      `).join('');
+        </article>`; }).join('');
 
       return `
         <div>
@@ -350,6 +352,10 @@ const PortalPage = (() => {
       const post = ATSStore.getPostingById(postingId);
       if (!post) return;
 
+      // Số năm kinh nghiệm yêu cầu hiển thị rõ trong JD.
+      const minExpText = Helpers.formatMinExperience(ATSStore.getPostingMinExperience(post));
+      const postRequisition = ATSStore.getRequisitionById(post.requisitionId);
+
       const modalHtml = `
         <div class="modal active" id="modal-public-jd">
           <div class="modal-dialog modal-lg">
@@ -367,8 +373,10 @@ const PortalPage = (() => {
                 <div class="jd-facts">
                   <div><span>Địa điểm:</span> <strong>${post.location}</strong></div>
                   <div><span>Hình thức:</span> <strong>${post.workType}</strong></div>
+                  <div><span>Kinh nghiệm tối thiểu:</span> <strong>${minExpText}</strong></div>
                   <div><span>Hạn nộp hồ sơ:</span> <strong>${Helpers.formatDate(post.deadline)}</strong></div>
                   <div><span>Mức lương:</span> <strong>${post.salary}</strong></div>
+                  <div><span>Số lượng cần tuyển:</span> <strong>${postRequisition && postRequisition.quantity ? postRequisition.quantity + ' người' : '—'}</strong></div>
                 </div>
 
                 <div>
@@ -424,9 +432,9 @@ const PortalPage = (() => {
 
               <form id="form-portal-apply">
                 <div class="modal-body text-xs">
-                  <!-- Section 1: Thông tin cá nhân -->
+                  <!-- Section 1: Thông tin cá nhân (gọn 2 cột) -->
                   <h4 class="form-section-title">Thông tin cá nhân</h4>
-                  <div class="grid grid-cols-2 gap-4 mb-3">
+                  <div class="grid grid-cols-2 gap-2 mb-2">
                     <div class="form-group">
                       <label class="form-label required">Họ và tên</label>
                       <input type="text" name="fullName" id="portal-name" class="form-input" required placeholder="Nguyễn Văn A">
@@ -435,21 +443,9 @@ const PortalPage = (() => {
                       <label class="form-label required">Email</label>
                       <input type="email" name="email" id="portal-email" class="form-input" required placeholder="email@gmail.com">
                     </div>
-                  </div>
-
-                  <div class="form-group mb-3">
-                    <label class="form-label required">Số điện thoại</label>
-                    <input type="text" name="phone" id="portal-phone" class="form-input" required placeholder="090xxxxxxx">
-                  </div>
-
-                  <!-- Section 2: Học vấn & Kinh nghiệm -->
-                  <h4 class="form-section-title">
-                    Học vấn & kinh nghiệm làm việc
-                  </h4>
-                  <div class="grid grid-cols-2 gap-4 mb-3">
                     <div class="form-group">
-                      <label class="form-label">Trình độ học vấn</label>
-                      <input type="text" name="education" id="portal-edu" class="form-input" value="Đại học" placeholder="Đại học / Cao đẳng...">
+                      <label class="form-label required">Số điện thoại</label>
+                      <input type="text" name="phone" id="portal-phone" class="form-input" required placeholder="090xxxxxxx">
                     </div>
                     <div class="form-group">
                       <label class="form-label">Giới tính</label>
@@ -459,21 +455,28 @@ const PortalPage = (() => {
                         <option value="Nữ">Nữ</option>
                       </select>
                     </div>
+                  </div>
+
+                  <!-- Section 2: Học vấn & kinh nghiệm (gọn 2 cột) -->
+                  <h4 class="form-section-title">Học vấn & kinh nghiệm</h4>
+                  <div class="grid grid-cols-2 gap-2 mb-2">
                     <div class="form-group">
                       <label class="form-label">Ngày sinh</label>
                       <input type="date" name="dob" id="portal-dob" class="form-input">
                     </div>
                     <div class="form-group">
-                      <label class="form-label required">Số năm kinh nghiệm (Năm)</label>
+                      <label class="form-label required">Số năm kinh nghiệm (năm)</label>
                       <input type="number" step="0.5" min="0" max="60" name="experienceYears" id="portal-exp" class="form-input" value="3" placeholder="Ví dụ: 2.5" oninput="this.value = Math.max(0, Math.min(60, parseFloat(this.value) || 0)); if (this.value === '') this.value = '';">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label">Trình độ học vấn</label>
+                      <input type="text" name="education" id="portal-edu" class="form-input" value="Đại học" placeholder="Đại học / Cao đẳng...">
                     </div>
                   </div>
 
-                  <!-- Section 3: Upload CV (Bắt buộc) -->
-                  <h4 class="form-section-title">
-                    Tệp CV <span class="text-danger" aria-hidden="true">*</span>
-                  </h4>
-                  <div class="form-group mb-2">
+                  <!-- Section 3: Tải CV (bắt buộc) -->
+                  <h4 class="form-section-title">Tệp CV <span class="text-danger" aria-hidden="true">*</span></h4>
+                  <div class="form-group mb-1">
                     <div class="cv-dropzone" id="portal-cv-dropzone" role="button" tabindex="0"
                          aria-label="Tải lên tệp CV: bấm để chọn tệp hoặc kéo thả tệp vào khung này">
                       <i data-lucide="upload" class="icon-md"></i>
@@ -488,7 +491,9 @@ const PortalPage = (() => {
                     <p class="portal-cv-error" id="portal-cv-error" role="alert">
                       Bắt buộc: vui lòng tải lên tệp CV trước khi gửi hồ sơ.
                     </p>
-                    <p class="portal-cv-note" id="portal-cv-status">Tệp CV được lưu kèm hồ sơ để bộ phận tuyển dụng đọc và sàng lọc. Đây là thông tin bắt buộc.</p>
+                    <p class="portal-cv-note" id="portal-cv-status">
+                      Tải CV để hệ thống tự điền các ô còn trống. Các ô bạn đã tự nhập sẽ được giữ nguyên.
+                    </p>
                   </div>
                 </div>
 
@@ -720,6 +725,8 @@ const PortalPage = (() => {
 
     /**
      * Tự động điền thông tin từ văn bản CV vào form ứng tuyển.
+     * Chỉ điền các ô đang TRỐNG hoặc còn ở giá trị mặc định — không ghi đè
+     * những gì ứng viên đã tự nhập trước khi tải CV.
      * Trả về true nếu điền được ít nhất một trường.
      */
     autofillPortalForm(sourceText) {
@@ -729,21 +736,25 @@ const PortalPage = (() => {
       const parsed = ATSStore.parseCVText(text);
       let filled = false;
 
-      const setValue = (id, value) => {
+      const setIfEmpty = (id, value, defaults = []) => {
         const el = document.getElementById(id);
-        if (el && value !== undefined && value !== null && String(value).trim() !== '') {
-          el.value = value;
-          filled = true;
-        }
+        if (!el) return false;
+        const next = value === undefined || value === null ? '' : String(value).trim();
+        if (!next) return false;
+        const current = String(el.value || '').trim();
+        if (current !== '' && !defaults.includes(current)) return false; // giữ nguyên dữ liệu người dùng đã nhập
+        el.value = next;
+        filled = true;
+        return true;
       };
 
-      setValue('portal-name', parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' ? parsed.name : '');
-      setValue('portal-email', parsed.email);
-      setValue('portal-phone', parsed.phone);
-      setValue('portal-gender', parsed.gender || '');
-      setValue('portal-dob', parsed.dob);
-      setValue('portal-edu', parsed.education && parsed.education !== 'Đang cập nhật' ? parsed.education : '');
-      if (parsed.experienceYears > 0) setValue('portal-exp', parsed.experienceYears);
+      setIfEmpty('portal-name', parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' ? parsed.name : '');
+      setIfEmpty('portal-email', parsed.email);
+      setIfEmpty('portal-phone', parsed.phone);
+      setIfEmpty('portal-gender', parsed.gender || '');
+      setIfEmpty('portal-dob', parsed.dob);
+      setIfEmpty('portal-edu', parsed.education && parsed.education !== 'Đang cập nhật' ? parsed.education : '', ['Đại học']);
+      if (parsed.experienceYears > 0) setIfEmpty('portal-exp', parsed.experienceYears, ['3']);
 
       return filled;
     }

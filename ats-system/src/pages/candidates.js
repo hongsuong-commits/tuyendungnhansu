@@ -1099,16 +1099,36 @@ const CandidatesPage = (() => {
 
     parseAndFillCV(text) {
       const parsed = ATSStore.parseCVText(text);
-      if (parsed.name && parsed.name !== 'Ứng viên chưa rõ họ tên' && document.getElementById('upload-name')) document.getElementById('upload-name').value = parsed.name;
-      if (parsed.email && document.getElementById('upload-email')) document.getElementById('upload-email').value = parsed.email;
-      if (parsed.phone && document.getElementById('upload-phone')) document.getElementById('upload-phone').value = parsed.phone;
-      if (parsed.gender && document.getElementById('upload-gender')) document.getElementById('upload-gender').value = parsed.gender;
-      if (parsed.dob && document.getElementById('upload-dob')) document.getElementById('upload-dob').value = parsed.dob;
-      if (parsed.education && parsed.education !== 'Đang cập nhật' && document.getElementById('upload-edu')) document.getElementById('upload-edu').value = parsed.education;
-      if (parsed.experienceYears && document.getElementById('upload-exp')) document.getElementById('upload-exp').value = parsed.experienceYears;
-      if (parsed.skills && document.getElementById('upload-skills')) document.getElementById('upload-skills').value = parsed.skills.join(', ');
+      let filled = false;
 
-      UI.toast({ message: 'Đã trích xuất thông tin CV tự động thành công!', type: 'success' });
+      // Chỉ điền ô đang trống/giá trị mặc định — không ghi đè dữ liệu HR đã nhập.
+      const setIfEmpty = (id, value, defaults = []) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const next = value === undefined || value === null ? '' : String(value).trim();
+        if (!next) return;
+        const current = String(el.value || '').trim();
+        if (current !== '' && !defaults.includes(current)) return;
+        el.value = next;
+        filled = true;
+      };
+
+      setIfEmpty('upload-name', parsed.name !== 'Ứng viên chưa rõ họ tên' ? parsed.name : '');
+      setIfEmpty('upload-email', parsed.email);
+      setIfEmpty('upload-phone', parsed.phone);
+      setIfEmpty('upload-gender', parsed.gender);
+      setIfEmpty('upload-dob', parsed.dob);
+      setIfEmpty('upload-edu', parsed.education !== 'Đang cập nhật' ? parsed.education : '', ['Đại học']);
+      setIfEmpty('upload-exp', parsed.experienceYears, ['2']);
+      setIfEmpty('upload-skills', parsed.skills && parsed.skills.length ? parsed.skills.join(', ') : '');
+
+      UI.toast({
+        message: filled
+          ? 'Đã trích xuất thông tin CV (chỉ điền các ô còn trống).'
+          : 'CV đã đọc xong nhưng các ô thông tin đã có dữ liệu — giữ nguyên nội dung bạn đã nhập.',
+        type: filled ? 'success' : 'info',
+        duration: 5000
+      });
     }
   };
 })();

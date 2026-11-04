@@ -1546,13 +1546,36 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       const emailMatch = cleanText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
       const email = emailMatch ? emailMatch[0].replace(/[.,;]+$/, '') : '';
 
-      // Extract Phone (accepts +84, spaces, dots and dashes)
+      // Extract Phone — hỗ trợ +84/84, di động 10 số, số cũ 11 số, máy bàn,
+      // khoảng trắng, dấu chấm, gạch ngang và ngoặc: (0912) 345 678.
       let phone = '';
-      const phoneCandidates = cleanText.match(/(?:\+?84[\s.-]?|0)(?:\d[\s.-]?){9}\b/g) || [];
-      for (const raw of phoneCandidates) {
-        const digits = raw.replace(/\D/g, '');
-        const local = digits.startsWith('84') ? `0${digits.slice(2)}` : digits;
-        if (/^0[35789]\d{8}$/.test(local)) { phone = local; break; }
+
+      const normalizePhone = (raw) => {
+        let digits = String(raw || '').replace(/\D/g, '');
+        // +84/84xxxxxxxxx → 0xxxxxxxxx
+        if (digits.startsWith('84') && digits.length >= 11) digits = '0' + digits.slice(2);
+        return /^0\d{9,10}$/.test(digits) ? digits : '';
+      };
+
+      const pickPhone = (list) => {
+        const normalized = (list || []).map(normalizePhone).filter(Boolean);
+        return normalized.find(p => /^0[35789]\d{8}$/.test(p))   // di động phổ biến 03/05/07/08/09
+          || normalized.find(p => /^0\d{9}$/.test(p))            // di động 10 số khác
+          || normalized.find(p => /^0\d{10}$/.test(p))           // số cũ 11 số / máy bàn
+          || '';
+      };
+
+      // 1) Ưu tiên số nằm ngay sau nhãn SĐT / Điện thoại / Tel...
+      const phoneLabel = cleanText.match(
+        /(?:SĐT|ĐT|ĐIỆN\s*THOẠI|PHONE|TEL|MOBILE|HOTLINE|LIÊN\s*HỆ)\s*[:：]?\s*(\(?\s*(?:\+?84|0)[\d\s.\-()]{7,18})/i
+      );
+      if (phoneLabel) phone = pickPhone([phoneLabel[1]]);
+
+      // 2) Quét toàn văn nếu chưa tìm được (bỏ ngoặc để không cắt ngang số).
+      if (!phone) {
+        const phoneScanText = cleanText.replace(/[()]/g, ' ').replace(/[ \t]{2,}/g, ' ');
+        const phoneCandidates = phoneScanText.match(/(?:\+?84|0)(?:[\s.\-]?\d){9,10}/g) || [];
+        phone = pickPhone(phoneCandidates);
       }
 
       // Extract Name — labelled field first, then the first plausible person-name line
@@ -2462,6 +2485,12 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
 
     createRequisition(data) {
       const code = Helpers.generateCode('YCTD');
+      const safeData = { ...data };
+      // Chuẩn hoá kinh nghiệm tối thiểu: không âm, không quá 60 (chặn cả khi
+      // dữ liệu đến từ API/nguồn khác, không chỉ từ form).
+      if (Object.prototype.hasOwnProperty.call(safeData, 'minExperience')) {
+        safeData.minExperience = Helpers.normalizeExperienceYears(safeData.minExperience);
+      }
       const newReq = {
         id: 'req_' + Date.now(),
         code,
@@ -2475,7 +2504,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
             note: 'Tạo mới yêu cầu tuyển dụng'
           }
         ],
-        ...data
+        ...safeData
       };
       _data.requisitions.unshift(newReq);
       saveState();
@@ -2485,7 +2514,11 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     updateRequisition(id, updates) {
       const idx = (_data.requisitions || []).findIndex(r => r.id === id);
       if (idx !== -1) {
-        _data.requisitions[idx] = { ..._data.requisitions[idx], ...updates };
+        const safeUpdates = { ...(updates || {}) };
+        if (Object.prototype.hasOwnProperty.call(safeUpdates, 'minExperience')) {
+          safeUpdates.minExperience = Helpers.normalizeExperienceYears(safeUpdates.minExperience);
+        }
+        _data.requisitions[idx] = { ..._data.requisitions[idx], ...safeUpdates };
         saveState();
         return _data.requisitions[idx];
       }
@@ -2737,6 +2770,22 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       return (_data.postings || []).find(p => p.id === id);
     },
 
+    /**
+     * Số năm kinh nghiệm yêu cầu của một tin tuyển dụng (dùng cho JD công khai).
+     * Ưu tiên giá trị lưu trên tin; tin cũ chưa có thì lấy từ yêu cầu tuyển dụng gốc.
+     */
+    getPostingMinExperience(posting) {
+      if (!posting) return 0;
+      const req = posting.requisitionId ? this.getRequisitionById(posting.requisitionId) : null;
+
+      if (Object.prototype.hasOwnProperty.call(posting, 'minExperience')) {
+        const own = Number(posting.minExperience);
+        return Number.isFinite(own) && own > 0 ? own : 0;
+      }
+      const fromReq = req ? Number(req.minExperience) : 0;
+      return Number.isFinite(fromReq) && fromReq > 0 ? fromReq : 0;
+    },
+
     createPostingFromRequisition(requisitionId, postingData = {}) {
       const req = this.getRequisitionById(requisitionId);
       if (!req) return null;
@@ -2752,6 +2801,10 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         location: postingData.location || req.location,
         workType: postingData.workType || req.workType,
         deadline: postingData.deadline || req.deadline,
+        // Kinh nghiệm tối thiểu lấy từ yêu cầu tuyển dụng để hiển thị trên JD.
+        minExperience: Helpers.normalizeExperienceYears(
+          postingData.minExperience !== undefined ? postingData.minExperience : req.minExperience
+        ),
         status: 'published',
         publishedAt: new Date().toISOString(),
         views: 0,

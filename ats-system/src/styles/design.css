@@ -2788,3 +2788,9 @@ body.modal-open { overflow: hidden !important; }
 .badge-info    { background: #e6f0fd; color: #14428c; border-color: #c3daf8; }
 .badge-primary { background: #e9eefc; color: #1e3a8a; border-color: #c9d7f6; }
 .badge-secondary { background: #eef1f5; color: #3a4d61; border-color: #dbe2ea; }
+
+/* Compact apply form: giảm khoảng cách để khung nộp CV lọt vào màn hình sớm hơn */
+#form-portal-apply .form-group { margin-bottom: 8px; }
+#form-portal-apply .form-label { margin-bottom: 4px; }
+#form-portal-apply .form-section-title { margin: 8px 0 6px; font-size: 12.5px; }
+#form-portal-apply .cv-dropzone { padding: 10px; }

@@ -109,6 +109,24 @@ if (req) {
   check('Điểm sàng lọc nằm trong 0..100', screening.score >= 0 && screening.score <= 100, screening.score);
 }
 
+// ── [4] Trích xuất số điện thoại theo nhiều định dạng thực tế ─────────────
+console.log('\n[4] Trích xuất số điện thoại theo nhiều định dạng:');
+const phoneCases = [
+  ['SĐT: 0978123456', '0978123456', 'di động 10 số'],
+  ['Điện thoại: 0909 678 123', '0909678123', 'có khoảng trắng'],
+  ['Phone: 0912.345.678', '0912345678', 'có dấu chấm'],
+  ['SĐT: +84 912 345 678', '0912345678', 'đầu số +84'],
+  ['Tel: 0123456789', '0123456789', 'số cũ 11 số'],
+  ['ĐT: 024 3123 4567', '02431234567', 'máy bàn'],
+  ['Liên hệ: (0912) 345 678', '0912345678', 'có ngoặc'],
+  ['Số điện thoại: 0903123456 - Email: a@b.com', '0903123456', 'theo sau là email'],
+];
+phoneCases.forEach(([line, expected, desc]) => {
+  const result = ATSStore.parseCVText('Họ tên: Nguyễn Văn A\n' + line);
+  check(`SĐT ${desc} → ${expected}`, result.phone === expected, result.phone);
+});
+check('Không nhầm năm sinh thành SĐT', ATSStore.parseCVText('Họ tên: Lê Văn B\nNăm sinh: 1998\nEmail: b@example.com').phone === '', 'phone rỗng');
+
 console.log('\n' + '='.repeat(64));
 if (failed === 0) {
   console.log(' KẾT QUẢ: TẤT CẢ KIỂM TRA CV ĐỀU ĐẠT');

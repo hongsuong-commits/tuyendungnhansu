@@ -506,7 +506,7 @@ const RequisitionsPage = (() => {
                     </div>
                     <div class="form-group">
                       <label class="form-label">Kinh nghiệm tối thiểu (năm)</label>
-                      <input type="number" step="0.5" name="minExperience" class="form-input" value="${req ? req.minExperience : '2'}">
+                      <input type="number" step="0.5" min="0" max="60" name="minExperience" id="req-min-exp" class="form-input" value="${req ? req.minExperience : '2'}" oninput="this.value = Math.max(0, Math.min(60, parseFloat(this.value) || 0)); if (this.value === '') this.value = '';">
                     </div>
                   </div>
 
@@ -553,6 +553,19 @@ const RequisitionsPage = (() => {
           e.preventDefault();
           const fd = new FormData(e.target);
           const rawSkills = fd.get('skills') ? fd.get('skills').split(',').map(s => s.trim()).filter(Boolean) : [];
+
+          // Kinh nghiệm tối thiểu: chỉ chấp nhận 0–60 năm (chặn số âm và số quá lớn).
+          const minExperienceValue = parseFloat(fd.get('minExperience'));
+          if (!Helpers.isValidExperienceYears(minExperienceValue)) {
+            UI.toast({
+              message: 'Kinh nghiệm tối thiểu phải là số từ 0 đến 60 năm. Vui lòng nhập lại.',
+              type: 'warning',
+              duration: 6000
+            });
+            const expInput = document.getElementById('req-min-exp');
+            if (expInput) expInput.focus();
+            return;
+          }
 
           const payload = {
             title: fd.get('title'),

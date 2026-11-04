@@ -300,6 +300,7 @@ const PostingsPage = (() => {
                   <div><span class="text-xs text-muted">Mức lương:</span> <strong class="text-success">${post.salary}</strong></div>
                   <div><span class="text-xs text-muted">Địa điểm:</span> <strong>${post.location}</strong></div>
                   <div><span class="text-xs text-muted">Hình thức:</span> <strong>${post.workType}</strong></div>
+                  <div><span class="text-xs text-muted">Kinh nghiệm tối thiểu:</span> <strong>${Helpers.formatMinExperience(ATSStore.getPostingMinExperience(post))}</strong></div>
                   <div><span class="text-xs text-muted">Hạn ứng tuyển:</span> <strong>${Helpers.formatDate(post.deadline)}</strong></div>
                 </div>
 

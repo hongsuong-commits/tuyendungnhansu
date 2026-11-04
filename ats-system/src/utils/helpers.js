@@ -289,6 +289,15 @@ const Helpers = (() => {
     },
 
     /**
+     * Hiển thị số năm kinh nghiệm yêu cầu (JD): "2 năm" hoặc "Không yêu cầu".
+     */
+    formatMinExperience(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num) || num <= 0) return 'Không yêu cầu';
+      return `${num % 1 === 0 ? num : num.toFixed(1)} năm`;
+    },
+
+    /**
      * Chuẩn hoá số năm kinh nghiệm về khoảng [0, 60] (làm tròn 1 chữ số thập phân).
      * Giá trị không hợp lệ trở thành 0 thay vì số âm hoặc NaN.
      */
