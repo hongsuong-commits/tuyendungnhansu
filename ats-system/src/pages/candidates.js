@@ -417,6 +417,7 @@ const CandidatesPage = (() => {
                         <i data-lucide="calendar" class="icon-xs"></i> Lên lịch phỏng vấn
                       </button>
 
+                      ${app.status !== 'hired' ? `
                       <button class="btn btn-sm btn-outline" onclick="CandidatesPage.handleStatusChange('${app.id}', 'need_info', 'Yêu cầu ứng viên cung cấp thêm thông tin chứng chỉ và bằng cấp')">
                         <i data-lucide="help-circle" class="icon-xs"></i> Yêu cầu bổ sung
                       </button>

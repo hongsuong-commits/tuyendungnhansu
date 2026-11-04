@@ -133,20 +133,23 @@ const Helpers = (() => {
     // ═══════════════════════════════════════════════════════════════════
 
     /**
-     * Format date string to Vietnamese format: "27/10/2026"
+     * Format date string to Vietnamese format: "27/10/2026".
+     * Parse theo múi giờ local (Asia/Saigon) để tránh bị dịch sang ngày hôm sau
+     * do JS đọc "YYYY-MM-DD" thành UTC midnight.
      */
     formatDate(dateStr) {
       if (!dateStr) return '—';
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return '—';
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}/${month}/${year}`;
+      const parts = String(dateStr).split(/[T ]/)[0].split('-');
+      const y = Number(parts[0]);
+      const m = Number(parts[1]);
+      const d = Number(parts[2]);
+      if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return '—';
+      return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
     },
 
     /**
-     * Format date + time: "27/10/2026 14:30"
+     * Format date + time: "27/10/2026 14:30".
+     * Parse theo múi giờ local để tránh bị dịch ngày do UTC.
      */
     formatDateTime(dateStr) {
       if (!dateStr) return '—';

@@ -34,6 +34,11 @@ const InterviewsPage = (() => {
         status: _activeStatus,
         interviewer: _activeInterviewer,
         search: _searchQuery
+      }).filter(iv => {
+        // Ứng viên đã tuyển ('hired') thì không hiển thị trong danh sách lịch phỏng vấn,
+        // nhưng vẫn giữ nguyên trong Danh sách ứng viên.
+        const app = (_data.applications || []).find(a => a.id === iv.applicationId);
+        return app && app.status !== 'hired';
       });
 
       const users = ATSStore.getUsers().filter(u => u.role !== 'candidate');
@@ -628,6 +633,7 @@ const InterviewsPage = (() => {
           }
 
           const result = ATSStore.createInterview({
+            applicationId: app.id,
             candidateId: app.candidateId,
             candidateName: app.candidateName,
             requisitionId: app.requisitionId,
