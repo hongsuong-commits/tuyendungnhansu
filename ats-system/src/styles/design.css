@@ -1836,7 +1836,7 @@ body.modal-open { overflow: hidden !important; }
 .login-header { margin-bottom: 24px; text-align: center; }
 .login-logo { display: none; }
 /* Chỉ tiêu đề "Đăng nhập" được tăng cỡ chữ; phần còn lại giữ mức hài hoà cũ */
-.login-title { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; color: var(--title); margin: 0 0 6px; text-align: center; }
+.login-title { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; color: var(--title); margin: 0 0 6px; text-align: center; }
 .login-subtitle { font-size: 13px; color: var(--muted); margin: 0 auto; text-align: center; max-width: 34ch; }
 
 .login-form { display: flex; flex-direction: column; gap: 0; }
