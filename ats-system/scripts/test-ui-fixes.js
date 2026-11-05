@@ -511,6 +511,10 @@ check('Mobile: panel trái vẫn ẩn (không đổi)',
   /\.login-aside\s*\{\s*display:\s*none;?\s*\}/.test(cssSrc2));
 check('Form đăng nhập căn giữa nửa phải màn hình',
   /\.login-container\s*\{[^}]*align-items:\s*center/.test(cssSrc2));
+check('Ô nhập đăng nhập lớn hơn (cao 46px, chữ 15px)',
+  /\.login-form \.form-input\s*\{[^}]*height:\s*46px[^}]*font-size:\s*15px/.test(cssSrc2));
+check('Nút đăng nhập lớn hơn (cao 46px)',
+  /\.login-btn\s*\{[^}]*height:\s*46px/.test(cssSrc2));
 
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
