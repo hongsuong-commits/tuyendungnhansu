@@ -433,10 +433,67 @@ if (postingToEdit) {
   check('Tìm được tin tuyển dụng để kiểm thử sửa/đăng lại', false);
 }
 
+// ── 10. Smoke test render thật các trang theo từng vai trò ────────────────
+console.log('\n[10] Render thật các trang cho Giám đốc / Nhân sự / Trưởng phòng');
+global.UI = global.UI || { toast() {}, confirm() {}, openModal() {}, closeModal() {} };
+global.Router = global.Router || { navigate() {} };
+global.lucide = global.lucide || { createIcons() {} };
+loadModule('src/pages/interviews.js', 'InterviewsPage');
+loadModule('src/pages/candidates.js', 'CandidatesPage');
+loadModule('src/pages/requisitions.js', 'RequisitionsPage');
+loadModule('src/pages/postings.js', 'PostingsPage');
+loadModule('src/pages/dashboard.js', 'DashboardPage');
+loadModule('src/pages/screening.js', 'ScreeningPage');
+loadModule('src/pages/evaluations.js', 'EvaluationsPage');
+loadModule('src/pages/reports.js', 'ReportsPage');
+loadModule('src/pages/notifications.js', 'NotificationsPage');
+loadModule('src/pages/users.js', 'UsersPage');
+loadModule('src/pages/profile.js', 'ProfilePage');
+loadModule('src/pages/settings.js', 'SettingsPage');
+loadModule('src/pages/portal.js', 'PortalPage');
+
+const roleUsers = {
+  director: ATSStore.getUsers().find(u => u.role === 'director'),
+  hr: ATSStore.getUsers().find(u => u.role === 'hr'),
+  department_head: ATSStore.getUsers().find(u => u.role === 'department_head'),
+};
+const pagesToRender = [
+  ['Tổng quan', () => DashboardPage.render({})],
+  ['Lịch phỏng vấn', () => InterviewsPage.render({})],
+  ['Danh sách ứng viên', () => CandidatesPage.render()],
+  ['Yêu cầu tuyển dụng', () => RequisitionsPage.render()],
+  ['Tin tuyển dụng', () => PostingsPage.render()],
+  ['Sàng lọc CV', () => ScreeningPage.render({})],
+  ['Đánh giá ứng viên', () => EvaluationsPage.render({})],
+  ['Báo cáo', () => ReportsPage.render({})],
+  ['Thông báo', () => NotificationsPage.render({})],
+  ['Người dùng', () => UsersPage.render({})],
+  ['Hồ sơ cá nhân', () => ProfilePage.render({})],
+  ['Cài đặt', () => SettingsPage.render({})],
+  ['Cổng tuyển dụng', () => PortalPage.render({})],
+];
+const originalGetCurrentUser = ATSStore.getCurrentUser;
+
+Object.keys(roleUsers).forEach(role => {
+  const user = roleUsers[role];
+  check(`Có tài khoản vai trò ${role}`, !!user);
+  if (!user) return;
+  ATSStore.getCurrentUser = () => user;
+  pagesToRender.forEach(([label, renderFn]) => {
+    let html = '';
+    let err = '';
+    try { html = renderFn(); } catch (e) { err = e.message; }
+    check(`Vai trò ${role}: mở "${label}" render được`,
+      !err && typeof html === 'string' && html.length > 100,
+      err || 'output rỗng');
+  });
+});
+ATSStore.getCurrentUser = originalGetCurrentUser;
+
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
 console.log(failed === 0
-  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM • LỊCH/NGÀY • PHÂN QUYỀN'
+  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM • LỊCH/NGÀY • PHÂN QUYỀN • RENDER'
   : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
 console.log('='.repeat(74) + '\n');
 process.exitCode = failed === 0 ? 0 : 1;

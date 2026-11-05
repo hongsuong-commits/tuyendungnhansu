@@ -46,7 +46,6 @@ const InterviewsPage = (() => {
       const users = ATSStore.getUsers().filter(u => u.role !== 'candidate');
       // Chỉ Nhân sự được tạo/đổi/hủy lịch; Giám đốc và Trưởng phòng chỉ xem và đánh giá.
       const canSchedule = user.role === 'hr';
-      const canEvaluate = ['hr', 'director', 'department_head'].includes(user.role);
 
       return `
         <div class="page-container">
@@ -132,6 +131,8 @@ const InterviewsPage = (() => {
       const rows = interviews.map((iv) => {
         // Tạo/đổi/hủy lịch: chỉ Nhân sự.
         const canEdit = user.role === 'hr';
+        // Đánh giá: Nhân sự, Giám đốc và Trưởng phòng.
+        const canEvaluate = ['hr', 'director', 'department_head'].includes(user.role);
 
         return `
           <tr>
