@@ -1761,7 +1761,8 @@ body.modal-open { overflow: hidden !important; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: stretch;
+  /* Căn giữa form trong nửa phải màn hình (trước đây bị dính lề trái, lệch về phía ảnh) */
+  align-items: center;
   padding: 40px clamp(24px, 6vw, 88px);
   gap: 14px;
   min-width: 0;

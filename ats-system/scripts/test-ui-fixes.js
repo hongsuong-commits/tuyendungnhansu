@@ -509,6 +509,8 @@ check('Logo + slogan trang đăng nhập giữ nguyên',
   /Mỗi hồ sơ đi đúng một lối\./.test(loginSrc));
 check('Mobile: panel trái vẫn ẩn (không đổi)',
   /\.login-aside\s*\{\s*display:\s*none;?\s*\}/.test(cssSrc2));
+check('Form đăng nhập căn giữa nửa phải màn hình',
+  /\.login-container\s*\{[^}]*align-items:\s*center/.test(cssSrc2));
 
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
