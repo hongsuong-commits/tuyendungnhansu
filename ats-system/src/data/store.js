@@ -2674,7 +2674,7 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
     canCancelRequisition(req, user = _currentUser) {
       if (!req || !user) return false;
       if (['cancelled', 'closed', 'rejected'].includes(req.status)) return false;
-      if (user.role === 'hr' || user.role === 'director') return true;
+      // Chỉ Trưởng phòng (đúng phòng ban) được hủy yêu cầu tuyển dụng.
       if (user.role === 'department_head') return req.department === user.department;
       return false;
     },
@@ -2939,6 +2939,46 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         return _data.postings[idx];
       }
       return null;
+    },
+
+    /**
+     * Đăng lại tin tuyển dụng đã đóng / bị lỗi lên cổng việc làm.
+     * Không cho đăng lại nếu yêu cầu gốc đã bị hủy hoặc từ chối.
+     */
+    republishPosting(id) {
+      const post = this.getPostingById(id);
+      if (!post) return { success: false, message: 'Không tìm thấy tin tuyển dụng.' };
+
+      const req = this.getRequisitionById(post.requisitionId);
+      if (req && ['cancelled', 'rejected'].includes(req.status)) {
+        return { success: false, message: 'Yêu cầu tuyển dụng gốc đã bị hủy/từ chối, không thể đăng lại tin.' };
+      }
+
+      const now = new Date().toISOString();
+      const actorName = _currentUser ? (_currentUser.fullName || _currentUser.username) : 'Nhân sự';
+
+      post.status = 'published';
+      post.publishStatus = 'published';
+      post.publishError = null;
+      post.publishedAt = now;
+      post.closedAt = null;
+      post.closedReason = null;
+
+      if (req) {
+        req.status = 'recruiting';
+        req.publishStatus = 'published';
+        req.publishError = null;
+        req.approvalHistory = req.approvalHistory || [];
+        req.approvalHistory.push({
+          status: 'republished',
+          by: actorName,
+          date: now,
+          note: 'Đăng lại tin tuyển dụng lên cổng việc làm.'
+        });
+      }
+
+      saveState();
+      return { success: true, posting: post };
     },
 
     // ── Candidates & Applications ──────────────────────────────

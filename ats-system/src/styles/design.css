@@ -1,5 +1,5 @@
 /* ============================================================================
-   SmartATS â€” design layer
+   SmartATS — design layer
    Restyle on top of main.css. Direction: navy ledger.
    Chrome in navy (#0B1F3A), titles in #163A5F, primary action #1D5D91,
    accent #4A90C2, secondary surface #DCEAF7. Neutral tint is navy, not grey.
@@ -12,7 +12,7 @@
   --font: 'Be Vietnam Pro', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* the five brand steps â€” everything else is derived from them */
+  /* the five brand steps — everything else is derived from them */
   --navy: #0b1f3a;
   --title: #163a5f;
   --navy-mid: #1d5d91;
@@ -54,7 +54,7 @@
   --fs-body: 14px;
   --fs-small: 12px;
 
-  /* legacy token remap â€” every older rule keeps working on the navy palette */
+  /* legacy token remap — every older rule keeps working on the navy palette */
   --primary: #1d5d91;
   --primary-light: #4a90c2;
   --primary-dark: #0b1f3a;
@@ -533,7 +533,7 @@ svg.lucide, .lucide { width: 16px; height: 16px; stroke-width: 1.6; flex: none; 
   color: var(--muted);
 }
 
-/* 6. The pipeline â€” the screen's one data element ------------------------- */
+/* 6. The pipeline — the screen's one data element ------------------------- */
 .metric-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1745,7 +1745,7 @@ body.modal-open { overflow: hidden !important; }
 .step-item.step-active .step-label { color: var(--text); font-weight: 500; }
 .step-line { width: 26px; height: 1px; background: var(--control); margin: 0 10px; }
 
-/* 17. Login â€” split: the pipeline on the left, the form on the right ------- */
+/* 17. Login — split: the pipeline on the left, the form on the right ------- */
 .login-page {
   min-height: 100svh;
   display: grid;
@@ -1933,7 +1933,7 @@ body.modal-open { overflow: hidden !important; }
   color: var(--muted);
 }
 
-/* 18. Portal â€” the public careers page ----------------------------------- */
+/* 18. Portal — the public careers page ----------------------------------- */
 .portal-wrapper { background: var(--ground); min-height: 100svh; display: flex; flex-direction: column; }
 
 .portal-header {
@@ -2021,7 +2021,7 @@ body.modal-open { overflow: hidden !important; }
   opacity: 1;
 }
 
-/* Tra cá»©u tiáº¿n Ä‘á»™ â€” the single control in the hero */
+/* Tra cứu tiến độ — the single control in the hero */
 .portal-lookup { max-width: 600px; margin: 20px auto 0; }
 .portal-lookup-inner {
   background: #ffffff;
@@ -2232,7 +2232,7 @@ body.modal-open { overflow: hidden !important; }
 .jd-content-box ul, .jd-content-box ol { padding-left: 18px; list-style: revert; }
 .jd-content-box li { margin: 3px 0; }
 
-/* 19. Calendar â€” week view with a real time gutter (07:00 â†’ 17:00) --------- */
+/* 19. Calendar — week view with a real time gutter (07:00 → 17:00) --------- */
 .calendar-container,
 .week-iv-card {
   background: var(--surface);

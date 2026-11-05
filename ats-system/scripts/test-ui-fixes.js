@@ -385,10 +385,58 @@ check('interviews.js: ngày mặc định của form là hôm nay',
 check('Lịch tuần: nhãn tuần dùng formatDate(Date) không qua UTC',
   /formatDate\(monday\)/.test(interviewsSrc2) && /formatDate\(sunday\)/.test(interviewsSrc2));
 
+// ── 9. Phân quyền theo yêu cầu nghiệp vụ mới ─────────────────────────────
+console.log('\n[9] Phân quyền & tinh gọn theo yêu cầu nghiệp vụ');
+const settingsSrc = fs.readFileSync(path.join(ROOT, 'src/pages/settings.js'), 'utf-8');
+const layoutSrc = fs.readFileSync(path.join(ROOT, 'src/components/layout.js'), 'utf-8');
+const postingsSrc2 = fs.readFileSync(path.join(ROOT, 'src/pages/postings.js'), 'utf-8');
+const screeningSrc2 = fs.readFileSync(path.join(ROOT, 'src/pages/screening.js'), 'utf-8');
+const requisitionsSrc2 = fs.readFileSync(path.join(ROOT, 'src/pages/requisitions.js'), 'utf-8');
+
+check('Cài đặt: đã bỏ khối "Cổng dịch vụ tích hợp (Integrations)"',
+  !/Cổng dịch vụ tích hợp/.test(settingsSrc));
+check('Menu: đổi tên thành "Tin tuyển dụng"',
+  /label: 'Tin tuyển dụng'/.test(layoutSrc) && !/Vị trí & tin tuyển dụng/.test(layoutSrc));
+check('Lịch phỏng vấn: chỉ HR được tạo lịch', /const canSchedule = user\.role === 'hr';/.test(interviewsSrc2));
+check('Lịch phỏng vấn: chỉ HR được sửa/hủy lịch', /const canEdit = user\.role === 'hr';/.test(interviewsSrc2));
+check('Lịch phỏng vấn: GĐ và Trưởng phòng vẫn được đánh giá',
+  /canEvaluate = \['hr', 'director', 'department_head'\]/.test(interviewsSrc2));
+check('Yêu cầu tuyển dụng: chỉ Trưởng phòng được chỉnh sửa',
+  /const canEdit = \(user\.role === 'department_head'\)/.test(requisitionsSrc2));
+check('Yêu cầu tuyển dụng: chỉ Trưởng phòng được hủy (store)',
+  /Chỉ Trưởng phòng \(đúng phòng ban\) được hủy yêu cầu tuyển dụng/.test(storeSrc2));
+check('Danh sách ứng viên: chỉ HR được duyệt hồ sơ',
+  /const canManage = user\.role === 'hr';/.test(candidatesSrc2));
+check('Tin tuyển dụng: có nút Xem / Sửa / Đăng lại / Đóng',
+  /btn-preview-post/.test(postingsSrc2) && /btn-edit-post/.test(postingsSrc2)
+  && /btn-republish-post/.test(postingsSrc2) && /btn-close-post/.test(postingsSrc2));
+check('Tin tuyển dụng: bỏ nút Sao chép link và Cấu hình nguồn đăng',
+  !/btn-share-post/.test(postingsSrc2) && !/btn-channels-post/.test(postingsSrc2));
+check('Tin tuyển dụng: có modal chỉnh sửa + hàm đăng lại',
+  /showEditPostModal\(/.test(postingsSrc2) && /republishPosting\(/.test(storeSrc2));
+check('Sàng lọc CV: đã xóa nút "Chạy đọc CV mới ngay"',
+  !/btn-open-live-scanner/.test(screeningSrc2) && !/Chạy đọc CV mới ngay/.test(screeningSrc2));
+
+// Hành vi thật: sửa tin và đăng lại tin tuyển dụng.
+const postingToEdit = ATSStore.getPostings().find(p => p.status === 'published') || ATSStore.getPostings()[0];
+if (postingToEdit) {
+  const editedPost = ATSStore.updatePosting(postingToEdit.id, { title: 'Tiêu đề đã chỉnh sửa (kiểm thử)' });
+  check('Sửa tin: lưu tiêu đề mới', editedPost && editedPost.title === 'Tiêu đề đã chỉnh sửa (kiểm thử)', editedPost && editedPost.title);
+
+  ATSStore.updatePosting(postingToEdit.id, { status: 'closed' });
+  const republished = ATSStore.republishPosting(postingToEdit.id);
+  check('Đăng lại tin: thành công', republished.success === true, republished.message);
+  check('Đăng lại tin: trạng thái quay về "published"',
+    ATSStore.getPostingById(postingToEdit.id).status === 'published',
+    ATSStore.getPostingById(postingToEdit.id).status);
+} else {
+  check('Tìm được tin tuyển dụng để kiểm thử sửa/đăng lại', false);
+}
+
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
 console.log(failed === 0
-  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM • LỊCH/NGÀY'
+  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM • LỊCH/NGÀY • PHÂN QUYỀN'
   : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
 console.log('='.repeat(74) + '\n');
 process.exitCode = failed === 0 ? 0 : 1;

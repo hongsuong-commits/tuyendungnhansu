@@ -16,7 +16,7 @@ const SettingsPage = (() => {
           <div class="page-header">
             <div>
               <h1 class="page-title">Cài đặt hệ thống</h1>
-              <p class="page-subtitle">Quản lý tham số sàng lọc CV, thông tin doanh nghiệp, cổng tích hợp và dữ liệu mẫu</p>
+              <p class="page-subtitle">Quản lý tham số sàng lọc CV, thông tin doanh nghiệp và dữ liệu mẫu</p>
             </div>
           </div>
 
@@ -100,58 +100,7 @@ const SettingsPage = (() => {
                 </div>
               </div>
 
-              <!-- Integrations Card -->
-              <div class="card">
-                <div class="card-header py-3">
-                  <h3 class="card-title text-sm flex items-center gap-2">
-                    <i data-lucide="plug" class="icon-sm text-primary"></i>
-                    Quản lý Cổng dịch vụ tích hợp (Integrations)
-                  </h3>
-                </div>
-                <div class="card-body">
-                  <div class="space-y-3">
-                    <div class="p-3 border rounded flex items-center justify-between bg-gray-50">
-                      <div>
-                        <strong class="text-sm block">Cổng tuyển dụng Doanh nghiệp (Career Portal)</strong>
-                        <span class="text-xs text-muted">Trang tuyển dụng công khai cho ứng viên nộp CV trực tuyến</span>
-                      </div>
-                      <span class="badge badge-success font-medium">Đang hoạt động</span>
-                    </div>
-
-                    <div class="p-3 border rounded flex items-center justify-between">
-                      <div>
-                        <strong class="text-sm block">Tích hợp TopCV Open API (Mô phỏng)</strong>
-                        <span class="text-xs text-muted">Tự động đồng bộ tin đăng và tiếp nhận hồ sơ từ TopCV</span>
-                      </div>
-                      <span class="badge badge-info font-medium">Mô phỏng sẵn sàng</span>
-                    </div>
-
-                    <div class="p-3 border rounded flex items-center justify-between">
-                      <div>
-                        <strong class="text-sm block">LinkedIn Jobs Easy Apply (Mô phỏng)</strong>
-                        <span class="text-xs text-muted">Đồng bộ ứng viên quốc tế và mạng lưới chuyên gia LinkedIn</span>
-                      </div>
-                      <span class="badge badge-info font-medium">Mô phỏng sẵn sàng</span>
-                    </div>
-
-                    <div class="p-3 border rounded flex items-center justify-between">
-                      <div>
-                        <strong class="text-sm block">Google Meet API</strong>
-                        <span class="text-xs text-muted">Tự động sinh link phòng phỏng vấn trực tuyến trong lịch hẹn</span>
-                      </div>
-                      <span class="badge badge-success font-medium">Đã kích hoạt</span>
-                    </div>
-
-                    <div class="p-3 border rounded flex items-center justify-between">
-                      <div>
-                        <strong class="text-sm block">Hệ thống gửi Email SMTP</strong>
-                        <span class="text-xs text-muted">Gửi thư mời phỏng vấn và thông báo kết quả ứng tuyển tự động</span>
-                      </div>
-                      <span class="badge badge-secondary font-medium">Chưa cấu hình Host/Port</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <!-- Integrations Card đã được loại bỏ theo yêu cầu nghiệp vụ -->
             </div>
 
             <!-- Right column: Company info & Reset (1 col) -->

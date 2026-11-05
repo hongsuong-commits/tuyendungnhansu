@@ -102,7 +102,8 @@ const RequisitionsPage = (() => {
       const rows = reqs.map((r, index) => {
         const canApprove = (user.role === 'director' || user.role === 'hr') && r.status === 'pending';
         const canPost = (user.role === 'hr') && r.status === 'approved';
-        const canEdit = (user.role === 'hr') || (user.role === 'department_head' && r.status === 'pending' && r.creatorId === user.id);
+        // Chỉ Trưởng phòng được chỉnh sửa yêu cầu (của phòng mình, khi còn chờ duyệt).
+        const canEdit = (user.role === 'department_head') && r.status === 'pending' && r.department === user.department;
         const canCancel = ATSStore.canCancelRequisition(r, user);
         const overdue = ATSStore.isApprovalOverdue(r);
         const waitedMinutes = overdue ? ATSStore.getApprovalWaitingMinutes(r) : 0;

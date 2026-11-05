@@ -53,6 +53,8 @@ function check(label, condition, detail) {
 
 ATSStore.login('hr1', '123456');
 const hr = ATSStore.getCurrentUser();
+// Trưởng phòng CNTT — người có quyền hủy yêu cầu của phòng mình.
+const itHead = ATSStore.getUsers().find(u => u.username === 'head_it');
 
 function makeRequisition(title) {
   return ATSStore.createRequisition({
@@ -208,9 +210,16 @@ const postingsBefore3 = ATSStore.getPostings().filter(p => p.requisitionId === r
 const invalidCancel = ATSStore.cancelRequisition(req3.id, { reason: 'ngắn' });
 check('Từ chối lý do hủy quá ngắn (<5 ký tự)', invalidCancel.success === false, invalidCancel.message);
 
+// Phân quyền mới: chỉ Trưởng phòng được hủy, Nhân sự/Giám đốc không được hủy.
+const deniedHr = ATSStore.cancelRequisition(req3.id, {
+  reason: 'Nhân sự thử hủy yêu cầu',
+  requestedBy: hr
+});
+check('Chặn nhân sự hủy yêu cầu (chỉ Trưởng phòng)', deniedHr.success === false, deniedHr.message);
+
 const cancelled = ATSStore.cancelRequisition(req3.id, {
   reason: 'Ngân sách quý 4 bị cắt, chưa thể tuyển bổ sung',
-  requestedBy: hr
+  requestedBy: itHead
 });
 const req3After = ATSStore.getRequisitionById(req3.id);
 
@@ -241,7 +250,7 @@ const denied = ATSStore.cancelRequisition(otherReq.id, {
 check('Chặn trưởng phòng khác phòng ban hủy yêu cầu', denied.success === false, denied.message);
 
 // Không thể hủy khi đã kết thúc.
-const again = ATSStore.cancelRequisition(req3.id, { reason: 'Hủy lần hai', requestedBy: hr });
+const again = ATSStore.cancelRequisition(req3.id, { reason: 'Hủy lần hai', requestedBy: itHead });
 check('Không thể hủy lại yêu cầu đã hủy', again.success === false, again.message);
 
 // ── Tổng kết ──────────────────────────────────────────────────────────────

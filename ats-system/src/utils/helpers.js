@@ -336,6 +336,16 @@ const Helpers = (() => {
     // String Helpers
     // ═══════════════════════════════════════════════════════════════════
 
+    /** Escape HTML để chèn an toàn vào thuộc tính/nội dung. */
+    escapeHtml(value) {
+      return String(value === null || value === undefined ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    },
+
     /**
      * Truncate string to maxLen with ellipsis
      */

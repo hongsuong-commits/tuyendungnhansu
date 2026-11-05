@@ -27,11 +27,7 @@ const ScreeningPage = (() => {
               <h1 class="page-title">Sàng lọc CV & Đối chiếu tiêu chí</h1>
               <p class="page-subtitle">Module phân tích văn bản CV tự động, trích xuất dữ liệu và hỗ trợ ra quyết định nghiệp vụ</p>
             </div>
-            <div class="page-actions">
-              <button class="btn btn-primary" id="btn-open-live-scanner">
-                <i data-lucide="scan-face" class="icon-sm"></i> Chạy đọc CV mới ngay
-              </button>
-            </div>
+            <div class="page-actions"></div>
           </div>
 
           <!-- Important Rule Alert (Compliance with 5.5) -->
@@ -200,7 +196,7 @@ const ScreeningPage = (() => {
           <div class="empty-state">
             <i data-lucide="scan-search" class="empty-state-icon"></i>
             <h3 class="empty-state-title">Chưa có hồ sơ nào cho vị trí này</h3>
-            <p class="empty-state-description">Bấm nút "Chạy đọc CV mới ngay" ở góc phải để thử nghiệm công cụ trích xuất CV.</p>
+            <p class="empty-state-description">Hồ sơ ứng viên nộp qua cổng tuyển dụng sẽ được hệ thống tự động trích xuất và chấm điểm sàng lọc tại đây.</p>
           </div>
         `;
       }
@@ -361,13 +357,7 @@ const ScreeningPage = (() => {
       };
       weightInputs.forEach(input => input.addEventListener('input', updateWeightTotal));
 
-      // Live Scanner Button
-      const btnScan = document.getElementById('btn-open-live-scanner');
-      if (btnScan) {
-        btnScan.addEventListener('click', () => {
-          this.showLiveScannerModal();
-        });
-      }
+      // Nút mở trình đọc CV trực tiếp đã được loại bỏ theo yêu cầu nghiệp vụ.
 
       // View Screening Detail buttons
       document.querySelectorAll('.btn-view-scr-detail').forEach(btn => {

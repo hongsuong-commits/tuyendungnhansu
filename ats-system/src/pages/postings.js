@@ -24,8 +24,8 @@ const PostingsPage = (() => {
         <div class="page-container">
           <div class="page-header">
             <div>
-              <h1 class="page-title">Vị trí & Tin tuyển dụng</h1>
-              <p class="page-subtitle">Quản lý các tin đăng tuyển đa kênh và theo dõi hiệu quả thu hút ứng viên</p>
+              <h1 class="page-title">Tin tuyển dụng</h1>
+              <p class="page-subtitle">Xem, chỉnh sửa, đăng lại và đóng tin tuyển dụng trên cổng việc làm</p>
             </div>
             <div class="page-actions">
               ${user.role === 'hr' ? `
@@ -156,15 +156,19 @@ const PostingsPage = (() => {
             <td>${Helpers.statusBadge(p.status)}</td>
             <td class="text-right">
               <div class="table-actions">
-                <button class="btn btn-xs btn-icon btn-outline btn-preview-post" data-id="${p.id}" title="Xem trước tin" aria-label="Xem trước tin">
+                <button class="btn btn-xs btn-icon btn-outline btn-preview-post" data-id="${p.id}" title="Xem tin tuyển dụng" aria-label="Xem tin">
                   <i data-lucide="eye" class="icon-xs"></i>
                 </button>
-                <button class="btn btn-xs btn-icon btn-outline btn-share-post" data-id="${p.id}" title="Sao chép liên kết chia sẻ" aria-label="Chia sẻ">
-                  <i data-lucide="share-2" class="icon-xs"></i>
-                </button>
-                <button class="btn btn-xs btn-icon btn-outline btn-channels-post" data-id="${p.id}" title="Cấu hình nguồn đăng" aria-label="Nguồn đăng">
-                  <i data-lucide="layers" class="icon-xs"></i>
-                </button>
+                ${canManage ? `
+                  <button class="btn btn-xs btn-icon btn-outline btn-edit-post" data-id="${p.id}" title="Chỉnh sửa tin" aria-label="Chỉnh sửa tin">
+                    <i data-lucide="pencil" class="icon-xs"></i>
+                  </button>
+                ` : ''}
+                ${canManage && p.status !== 'published' ? `
+                  <button class="btn btn-xs btn-icon btn-outline btn-republish-post" data-id="${p.id}" title="Đăng lại tin" aria-label="Đăng lại tin">
+                    <i data-lucide="refresh-cw" class="icon-xs"></i>
+                  </button>
+                ` : ''}
                 ${canManage && p.status === 'published' ? `
                   <button class="btn btn-xs btn-icon btn-outline btn-quick-reject btn-close-post" data-id="${p.id}" title="Đóng tin tuyển dụng" aria-label="Đóng tin">
                     <i data-lucide="slash" class="icon-xs"></i>
@@ -245,19 +249,19 @@ const PostingsPage = (() => {
         });
       });
 
-      // Share Link Buttons
-      document.querySelectorAll('.btn-share-post').forEach(btn => {
+      // Nút "Chỉnh sửa tin"
+      document.querySelectorAll('.btn-edit-post').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const id = e.currentTarget.getAttribute('data-id');
-          this.copyShareUrl(id);
+          this.showEditPostModal(id);
         });
       });
 
-      // Manage Channels Buttons
-      document.querySelectorAll('.btn-channels-post').forEach(btn => {
+      // Nút "Đăng lại tin"
+      document.querySelectorAll('.btn-republish-post').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const id = e.currentTarget.getAttribute('data-id');
-          this.showChannelsModal(id);
+          this.handleRepublishPosting(id);
         });
       });
 
@@ -444,6 +448,132 @@ const PostingsPage = (() => {
           UI.toast({ message: 'Đã đóng tin tuyển dụng thành công.', type: 'warning' });
           this.refresh();
         }
+      });
+    },
+
+    /** Đăng lại tin đã đóng / bị lỗi lên cổng tuyển dụng. */
+    handleRepublishPosting(id) {
+      const post = ATSStore.getPostingById(id);
+      if (!post) return;
+      UI.confirm({
+        title: 'Đăng lại tin tuyển dụng',
+        message: `Đăng lại tin "${post.title}" lên cổng tuyển dụng để ứng viên tiếp tục nộp hồ sơ?`,
+        type: 'info',
+        confirmText: 'Đăng lại tin',
+        onConfirm: () => {
+          const result = ATSStore.republishPosting(id);
+          if (!result || result.success === false) {
+            UI.toast({ message: (result && result.message) || 'Không thể đăng lại tin.', type: 'error', duration: 6000 });
+            return;
+          }
+          UI.toast({ message: `Đã đăng lại tin ${post.code}.`, type: 'success' });
+          this.refresh();
+        }
+      });
+    },
+
+    /** Modal chỉnh sửa tin tuyển dụng. */
+    showEditPostModal(id) {
+      const post = ATSStore.getPostingById(id);
+      if (!post) return;
+
+      const workTypes = ['Toàn thời gian', 'Bán thời gian', 'Thực tập', 'Remote (Từ xa)'];
+      const esc = (v) => Helpers.escapeHtml(v || '');
+      const modalHtml = `
+        <div class="modal active" id="modal-post-edit">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <div>
+                  <div class="text-xs text-muted mb-1 font-mono">${post.code}</div>
+                  <h3 class="modal-title">Chỉnh sửa tin tuyển dụng</h3>
+                </div>
+                <button type="button" class="modal-close" onclick="UI.closeModal('modal-post-edit')">&times;</button>
+              </div>
+              <form id="form-post-edit">
+                <div class="modal-body text-xs">
+                  <div class="grid grid-cols-2 gap-4 mb-3">
+                    <div class="form-group" style="grid-column: span 2;">
+                      <label class="form-label required">Tiêu đề tin</label>
+                      <input type="text" name="title" class="form-input" required value="${esc(post.title)}">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Mức lương</label>
+                      <input type="text" name="salary" class="form-input" value="${esc(post.salary)}" placeholder="Thỏa thuận / 20.000.000 VNĐ">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Địa điểm</label>
+                      <input type="text" name="location" class="form-input" value="${esc(post.location)}" placeholder="Hà Nội / TP.HCM">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Hình thức làm việc</label>
+                      <select name="workType" class="form-select">
+                        ${workTypes.map(w => `<option value="${w}" ${post.workType === w ? 'selected' : ''}>${w}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Hạn ứng tuyển</label>
+                      <input type="date" name="deadline" class="form-input" value="${esc(post.deadline)}">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Kinh nghiệm tối thiểu (năm)</label>
+                      <input type="number" step="0.5" min="0" max="60" name="minExperience" class="form-input" value="${Number(ATSStore.getPostingMinExperience(post))}" oninput="this.value = Math.max(0, Math.min(60, parseFloat(this.value) || 0)); if (this.value === '') this.value = '';">
+                    </div>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <label class="form-label">Mô tả công việc</label>
+                    <textarea name="description" class="form-textarea" rows="4">${esc(post.description)}</textarea>
+                  </div>
+                  <div class="form-group mb-3">
+                    <label class="form-label">Yêu cầu ứng viên</label>
+                    <textarea name="requirements" class="form-textarea" rows="4">${esc(post.requirements)}</textarea>
+                  </div>
+                  <div class="form-group mb-1">
+                    <label class="form-label">Quyền lợi & chế độ</label>
+                    <textarea name="benefits" class="form-textarea" rows="3">${esc(post.benefits)}</textarea>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" onclick="UI.closeModal('modal-post-edit')">Hủy</button>
+                  <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save" class="icon-sm"></i> Lưu thay đổi
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const container = document.getElementById('post-modals-container');
+      if (!container) return;
+      container.innerHTML = modalHtml;
+      UI.openModal('modal-post-edit');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+
+      document.getElementById('form-post-edit').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const minExp = parseFloat(fd.get('minExperience'));
+        if (!Helpers.isValidExperienceYears(minExp)) {
+          UI.toast({ message: 'Kinh nghiệm tối thiểu phải từ 0 đến 60 năm.', type: 'warning', duration: 6000 });
+          return;
+        }
+        ATSStore.updatePosting(id, {
+          title: String(fd.get('title') || '').trim(),
+          salary: fd.get('salary'),
+          location: fd.get('location'),
+          workType: fd.get('workType'),
+          deadline: fd.get('deadline'),
+          minExperience: Helpers.normalizeExperienceYears(minExp),
+          description: fd.get('description'),
+          requirements: fd.get('requirements'),
+          benefits: fd.get('benefits')
+        });
+        UI.closeModal('modal-post-edit');
+        UI.toast({ message: 'Đã cập nhật tin tuyển dụng.', type: 'success' });
+        this.refresh();
       });
     }
   };

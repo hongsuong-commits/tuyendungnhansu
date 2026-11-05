@@ -8,7 +8,7 @@ const Layout = (() => {
   const NAV_ITEMS = [
     { id: 'dashboard', icon: 'home', label: 'Tổng quan', href: '#/dashboard' },
     { id: 'requisitions', icon: 'file-text', label: 'Yêu cầu tuyển dụng', href: '#/requisitions' },
-    { id: 'postings', icon: 'briefcase', label: 'Vị trí & tin tuyển dụng', href: '#/postings' },
+    { id: 'postings', icon: 'briefcase', label: 'Tin tuyển dụng', href: '#/postings' },
     { id: 'candidates', icon: 'users', label: 'Danh sách ứng viên', href: '#/candidates' },
     { id: 'screening', icon: 'scan-search', label: 'Sàng lọc CV', href: '#/screening' },
     { id: 'interviews', icon: 'calendar', label: 'Lịch phỏng vấn', href: '#/interviews' },
@@ -174,7 +174,7 @@ const Layout = (() => {
       const PAGE_TITLES = {
         dashboard: 'Tổng quan',
         requisitions: 'Yêu cầu tuyển dụng',
-        postings: 'Vị trí & tin tuyển dụng',
+        postings: 'Tin tuyển dụng',
         candidates: 'Danh sách ứng viên',
         screening: 'Sàng lọc CV',
         interviews: 'Lịch phỏng vấn',

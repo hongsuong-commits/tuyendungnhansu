@@ -366,7 +366,7 @@ const CandidatesPage = (() => {
       const cand = ATSStore.getCandidateById(app.candidateId) || {};
       const req = ATSStore.getRequisitionById(app.requisitionId);
       const user = ATSStore.getCurrentUser();
-      const canManage = user.role === 'hr' || (user.role === 'department_head' && req && req.department === user.department);
+      const canManage = user.role === 'hr';
 
       const scr = app.screeningDetails || {};
       const metList = scr.metCriteria || [];

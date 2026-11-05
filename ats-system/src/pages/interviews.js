@@ -44,7 +44,9 @@ const InterviewsPage = (() => {
       });
 
       const users = ATSStore.getUsers().filter(u => u.role !== 'candidate');
-      const canSchedule = user.role === 'hr' || user.role === 'department_head';
+      // Chỉ Nhân sự được tạo/đổi/hủy lịch; Giám đốc và Trưởng phòng chỉ xem và đánh giá.
+      const canSchedule = user.role === 'hr';
+      const canEvaluate = ['hr', 'director', 'department_head'].includes(user.role);
 
       return `
         <div class="page-container">
@@ -128,7 +130,8 @@ const InterviewsPage = (() => {
       }
 
       const rows = interviews.map((iv) => {
-        const canEdit = user.role === 'hr' || user.role === 'department_head';
+        // Tạo/đổi/hủy lịch: chỉ Nhân sự.
+        const canEdit = user.role === 'hr';
 
         return `
           <tr>
@@ -155,10 +158,12 @@ const InterviewsPage = (() => {
                 <button class="btn btn-xs btn-icon btn-outline btn-view-iv" data-id="${iv.id}" title="Chi tiết lịch" aria-label="Chi tiết lịch">
                   <i data-lucide="eye" class="icon-xs"></i>
                 </button>
-                ${canEdit && iv.status !== 'completed' && iv.status !== 'cancelled' ? `
+                ${canEvaluate && iv.status !== 'completed' && iv.status !== 'cancelled' ? `
                   <button class="btn btn-xs btn-outline btn-finish-iv" data-id="${iv.id}" title="Đánh dấu hoàn thành & Chấm điểm">
                     <i data-lucide="check" class="icon-xs"></i> Đánh giá
                   </button>
+                ` : ''}
+                ${canEdit && iv.status !== 'completed' && iv.status !== 'cancelled' ? `
                   <button class="btn btn-xs btn-icon btn-outline btn-cancel-iv" data-id="${iv.id}" title="Hủy lịch" aria-label="Hủy lịch">
                     <i data-lucide="x" class="icon-xs"></i>
                   </button>
@@ -382,8 +387,13 @@ const InterviewsPage = (() => {
         this.refresh();
       });
 
-      // Schedule Button (Single button in header)
+      // Schedule Button (Single button in header) — chỉ Nhân sự
       document.getElementById('btn-create-interview')?.addEventListener('click', () => {
+        const me = ATSStore.getCurrentUser();
+        if (!me || me.role !== 'hr') {
+          UI.toast({ message: 'Chỉ nhân sự (HR) được tạo lịch phỏng vấn.', type: 'warning' });
+          return;
+        }
         this.showScheduleModal();
       });
 
@@ -397,6 +407,11 @@ const InterviewsPage = (() => {
 
       document.querySelectorAll('.btn-finish-iv').forEach(btn => {
         btn.addEventListener('click', (e) => {
+          const me = ATSStore.getCurrentUser();
+          if (!me || !['hr', 'director', 'department_head'].includes(me.role)) {
+            UI.toast({ message: 'Bạn không có quyền đánh giá phỏng vấn.', type: 'warning' });
+            return;
+          }
           const id = e.currentTarget.getAttribute('data-id');
           const iv = ATSStore.getInterviewById(id);
           if (iv) {
@@ -409,6 +424,11 @@ const InterviewsPage = (() => {
 
       document.querySelectorAll('.btn-cancel-iv').forEach(btn => {
         btn.addEventListener('click', (e) => {
+          const me = ATSStore.getCurrentUser();
+          if (!me || me.role !== 'hr') {
+            UI.toast({ message: 'Chỉ nhân sự (HR) được hủy lịch phỏng vấn.', type: 'warning' });
+            return;
+          }
           const id = e.currentTarget.getAttribute('data-id');
           this.handleCancelInterview(id);
         });
@@ -416,6 +436,11 @@ const InterviewsPage = (() => {
 
       document.querySelectorAll('.btn-reschedule-iv').forEach(btn => {
         btn.addEventListener('click', (e) => {
+          const me = ATSStore.getCurrentUser();
+          if (!me || me.role !== 'hr') {
+            UI.toast({ message: 'Chỉ nhân sự (HR) được đổi lịch phỏng vấn.', type: 'warning' });
+            return;
+          }
           const id = e.currentTarget.getAttribute('data-id');
           this.showRescheduleModal(id);
         });
