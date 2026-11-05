@@ -115,8 +115,8 @@ const PortalPage = (() => {
           <!-- Hero: tiêu đề căn giữa + thanh tìm việc / tra cứu theo từng chế độ -->
           <section class="portal-hero">
             <div class="portal-hero-content">
-              <h1 class="portal-hero-title">Hồ sơ của bạn được đọc, không chỉ được nhận.</h1>
-              <p class="portal-hero-subtitle">${postings.length} vị trí đang mở. Nộp CV trực tuyến, theo dõi từng vòng và nhận phản hồi qua email.</p>
+              <h1 class="portal-hero-title">Tuyển dụng nhân tài</h1>
+              <p class="portal-hero-subtitle">${postings.length} vị trí đang mở. Đúng người – Đúng tầm – Đúng tương lai.</p>
 
               ${_viewMode === 'track' ? renderLookupForm() : renderJobSearch(departments)}
             </div>
