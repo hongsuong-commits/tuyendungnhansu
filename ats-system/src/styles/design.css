@@ -1749,8 +1749,8 @@ body.modal-open { overflow: hidden !important; }
 .login-page {
   min-height: 100svh;
   display: grid;
-  /* Chia đúng 50/50: ảnh nền bên trái, form đăng nhập bên phải */
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /* Tỉ lệ cũ: ảnh nền ~45% bên trái, form đăng nhập ~55% bên phải */
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   background: var(--ground);
   padding: 0;
   align-items: stretch;
