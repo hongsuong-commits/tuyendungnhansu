@@ -494,6 +494,7 @@ ATSStore.getCurrentUser = originalGetCurrentUser;
 console.log('\n[11] Ảnh nền trang đăng nhập');
 const cssSrc2 = fs.readFileSync(path.join(ROOT, 'src/styles/design.css'), 'utf-8');
 const loginSrc = fs.readFileSync(path.join(ROOT, 'src/pages/login.js'), 'utf-8');
+const portalSrcAll = fs.readFileSync(path.join(ROOT, 'src/pages/portal.js'), 'utf-8');
 const bgPath = path.join(ROOT, 'src/assets/login-bg.png');
 
 check('Có file ảnh nền src/assets/login-bg.png',
@@ -511,10 +512,15 @@ check('Mobile: panel trái vẫn ẩn (không đổi)',
   /\.login-aside\s*\{\s*display:\s*none;?\s*\}/.test(cssSrc2));
 check('Form đăng nhập căn giữa nửa phải màn hình',
   /\.login-container\s*\{[^}]*align-items:\s*center/.test(cssSrc2));
-check('Ô nhập đăng nhập lớn hơn (cao 46px, chữ 15px)',
-  /\.login-form \.form-input\s*\{[^}]*height:\s*46px[^}]*font-size:\s*15px/.test(cssSrc2));
-check('Nút đăng nhập lớn hơn (cao 46px)',
-  /\.login-btn\s*\{[^}]*height:\s*46px/.test(cssSrc2));
+check('Trang đăng nhập chia đúng 50/50 (ảnh | form)',
+  /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/.test(cssSrc2));
+check('Ô nhập đăng nhập lớn (cao 52px, chữ 16px)',
+  /\.login-form \.form-input\s*\{[^}]*height:\s*52px[^}]*font-size:\s*16px/.test(cssSrc2));
+check('Nút đăng nhập lớn (cao 52px)',
+  /\.login-btn\s*\{[^}]*height:\s*52px/.test(cssSrc2));
+check('Hero portal: bỏ số lượng vị trí đang mở, giữ slogan',
+  !/\$\{postings\.length\} vị trí đang mở/.test(portalSrcAll)
+  && /Đúng người – Đúng tầm – Đúng tương lai\./.test(portalSrcAll));
 
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));

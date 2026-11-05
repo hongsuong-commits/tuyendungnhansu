@@ -116,7 +116,7 @@ const PortalPage = (() => {
           <section class="portal-hero">
             <div class="portal-hero-content">
               <h1 class="portal-hero-title">Tuyển dụng nhân tài</h1>
-              <p class="portal-hero-subtitle">${postings.length} vị trí đang mở. Đúng người – Đúng tầm – Đúng tương lai.</p>
+              <p class="portal-hero-subtitle">Đúng người – Đúng tầm – Đúng tương lai.</p>
 
               ${_viewMode === 'track' ? renderLookupForm() : renderJobSearch(departments)}
             </div>
