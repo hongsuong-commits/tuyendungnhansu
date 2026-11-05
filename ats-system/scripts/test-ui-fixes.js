@@ -490,10 +490,30 @@ Object.keys(roleUsers).forEach(role => {
 });
 ATSStore.getCurrentUser = originalGetCurrentUser;
 
+// ── 11. Ảnh nền trang đăng nhập ─────────────────────────────────────────
+console.log('\n[11] Ảnh nền trang đăng nhập');
+const cssSrc2 = fs.readFileSync(path.join(ROOT, 'src/styles/design.css'), 'utf-8');
+const loginSrc = fs.readFileSync(path.join(ROOT, 'src/pages/login.js'), 'utf-8');
+const bgPath = path.join(ROOT, 'src/assets/login-bg.png');
+
+check('Có file ảnh nền src/assets/login-bg.png',
+  fs.existsSync(bgPath) && fs.statSync(bgPath).size > 100 * 1024,
+  fs.existsSync(bgPath) ? fs.statSync(bgPath).size : 'không có file');
+check('CSS dùng ảnh nền cho panel đăng nhập',
+  /url\('\.\.\/assets\/login-bg\.png'\)/.test(cssSrc2));
+check('CSS phủ kín ảnh (cover) và căn giữa',
+  /background-size:\s*cover/.test(cssSrc2) && /background-position:\s*center center/.test(cssSrc2));
+check('CSS có lớp phủ navy để chữ dễ đọc',
+  /linear-gradient\(140deg,\s*rgba\(11, 31, 58/.test(cssSrc2));
+check('Logo + slogan trang đăng nhập giữ nguyên',
+  /Mỗi hồ sơ đi đúng một lối\./.test(loginSrc));
+check('Mobile: panel trái vẫn ẩn (không đổi)',
+  /\.login-aside\s*\{\s*display:\s*none;?\s*\}/.test(cssSrc2));
+
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
 console.log(failed === 0
-  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM • LỊCH/NGÀY • PHÂN QUYỀN • RENDER'
+  ? ' KẾT QUẢ: TÌM KIẾM • THÔNG BÁO • CV • GIỚI TÍNH • MÀU • QUAY LẠI • ĐIỂM 1–5 • SỐ NĂM ≥ 0 • JD KINH NGHIỆM • LỊCH/NGÀY • PHÂN QUYỀN • RENDER • NỀN ĐĂNG NHẬP'
   : ` KẾT QUẢ: ${failed} kiểm tra KHÔNG ĐẠT`);
 console.log('='.repeat(74) + '\n');
 process.exitCode = failed === 0 ? 0 : 1;
