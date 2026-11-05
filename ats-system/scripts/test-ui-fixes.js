@@ -514,8 +514,8 @@ check('Form đăng nhập căn giữa nửa phải màn hình',
   /\.login-container\s*\{[^}]*align-items:\s*center/.test(cssSrc2));
 check('Trang đăng nhập giữ tỉ lệ cũ (ảnh 45% | form 55%)',
   /grid-template-columns:\s*minmax\(0, 0\.9fr\) minmax\(0, 1\.1fr\)/.test(cssSrc2));
-check('Ô nhập đăng nhập lớn (cao 52px, chữ 17px)',
-  /\.login-form \.form-input\s*\{[^}]*height:\s*52px[^}]*font-size:\s*17px/.test(cssSrc2));
+check('Ô nhập đăng nhập giữ cỡ hài hoà (cao 52px, chữ 16px)',
+  /\.login-form \.form-input\s*\{[^}]*height:\s*52px[^}]*font-size:\s*16px/.test(cssSrc2));
 check('Tiêu đề "Đăng nhập" lớn hơn (28px)',
   /\.login-title\s*\{[^}]*font-size:\s*28px/.test(cssSrc2));
 check('Nút đăng nhập lớn (cao 52px)',
