@@ -2486,6 +2486,13 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         const q = filters.search.toLowerCase();
         list = list.filter(r => (r.title && r.title.toLowerCase().includes(q)) || (r.code && r.code.toLowerCase().includes(q)));
       }
+      // Yêu cầu tạo sau hiển thị lên đầu (mới nhất → cũ nhất).
+      list.sort((a, b) => {
+        const da = new Date(a.createdAt || 0).getTime() || 0;
+        const db = new Date(b.createdAt || 0).getTime() || 0;
+        if (db !== da) return db - da;
+        return String(b.id).localeCompare(String(a.id));
+      });
       return list;
     },
 
@@ -2517,6 +2524,33 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
         ...safeData
       };
       _data.requisitions.unshift(newReq);
+
+      // Thông báo ngay khi có yêu cầu tuyển dụng mới:
+      // - Giám đốc: cần phê duyệt
+      // - Nhân sự: theo dõi (bỏ qua nếu chính HR tạo)
+      const creatorName = _currentUser
+        ? (_currentUser.fullName || _currentUser.username)
+        : (newReq.creatorName || 'Phòng ban');
+      const deptLabel = newReq.department ? ` (${newReq.department})` : '';
+      this.addNotificationRecord({
+        title: 'Yêu cầu tuyển dụng mới cần phê duyệt',
+        message: `${newReq.code} – ${newReq.title}${deptLabel} do ${creatorName} tạo, đang chờ phê duyệt.`,
+        icon: 'file-plus',
+        link: '#/requisitions',
+        role: 'director',
+        level: 'warning'
+      });
+      if (!_currentUser || _currentUser.role !== 'hr') {
+        this.addNotificationRecord({
+          title: 'Yêu cầu tuyển dụng mới đã được tạo',
+          message: `${newReq.code} – ${newReq.title}${deptLabel} do ${creatorName} tạo.`,
+          icon: 'file-text',
+          link: '#/requisitions',
+          role: 'hr',
+          level: 'info'
+        });
+      }
+
       saveState();
       return newReq;
     },
@@ -3014,7 +3048,11 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
       }
       if (filters.sortBy) {
         if (filters.sortBy === 'date_desc') {
-          list.sort((a, b) => new Date(b.appliedDate) - new Date(a.appliedDate));
+          list.sort((a, b) => {
+            const diff = new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0);
+            if (diff) return diff;
+            return String(b.id).localeCompare(String(a.id)); // cùng thời điểm: hồ sơ nộp sau lên trước
+          });
         } else if (filters.sortBy === 'date_asc') {
           list.sort((a, b) => new Date(a.appliedDate) - new Date(b.appliedDate));
         } else if (filters.sortBy === 'score_desc') {
@@ -3023,7 +3061,11 @@ Kỹ năng: Linux, Docker, Scripting Bash, Git. Chưa có chứng chỉ AWS.`
           list.sort((a, b) => (a.screeningScore || 0) - (b.screeningScore || 0));
         }
       } else {
-        list.sort((a, b) => new Date(b.appliedDate) - new Date(a.appliedDate));
+        list.sort((a, b) => {
+          const diff = new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0);
+          if (diff) return diff;
+          return String(b.id).localeCompare(String(a.id));
+        });
       }
 
       return list;

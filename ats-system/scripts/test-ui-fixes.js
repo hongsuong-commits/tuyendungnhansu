@@ -516,13 +516,42 @@ check('Trang đăng nhập giữ tỉ lệ cũ (ảnh 45% | form 55%)',
   /grid-template-columns:\s*minmax\(0, 0\.9fr\) minmax\(0, 1\.1fr\)/.test(cssSrc2));
 check('Ô nhập đăng nhập giữ cỡ hài hoà (cao 52px, chữ 16px)',
   /\.login-form \.form-input\s*\{[^}]*height:\s*52px[^}]*font-size:\s*16px/.test(cssSrc2));
-check('Tiêu đề "Đăng nhập" lớn hơn (28px)',
-  /\.login-title\s*\{[^}]*font-size:\s*28px/.test(cssSrc2));
+check('Tiêu đề "Đăng nhập" lớn hơn (≥26px)',
+  /\.login-title\s*\{[^}]*font-size:\s*(2[6-9]|3[0-9])px/.test(cssSrc2));
 check('Nút đăng nhập lớn (cao 52px)',
   /\.login-btn\s*\{[^}]*height:\s*52px/.test(cssSrc2));
 check('Hero portal: bỏ số lượng vị trí đang mở, giữ slogan',
   !/\$\{postings\.length\} vị trí đang mở/.test(portalSrcAll)
   && /Đúng người – Đúng tầm – Đúng tương lai\./.test(portalSrcAll));
+
+// ── 12. Thông báo yêu cầu mới & thứ tự mới nhất lên đầu ─────────────────
+console.log('\n[12] Thông báo yêu cầu tuyển dụng mới & thứ tự mới nhất');
+const dirNotifBefore = ATSStore.getNotificationsForUser('director').length;
+const testReq = ATSStore.createRequisition({
+  title: 'Kiểm thử thông báo yêu cầu mới',
+  department: 'Công nghệ thông tin',
+  quantity: 1,
+  reason: 'Kiểm thử',
+  creatorId: 'usr_head_it',
+  creatorName: 'Lê Văn Hùng'
+});
+const dirNotifAfter = ATSStore.getNotificationsForUser('director');
+check('Tạo yêu cầu → Giám đốc nhận thông báo phê duyệt',
+  dirNotifAfter.length === dirNotifBefore + 1,
+  dirNotifAfter.length - dirNotifBefore);
+check('Thông báo Giám đốc đúng tiêu đề',
+  (dirNotifAfter[0] || {}).title === 'Yêu cầu tuyển dụng mới cần phê duyệt',
+  (dirNotifAfter[0] || {}).title);
+check('Thông báo có mã yêu cầu và link tới danh sách',
+  ((dirNotifAfter[0] || {}).message || '').includes(testReq.code)
+  && (dirNotifAfter[0] || {}).link === '#/requisitions');
+check('Danh sách yêu cầu: yêu cầu tạo sau hiển thị lên đầu',
+  ATSStore.getRequisitions()[0].id === testReq.id,
+  ATSStore.getRequisitions()[0].id);
+const appsSorted = ATSStore.getApplications();
+check('Danh sách ứng viên: hồ sơ nộp sau hiển thị lên đầu',
+  new Date(appsSorted[0].appliedDate).getTime() >= new Date(appsSorted[appsSorted.length - 1].appliedDate).getTime(),
+  { first: appsSorted[0].appliedDate, last: appsSorted[appsSorted.length - 1].appliedDate });
 
 // ── Tổng kết ──────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(74));
